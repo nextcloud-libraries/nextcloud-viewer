@@ -35,9 +35,10 @@ export class ViewerPage {
 	 * Open the playground and click one of its files.
 	 *
 	 * @param name the file to open
+	 * @param query optional playground flags, e.g. `previews`
 	 */
-	async open(name: string): Promise<void> {
-		await this.page.goto('/')
+	async open(name: string, query = ''): Promise<void> {
+		await this.page.goto(query ? `/?${query}` : '/')
 		await this.page.getByRole('button', { name }).click()
 	}
 

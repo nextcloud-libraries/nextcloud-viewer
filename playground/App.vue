@@ -17,10 +17,22 @@ interface Fixture {
 	mime: string
 	/** Whether the viewer offers its editor for this one */
 	editable?: boolean
+	/**
+	 * Whether the server would have a preview for it. There is no previews
+	 * endpoint here, so this is what lets that path be exercised at all: the
+	 * viewer asks for /core/preview and the test decides what comes back.
+	 */
+	hasPreview?: boolean
 }
+
+// The previewed file needs a previews endpoint to stand behind it, so it is
+// only listed when asked for: it would otherwise sit in every other test's
+// list with nothing to serve it
+const withPreviews = new URLSearchParams(window.location.search).has('previews')
 
 const fixtures: Fixture[] = [
 	{ name: 'photo.jpg', mime: 'image/jpeg', editable: true },
+	...(withPreviews ? [{ name: 'previewed.jpg', mime: 'image/jpeg', hasPreview: true }] : []),
 	{ name: 'gradient.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'portrait.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'animation.gif', mime: 'image/gif' },
@@ -31,9 +43,10 @@ const fixtures: Fixture[] = [
 /**
  * The fixtures as Files nodes.
  *
- * Their source is a plain URL served by this page, not a WebDAV one, and
- * `hasPreview` is left off so the viewer loads that URL directly instead of
- * asking a previews endpoint that does not exist here.
+ * Their source is a plain URL served by this page, not a WebDAV one. Most
+ * leave `hasPreview` off so the viewer loads that URL directly instead of
+ * asking a previews endpoint that does not exist here; the one that sets it
+ * is there so that path can be tested with a stubbed endpoint.
  */
 const nodes: IFile[] = fixtures.map((fixture, index) => new File({
 	source: new URL(`./media/${fixture.name}`, window.location.href).href,
@@ -45,7 +58,10 @@ const nodes: IFile[] = fixtures.map((fixture, index) => new File({
 	owner: 'playground',
 	mtime: new Date('2026-01-01T00:00:00Z'),
 	permissions: fixture.editable ? Permission.ALL : Permission.READ,
-	attributes: { hasPreview: false },
+	attributes: {
+		hasPreview: fixture.hasPreview === true,
+		etag: `etag-${index + 1}`,
+	},
 }))
 
 /**

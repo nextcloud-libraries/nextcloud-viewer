@@ -661,14 +661,15 @@ const compare: ViewerAPI['compare'] = async (file1, file2, handlerId) => {
 }
 
 /**
- * Handle Viewer opening to determine backdrop style
+ * Handle Viewer opening to determine backdrop style.
+ *
+ * The viewer is dark whatever theme the user runs: a photo or a video reads
+ * better against dark, and the room around it should not compete with it.
+ * A handler showing something else — a document, say — can ask for a light
+ * backdrop instead, but nothing follows the user's theme here.
  */
 function onOpen() {
-	// Determine if we should use a light backdrop
-	const backgroundInvertIfDark = getComputedStyle(document.documentElement).getPropertyValue('--background-invert-if-dark')
-	const defaultThemeIsLight = backgroundInvertIfDark.trim() !== 'invert(100%)'
-	const theme = currentHandler.value?.theme ?? 'default'
-	lightBackdrop.value = theme === 'light' || (theme === 'default' && defaultThemeIsLight)
+	lightBackdrop.value = (currentHandler.value?.theme ?? 'default') === 'light'
 }
 
 /**
