@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Используемый браузер не поддерживает воспроизведение звука."
+
+msgid "Cancel"
+msgstr "Отменить"
+
+msgid "Image saved"
+msgstr "Изображение сохранено"
+
+msgid "Play the live photo"
+msgstr "Воспроизвести живое фото"
+
+msgid "LIVE"
+msgstr "ТРАНСЛИРУЕТСЯ"
+
+msgid "Your browser does not support videos."
+msgstr "Используемый браузер не поддерживает воспроизведение видео."
+
+msgid "Edit"
+msgstr "Редактировать"
+
+msgid "Open sidebar"
+msgstr "Открыть боковую панель"
+
+msgid "Download"
+msgstr "Скачать"
+
+msgid "View"
+msgstr "Просмотр"
+
+msgid "Reset"
+msgstr "Сброс"
+
+msgid "Quality"
+msgstr "Качество"
+
+msgid "Failed to load image."
+msgstr "Не удалось загрузить изображение."
+
+msgid "Restart"
+msgstr "Перезапуск"
+
+msgid "Rewind {seektime}s"
+msgstr "Назад {seektime}с"
+
+msgid "Play"
+msgstr "Воспроизвести"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Forward {seektime}s"
+msgstr "Вперёд {seektime}с"
+
+msgid "Seek"
+msgstr "Поиск"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} из {duration}"
+
+msgid "Played"
+msgstr "Проигрывается"
+
+msgid "Buffered"
+msgstr "Буферизовано"
+
+msgid "Current time"
+msgstr "Текущее время"
+
+msgid "Duration"
+msgstr "Продолжительность"
+
+msgid "Volume"
+msgstr "Громкость"
+
+msgid "Mute"
+msgstr "Отключить звук"
+
+msgid "Unmute"
+msgstr "Разглушить"
+
+msgid "Enable captions"
+msgstr "Включить субтитры"
+
+msgid "Disable captions"
+msgstr "Отключить субтитры"
+
+msgid "Enter fullscreen"
+msgstr "Полный экран"
+
+msgid "Exit fullscreen"
+msgstr "Выйти из полноэкранного режима"
+
+msgid "Player for {title}"
+msgstr "Проигрыватель {title}"
+
+msgid "Captions"
+msgstr "Субтитры"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "PIP"
+msgstr "PIP"
+
+msgid "Go back to previous menu"
+msgstr "Вернуться в предыдущее меню"
+
+msgid "Speed"
+msgstr "Скорость"
+
+msgid "Normal"
+msgstr "Обычный"
+
+msgid "Loop"
+msgstr "Зациклить"
+
+msgid "Start"
+msgstr "Начало"
+
+msgid "End"
+msgstr "Окончание"
+
+msgid "All"
+msgstr "Все"
+
+msgid "Disabled"
+msgstr "Отключено"
+
+msgid "Enabled"
+msgstr "Включено"
+
+msgid "Ad"
+msgstr "Ad"
+

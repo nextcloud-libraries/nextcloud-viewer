@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ja\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Your browser does not support audio."
+msgstr "お使いのブラウザーはオーディオをサポートしていません。"
+
+msgid "Cancel"
+msgstr "キャンセル"
+
+msgid "Image saved"
+msgstr "画像を保存しました"
+
+msgid "Play the live photo"
+msgstr "ライブフォトを再生"
+
+msgid "LIVE"
+msgstr "ライブ"
+
+msgid "Your browser does not support videos."
+msgstr "お使いのブラウザーはビデオに対応していません。"
+
+msgid "Edit"
+msgstr "編集"
+
+msgid "Open sidebar"
+msgstr "サイドバーを開く"
+
+msgid "Download"
+msgstr "ダウンロード"
+
+msgid "View"
+msgstr "表示"
+
+msgid "Reset"
+msgstr "リセット"
+
+msgid "Quality"
+msgstr "品質"
+
+msgid "Failed to load image."
+msgstr "画像の読込に失敗しました"
+
+msgid "Restart"
+msgstr "再開"
+
+msgid "Rewind {seektime}s"
+msgstr "{seektime}秒巻き戻す"
+
+msgid "Play"
+msgstr "再生"
+
+msgid "Pause"
+msgstr "一時停止"
+
+msgid "Forward {seektime}s"
+msgstr "{seektime}秒先へ進む"
+
+msgid "Seek"
+msgstr "探す"
+
+msgid "{currentTime} of {duration}"
+msgstr "{duration} のうち {currentTime}"
+
+msgid "Played"
+msgstr "再生済"
+
+msgid "Buffered"
+msgstr "バッファ"
+
+msgid "Current time"
+msgstr "現在時刻"
+
+msgid "Duration"
+msgstr "期間"
+
+msgid "Volume"
+msgstr "音量"
+
+msgid "Mute"
+msgstr "ミュート"
+
+msgid "Unmute"
+msgstr "ミュート解除"
+
+msgid "Enable captions"
+msgstr "字幕を有効にする"
+
+msgid "Disable captions"
+msgstr "字幕をオフにする"
+
+msgid "Enter fullscreen"
+msgstr "全画面表示にする"
+
+msgid "Exit fullscreen"
+msgstr "全画面を終了"
+
+msgid "Player for {title}"
+msgstr "{title}のプレイヤー"
+
+msgid "Captions"
+msgstr "字幕"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "PIP"
+msgstr "PIP"
+
+msgid "Go back to previous menu"
+msgstr "前のメニューに戻る"
+
+msgid "Speed"
+msgstr "スピード"
+
+msgid "Normal"
+msgstr "ノーマル"
+
+msgid "Loop"
+msgstr "繰り返し"
+
+msgid "Start"
+msgstr "開始する"
+
+msgid "End"
+msgstr "終了"
+
+msgid "All"
+msgstr "すべて"
+
+msgid "Disabled"
+msgstr "無効"
+
+msgid "Enabled"
+msgstr "有効"
+
+msgid "Ad"
+msgstr "広告"
+

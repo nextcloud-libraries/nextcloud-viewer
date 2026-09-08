@@ -1,0 +1,57 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ka\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Open sidebar"
+msgstr "Open sidebar"
+
+msgid "Download"
+msgstr "Download"
+
+msgid "View"
+msgstr "View"
+
+msgid "Reset"
+msgstr "Reset"
+
+msgid "Play"
+msgstr "Play"
+
+msgid "Duration"
+msgstr "Duration"
+
+msgid "Mute"
+msgstr "Mute"
+
+msgid "Settings"
+msgstr "ოფციები"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "End"
+
+msgid "All"
+msgstr "All"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "Enabled"
+msgstr "Enabled"
+

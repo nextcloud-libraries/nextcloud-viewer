@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: fa\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "مرورگر شما از صدا پشتیبانی نمی‌کند."
+
+msgid "Cancel"
+msgstr "لغو"
+
+msgid "Image saved"
+msgstr "تصویر ذخیره شد"
+
+msgid "Play the live photo"
+msgstr "پخش عکس زنده"
+
+msgid "LIVE"
+msgstr "زنده"
+
+msgid "Your browser does not support videos."
+msgstr "مرورگر شما از ویدیو پشتیبانی نمی‌کند."
+
+msgid "Edit"
+msgstr "ویرایش"
+
+msgid "Open sidebar"
+msgstr "باز کردن نوار کناری"
+
+msgid "Download"
+msgstr "دانلود"
+
+msgid "View"
+msgstr "مشاهده"
+
+msgid "Reset"
+msgstr "بازنشانی"
+
+msgid "Quality"
+msgstr "کیفیت"
+
+msgid "Failed to load image."
+msgstr "بارگذاری تصویر انجام نشد."
+
+msgid "Restart"
+msgstr "راه‌اندازی مجدد"
+
+msgid "Rewind {seektime}s"
+msgstr "بازگشت {seektime} ثانیه"
+
+msgid "Play"
+msgstr "پخش"
+
+msgid "Pause"
+msgstr "مکث"
+
+msgid "Forward {seektime}s"
+msgstr "جلو رفتن {seektime} ثانیه"
+
+msgid "Seek"
+msgstr "جستجو"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} از {duration}"
+
+msgid "Played"
+msgstr "پخش‌شده"
+
+msgid "Buffered"
+msgstr "بافر شده"
+
+msgid "Current time"
+msgstr "زمان فعلی"
+
+msgid "Duration"
+msgstr "مدت زمان"
+
+msgid "Volume"
+msgstr "صدا"
+
+msgid "Mute"
+msgstr "بی‌صدا"
+
+msgid "Unmute"
+msgstr "با صدا"
+
+msgid "Enable captions"
+msgstr "فعال‌سازی زیرنویس"
+
+msgid "Disable captions"
+msgstr "غیرفعال‌سازی زیرنویس"
+
+msgid "Enter fullscreen"
+msgstr "ورود به تمام‌صفحه"
+
+msgid "Exit fullscreen"
+msgstr "خروج از تمام‌صفحه"
+
+msgid "Player for {title}"
+msgstr "پخش‌کننده برای {title}"
+
+msgid "Captions"
+msgstr "زیرنویس‌ها"
+
+msgid "Settings"
+msgstr "تنظیمات"
+
+msgid "PIP"
+msgstr "تصویر در تصویر"
+
+msgid "Go back to previous menu"
+msgstr "بازگشت به منوی قبلی"
+
+msgid "Speed"
+msgstr "سرعت"
+
+msgid "Normal"
+msgstr "عادی"
+
+msgid "Loop"
+msgstr "تکرار"
+
+msgid "Start"
+msgstr "شروع"
+
+msgid "End"
+msgstr "پایان"
+
+msgid "All"
+msgstr "همه"
+
+msgid "Disabled"
+msgstr "غیرفعال"
+
+msgid "Enabled"
+msgstr "فعال"
+
+msgid "Ad"
+msgstr "تبلیغ"
+

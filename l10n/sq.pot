@@ -1,0 +1,57 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: sq\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Anullo"
+
+msgid "Image saved"
+msgstr "Imazhi u ruajt"
+
+msgid "Edit"
+msgstr "Përpuno"
+
+msgid "Open sidebar"
+msgstr "Hapni sidebar-in"
+
+msgid "Download"
+msgstr "Shkarko"
+
+msgid "View"
+msgstr "Shiko"
+
+msgid "Reset"
+msgstr "Rivendos"
+
+msgid "Play"
+msgstr "Luaje"
+
+msgid "Pause"
+msgstr "Pauzë"
+
+msgid "Duration"
+msgstr "Kohëzgjatja"
+
+msgid "Settings"
+msgstr "Rregullimet"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "Fillo"
+
+msgid "End"
+msgstr "Mbarim"
+
+msgid "All"
+msgstr "Të gjithë"
+
+msgid "Disabled"
+msgstr "I/E çaktivizuar"
+
+msgid "Enabled"
+msgstr "E aktivizuar"
+

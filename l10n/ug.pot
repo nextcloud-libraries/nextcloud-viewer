@@ -1,0 +1,90 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ug\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "توركۆرگۈڭىز ئاۋازنى قوللىمايدۇ."
+
+msgid "Cancel"
+msgstr "ۋاز كەچ"
+
+msgid "Image saved"
+msgstr "رەسىم ساقلاندى"
+
+msgid "Play the live photo"
+msgstr "نەق مەيدان سۈرىتىنى قويۇڭ"
+
+msgid "LIVE"
+msgstr "نەق مەيدان"
+
+msgid "Your browser does not support videos."
+msgstr "توركۆرگۈڭىز سىنلارنى قوللىمايدۇ."
+
+msgid "Edit"
+msgstr "تەھرىر"
+
+msgid "Open sidebar"
+msgstr "يان بالداقنى ئېچىڭ"
+
+msgid "Download"
+msgstr "چۈشۈر"
+
+msgid "View"
+msgstr "كۆرۈش"
+
+msgid "Reset"
+msgstr "ئەسلىگە قايتۇرۇش"
+
+msgid "Quality"
+msgstr "سۈپەت"
+
+msgid "Failed to load image."
+msgstr "رەسىم يۈكلەنمىدى."
+
+msgid "Restart"
+msgstr "قايتا قوزغىتىڭ"
+
+msgid "Play"
+msgstr "ئويناش"
+
+msgid "Pause"
+msgstr "توختات"
+
+msgid "Current time"
+msgstr "نۆۋەتتىكى ۋاقىت"
+
+msgid "Duration"
+msgstr "ئۇزۇنلىقى"
+
+msgid "Volume"
+msgstr "ھەجىم"
+
+msgid "Mute"
+msgstr "جىمجىتلا"
+
+msgid "Settings"
+msgstr "تەڭشەكلەر"
+
+msgid "Speed"
+msgstr "سۈرئەت"
+
+msgid "Normal"
+msgstr "نورمال"
+
+msgid "Start"
+msgstr "باشلاش"
+
+msgid "End"
+msgstr "ئاخىر"
+
+msgid "All"
+msgstr "ھەممىسى"
+
+msgid "Disabled"
+msgstr "چەكلەنگەن"
+
+msgid "Enabled"
+msgstr "قوزغىتىلدى"
+

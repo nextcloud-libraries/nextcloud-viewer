@@ -1,0 +1,75 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ast\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "El restolador nun ye compatible col audiu."
+
+msgid "Cancel"
+msgstr "Encaboxar"
+
+msgid "Image saved"
+msgstr "Guardóse la imaxe"
+
+msgid "Play the live photo"
+msgstr "Reproducir la semeya en direuto"
+
+msgid "LIVE"
+msgstr "EN DIREUTO"
+
+msgid "Your browser does not support videos."
+msgstr "El restolador nun ye compatible colos vídeos."
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Open sidebar"
+msgstr "Abrir la barra llateral"
+
+msgid "Download"
+msgstr "Baxar"
+
+msgid "View"
+msgstr "Ver"
+
+msgid "Reset"
+msgstr "Reafitar"
+
+msgid "Quality"
+msgstr "Calidá"
+
+msgid "Play"
+msgstr "Reproducir"
+
+msgid "Pause"
+msgstr "Posar"
+
+msgid "Current time"
+msgstr "Hora actual"
+
+msgid "Duration"
+msgstr "Duración"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Exit fullscreen"
+msgstr "Colar de la pantalla completa"
+
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "All"
+msgstr "Too"
+
+msgid "Disabled"
+msgstr "Desactivóse"
+
+msgid "Enabled"
+msgstr "Activóse"
+

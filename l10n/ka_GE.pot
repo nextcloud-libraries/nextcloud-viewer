@@ -1,0 +1,45 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ka_GE\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+msgid "Cancel"
+msgstr "უარყოფა"
+
+msgid "Edit"
+msgstr "შეცვლა"
+
+msgid "Download"
+msgstr "ჩამოტვირთვა"
+
+msgid "Reset"
+msgstr "საწყის მდოგმარეობაში დაბრუნება"
+
+msgid "Play"
+msgstr "დაკვრა"
+
+msgid "Pause"
+msgstr "პაუზა"
+
+msgid "Exit fullscreen"
+msgstr "მთელი ეკრანიდან გამოსვლა"
+
+msgid "Settings"
+msgstr "პარამეტრები"
+
+msgid "Normal"
+msgstr "ნორმალური"
+
+msgid "End"
+msgstr "დამთავრება"
+
+msgid "All"
+msgstr "ყველა"
+
+msgid "Disabled"
+msgstr "არაა მოქმედი"
+
+msgid "Enabled"
+msgstr "მოქმედია"
+

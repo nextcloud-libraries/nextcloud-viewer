@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: tr\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Tarayıcınız sesleri desteklemiyor."
+
+msgid "Cancel"
+msgstr "İptal"
+
+msgid "Image saved"
+msgstr "Görsel kaydedildi"
+
+msgid "Play the live photo"
+msgstr "Live Photo oynat"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Tarayıcınız görüntüleri desteklemiyor."
+
+msgid "Edit"
+msgstr "Düzenle"
+
+msgid "Open sidebar"
+msgstr "Kenar çubuğunu aç"
+
+msgid "Download"
+msgstr "İndir"
+
+msgid "View"
+msgstr "Görüntüle"
+
+msgid "Reset"
+msgstr "Sıfırla"
+
+msgid "Quality"
+msgstr "Kalite"
+
+msgid "Failed to load image."
+msgstr "Görsel yüklenemedi."
+
+msgid "Restart"
+msgstr "Yeniden başlat"
+
+msgid "Rewind {seektime}s"
+msgstr "{seektime}s geri git"
+
+msgid "Play"
+msgstr "Oynat"
+
+msgid "Pause"
+msgstr "Duraklat"
+
+msgid "Forward {seektime}s"
+msgstr "{seektime}s ileri git"
+
+msgid "Seek"
+msgstr "Ara"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} / {duration}"
+
+msgid "Played"
+msgstr "Oynatıldı"
+
+msgid "Buffered"
+msgstr "Ara belleğe alındı"
+
+msgid "Current time"
+msgstr "Geçerli zaman"
+
+msgid "Duration"
+msgstr "Süre"
+
+msgid "Volume"
+msgstr "Ses düzeyi"
+
+msgid "Mute"
+msgstr "Sesi kapat"
+
+msgid "Unmute"
+msgstr "Sesi aç"
+
+msgid "Enable captions"
+msgstr "Alt yazıları aç"
+
+msgid "Disable captions"
+msgstr "Alt yazıları kapat"
+
+msgid "Enter fullscreen"
+msgstr "Tam ekrana geç"
+
+msgid "Exit fullscreen"
+msgstr "Tam ekrandan çık"
+
+msgid "Player for {title}"
+msgstr "{title} için oynatıcı"
+
+msgid "Captions"
+msgstr "Alt yazılar"
+
+msgid "Settings"
+msgstr "Ayarlar"
+
+msgid "PIP"
+msgstr "Resim içinde resim"
+
+msgid "Go back to previous menu"
+msgstr "Önceki menüye dön"
+
+msgid "Speed"
+msgstr "Hız"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Loop"
+msgstr "Yinele"
+
+msgid "Start"
+msgstr "Başlangıç"
+
+msgid "End"
+msgstr "Bitiş"
+
+msgid "All"
+msgstr "Tümü"
+
+msgid "Disabled"
+msgstr "Kullanılmıyor"
+
+msgid "Enabled"
+msgstr "Kullanılıyor"
+
+msgid "Ad"
+msgstr "Reklam"
+

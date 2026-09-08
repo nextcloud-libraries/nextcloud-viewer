@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: bn_BD\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "বাতির"
+
+msgid "Edit"
+msgstr "সম্পাদনা"
+
+msgid "Download"
+msgstr "ডাউনলোড"
+
+msgid "Reset"
+msgstr "পূণঃনির্ধানণ"
+
+msgid "Play"
+msgstr "বাজাও"
+
+msgid "Pause"
+msgstr "বিরতি"
+
+msgid "Settings"
+msgstr "সেটিংস"
+
+msgid "All"
+msgstr "সবাই"
+
+msgid "Disabled"
+msgstr "অকার্যকর"
+
+msgid "Enabled"
+msgstr "কার্যকর"
+

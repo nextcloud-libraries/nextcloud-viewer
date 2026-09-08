@@ -1,0 +1,72 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: lo\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Cancel"
+msgstr "ຍົກເລີກ"
+
+msgid "Image saved"
+msgstr "Image saved"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Edit"
+msgstr "ແກ້ໄຂ"
+
+msgid "Open sidebar"
+msgstr "ເປີດແທບດ້ານຂ້າງ"
+
+msgid "Download"
+msgstr "ດາວໂຫລດ"
+
+msgid "View"
+msgstr "ເບິ່ງ"
+
+msgid "Reset"
+msgstr "ຕັ້ງຄ່າໃໝ່"
+
+msgid "Quality"
+msgstr "ຄຸນນະພາບ"
+
+msgid "Play"
+msgstr "Play"
+
+msgid "Pause"
+msgstr "ຢຸດຊົ່ວຄາວ"
+
+msgid "Duration"
+msgstr "ໄລຍະເວລາ"
+
+msgid "Volume"
+msgstr "ລະດັບສຽງ"
+
+msgid "Mute"
+msgstr "Mute"
+
+msgid "Settings"
+msgstr "ການຕັ້ງຄ່າ"
+
+msgid "Speed"
+msgstr "ຄວາມໄວ"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "ເລີ່ມ"
+
+msgid "End"
+msgstr "End"
+
+msgid "All"
+msgstr "ທັງໝົດ"
+
+msgid "Disabled"
+msgstr "ປິດໃຊ້ງານ"
+
+msgid "Enabled"
+msgstr "ເປີດໃຊ້ງານ"
+

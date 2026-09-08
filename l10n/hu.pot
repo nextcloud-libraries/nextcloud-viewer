@@ -1,0 +1,87 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: hu\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Az Ön böngészője nem támogatja a hangot."
+
+msgid "Cancel"
+msgstr "Mégse"
+
+msgid "Image saved"
+msgstr "Kép elmentve"
+
+msgid "Play the live photo"
+msgstr "Az élő fénykép lejátszása"
+
+msgid "LIVE"
+msgstr "ÉLŐ"
+
+msgid "Your browser does not support videos."
+msgstr "A böngészője nem támogatja a videókat."
+
+msgid "Edit"
+msgstr "Szerkesztés"
+
+msgid "Open sidebar"
+msgstr "Oldalsáv megnyitása"
+
+msgid "Download"
+msgstr "Letöltés"
+
+msgid "View"
+msgstr "Megtekintés"
+
+msgid "Reset"
+msgstr "Alaphelyzetbe állítás"
+
+msgid "Quality"
+msgstr "Minőség"
+
+msgid "Restart"
+msgstr "Újraindítás"
+
+msgid "Play"
+msgstr "Lejátszás"
+
+msgid "Pause"
+msgstr "Szünet"
+
+msgid "Duration"
+msgstr "Időtartam"
+
+msgid "Volume"
+msgstr "Hangerő"
+
+msgid "Mute"
+msgstr "Némítás"
+
+msgid "Exit fullscreen"
+msgstr "Teljes képernyő bezárása"
+
+msgid "Settings"
+msgstr "Beállítások"
+
+msgid "Speed"
+msgstr "Sebesség"
+
+msgid "Normal"
+msgstr "Normális"
+
+msgid "Start"
+msgstr "Kezdés"
+
+msgid "End"
+msgstr "Vég"
+
+msgid "All"
+msgstr "Összes"
+
+msgid "Disabled"
+msgstr "Letiltva"
+
+msgid "Enabled"
+msgstr "Engedélyezve"
+

@@ -1,0 +1,69 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: vi\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Trình duyệt của bạn không hỗ trợ âm thanh."
+
+msgid "Cancel"
+msgstr "Hủy"
+
+msgid "Image saved"
+msgstr "Đã lưu hình ảnh"
+
+msgid "Your browser does not support videos."
+msgstr "Trình duyệt của bạn không hỗ trợ video."
+
+msgid "Edit"
+msgstr "Chỉnh sửa"
+
+msgid "Open sidebar"
+msgstr "Mở thanh bên"
+
+msgid "Download"
+msgstr "Tải xuống"
+
+msgid "View"
+msgstr "Xem"
+
+msgid "Reset"
+msgstr "Đặt lại"
+
+msgid "Play"
+msgstr "Phát"
+
+msgid "Pause"
+msgstr "Tạm dừng"
+
+msgid "Duration"
+msgstr "Khoảng thời gian"
+
+msgid "Volume"
+msgstr "Âm lượng"
+
+msgid "Mute"
+msgstr "Tắt tiếng"
+
+msgid "Settings"
+msgstr "Thiết lập"
+
+msgid "Normal"
+msgstr "Bình thường"
+
+msgid "Start"
+msgstr "Bắt đầu"
+
+msgid "End"
+msgstr "Kết thúc"
+
+msgid "All"
+msgstr "Tất cả"
+
+msgid "Disabled"
+msgstr "Đã vô hiệu"
+
+msgid "Enabled"
+msgstr "Đá kích hoạt"
+

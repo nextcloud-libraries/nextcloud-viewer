@@ -1,0 +1,81 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: hr\n"
+"Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Vaš preglednik ne podržava zvuk."
+
+msgid "Cancel"
+msgstr "Odustani"
+
+msgid "Image saved"
+msgstr "Slika je spremljena"
+
+msgid "Play the live photo"
+msgstr "Reproduciraj sliku uživo"
+
+msgid "LIVE"
+msgstr "UŽIVO"
+
+msgid "Your browser does not support videos."
+msgstr "Vaš preglednik ne podržava videozapise."
+
+msgid "Edit"
+msgstr "Uredi"
+
+msgid "Open sidebar"
+msgstr "Otvori bočnu traku"
+
+msgid "Download"
+msgstr "Preuzmi"
+
+msgid "View"
+msgstr "Pregledaj"
+
+msgid "Reset"
+msgstr "Resetiraj"
+
+msgid "Quality"
+msgstr "Kvaliteta"
+
+msgid "Failed to load image."
+msgstr "Neuspješno učitavanje slike."
+
+msgid "Play"
+msgstr "Reprodukcija"
+
+msgid "Pause"
+msgstr "Pauza"
+
+msgid "Duration"
+msgstr "Trajanje"
+
+msgid "Mute"
+msgstr "Utišaj"
+
+msgid "Settings"
+msgstr "Postavke"
+
+msgid "Speed"
+msgstr "Brzina"
+
+msgid "Normal"
+msgstr "Normalno"
+
+msgid "Start"
+msgstr "Pokreni"
+
+msgid "End"
+msgstr "Završetak"
+
+msgid "All"
+msgstr "Sve"
+
+msgid "Disabled"
+msgstr "Onemogućeno"
+
+msgid "Enabled"
+msgstr "Omogućeno"
+

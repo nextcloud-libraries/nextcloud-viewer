@@ -1,0 +1,84 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ca\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "El vostre navegador no és compatible amb l'àudio."
+
+msgid "Cancel"
+msgstr "Cancel·la"
+
+msgid "Image saved"
+msgstr "S'ha desat la imatge"
+
+msgid "Play the live photo"
+msgstr "Reprodueix la fotografia en viu"
+
+msgid "LIVE"
+msgstr "DIRECTE"
+
+msgid "Your browser does not support videos."
+msgstr "El vostre navegador no és compatible amb els vídeos."
+
+msgid "Edit"
+msgstr "Edita"
+
+msgid "Open sidebar"
+msgstr "Obre la barra lateral"
+
+msgid "Download"
+msgstr "Baixa"
+
+msgid "View"
+msgstr "Visualitza"
+
+msgid "Reset"
+msgstr "Reinicialitza"
+
+msgid "Quality"
+msgstr "Qualitat"
+
+msgid "Failed to load image."
+msgstr "No s'ha pogut carregar la imatge."
+
+msgid "Play"
+msgstr "Joguina"
+
+msgid "Pause"
+msgstr "Posa en pausa"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} de {duration}"
+
+msgid "Volume"
+msgstr "Volum"
+
+msgid "Mute"
+msgstr "Silencia"
+
+msgid "Settings"
+msgstr "Paràmetres"
+
+msgid "Speed"
+msgstr "Velocitat"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "Inici"
+
+msgid "End"
+msgstr "Final"
+
+msgid "All"
+msgstr "Totes"
+
+msgid "Disabled"
+msgstr "Inhabilitat"
+
+msgid "Enabled"
+msgstr "Habilitat"
+

@@ -1,0 +1,60 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: oc\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Vòstre navigador pren pas encarga l’àudio."
+
+msgid "Cancel"
+msgstr "Anullar"
+
+msgid "Your browser does not support videos."
+msgstr "Vòstre navigador pren pas encarga las vidèos."
+
+msgid "Edit"
+msgstr "Modificar"
+
+msgid "Open sidebar"
+msgstr "Dobrir panèl lateral"
+
+msgid "Download"
+msgstr "Telecargar"
+
+msgid "View"
+msgstr "Vista"
+
+msgid "Reset"
+msgstr "Reïnicializar"
+
+msgid "Play"
+msgstr "Aviar"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Duration"
+msgstr "Durada"
+
+msgid "Volume"
+msgstr "Volum"
+
+msgid "Mute"
+msgstr "Mut"
+
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "Normal"
+msgstr "Normala"
+
+msgid "All"
+msgstr "Tot"
+
+msgid "Disabled"
+msgstr "Desactivat"
+
+msgid "Enabled"
+msgstr "Activada"
+

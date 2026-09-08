@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: lb\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Ofbriechen"
+
+msgid "Edit"
+msgstr "Änneren"
+
+msgid "Download"
+msgstr "Eroflueden"
+
+msgid "Reset"
+msgstr "Zeréck setzen"
+
+msgid "Play"
+msgstr "Ofspillen"
+
+msgid "Pause"
+msgstr "Paus"
+
+msgid "Settings"
+msgstr "Astellungen"
+
+msgid "All"
+msgstr "All"
+
+msgid "Disabled"
+msgstr "Deaktivéiert"
+
+msgid "Enabled"
+msgstr "Aktivéiert"
+

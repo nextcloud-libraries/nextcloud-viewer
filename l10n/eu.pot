@@ -1,0 +1,90 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: eu\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Zure nabigatzaileak ez du audioa onartzen."
+
+msgid "Cancel"
+msgstr "Utzi"
+
+msgid "Image saved"
+msgstr "Irudia gordeta"
+
+msgid "Play the live photo"
+msgstr "Erreproduzitu zuzeneko argazkia"
+
+msgid "LIVE"
+msgstr "ZUZENEAN"
+
+msgid "Your browser does not support videos."
+msgstr "Zure nabigatzaileak ez ditu bideoak onartzen."
+
+msgid "Edit"
+msgstr "Aldatu"
+
+msgid "Open sidebar"
+msgstr "Ireki albo-barra"
+
+msgid "Download"
+msgstr "Deskargatu"
+
+msgid "View"
+msgstr "Ikusi"
+
+msgid "Reset"
+msgstr "Berrezarri"
+
+msgid "Quality"
+msgstr "Kalitatea"
+
+msgid "Failed to load image."
+msgstr "Irudia kargatzeak huts egin du."
+
+msgid "Restart"
+msgstr "Berrabiarazi"
+
+msgid "Play"
+msgstr "Jokatu"
+
+msgid "Pause"
+msgstr "Gelditu"
+
+msgid "Current time"
+msgstr "Uneko ordua"
+
+msgid "Duration"
+msgstr "Iraupena"
+
+msgid "Volume"
+msgstr "Bolumena"
+
+msgid "Mute"
+msgstr "Isilarazi"
+
+msgid "Settings"
+msgstr "Ezarpenak"
+
+msgid "Speed"
+msgstr "Abiadura"
+
+msgid "Normal"
+msgstr "Normala"
+
+msgid "Start"
+msgstr "Hasi"
+
+msgid "End"
+msgstr "Amaiera"
+
+msgid "All"
+msgstr "Denak"
+
+msgid "Disabled"
+msgstr "Desgaituta"
+
+msgid "Enabled"
+msgstr "Gaituta"
+

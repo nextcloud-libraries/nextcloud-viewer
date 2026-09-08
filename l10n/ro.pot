@@ -1,0 +1,66 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ro\n"
+"Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));\n"
+
+msgid "Your browser does not support audio."
+msgstr "Browser-ul tău nu suportă audio."
+
+msgid "Cancel"
+msgstr "Anulare"
+
+msgid "Image saved"
+msgstr "Imagine salvată"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Browser-ul tău nu suportă video."
+
+msgid "Edit"
+msgstr "Editează"
+
+msgid "Open sidebar"
+msgstr "Deschide bara laterală"
+
+msgid "Download"
+msgstr "Descărcare"
+
+msgid "View"
+msgstr "Vizualizare"
+
+msgid "Reset"
+msgstr "Resetare"
+
+msgid "Quality"
+msgstr "Calitatea"
+
+msgid "Play"
+msgstr "Start Joc"
+
+msgid "Pause"
+msgstr "Pauză"
+
+msgid "Duration"
+msgstr "Durată"
+
+msgid "Mute"
+msgstr "Oprește sunetul"
+
+msgid "Settings"
+msgstr "Setări"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "All"
+msgstr "Toate "
+
+msgid "Disabled"
+msgstr "Dezactivați"
+
+msgid "Enabled"
+msgstr "Activat"
+

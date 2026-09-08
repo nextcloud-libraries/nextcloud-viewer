@@ -1,0 +1,117 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: cs\n"
+"Plural-Forms: nplurals=4; plural=(n == 1 && n % 1 == 0) ? 0 : (n >= 2 && n <= 4 && n % 1 == 0) ? 1: (n % 1 != 0 ) ? 2 : 3;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Váš prohlížeč nepodporuje zvuk."
+
+msgid "Cancel"
+msgstr "Storno"
+
+msgid "Image saved"
+msgstr "Obrázek uložen"
+
+msgid "Play the live photo"
+msgstr "Přehrát živé video"
+
+msgid "LIVE"
+msgstr "ŽIVĚ"
+
+msgid "Your browser does not support videos."
+msgstr "Vámi používaný webový prohlížeč nepodporuje videa."
+
+msgid "Edit"
+msgstr "Upravit"
+
+msgid "Open sidebar"
+msgstr "Otevřít postranní panel"
+
+msgid "Download"
+msgstr "Stáhnout"
+
+msgid "View"
+msgstr "Zobrazit"
+
+msgid "Reset"
+msgstr "Vrátit na výchozí hodnoty"
+
+msgid "Quality"
+msgstr "Kvalita"
+
+msgid "Failed to load image."
+msgstr "Obrázek se nepodařilo načíst."
+
+msgid "Restart"
+msgstr "Restartovat"
+
+msgid "Play"
+msgstr "Přehrát"
+
+msgid "Pause"
+msgstr "Pozastavit"
+
+msgid "Seek"
+msgstr "Posun"
+
+msgid "Played"
+msgstr "Přehráno"
+
+msgid "Buffered"
+msgstr "Ve vyrovnávací paměti"
+
+msgid "Current time"
+msgstr "Aktuální čas"
+
+msgid "Duration"
+msgstr "Trvání"
+
+msgid "Volume"
+msgstr "Hlasitost"
+
+msgid "Mute"
+msgstr "Ztlumit"
+
+msgid "Unmute"
+msgstr "Zrušit ztlumení"
+
+msgid "Exit fullscreen"
+msgstr "Opustit režim celé obrazovky"
+
+msgid "Captions"
+msgstr "Titulky"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "PIP"
+msgstr "Obraz v obraze"
+
+msgid "Speed"
+msgstr "Rychlost"
+
+msgid "Normal"
+msgstr "Normální"
+
+msgid "Loop"
+msgstr "Smyčka"
+
+msgid "Start"
+msgstr "Spustit"
+
+msgid "End"
+msgstr "Konec"
+
+msgid "All"
+msgstr "Vše"
+
+msgid "Disabled"
+msgstr "Vypnuto"
+
+msgid "Enabled"
+msgstr "Zapnuto"
+
+msgid "Ad"
+msgstr "Přidat"
+

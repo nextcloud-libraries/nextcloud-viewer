@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: es\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Tu navegador no soporta audio."
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Image saved"
+msgstr "Imagen guardada"
+
+msgid "Play the live photo"
+msgstr "Reproducir la fotografía en vivo"
+
+msgid "LIVE"
+msgstr "EN VIVO"
+
+msgid "Your browser does not support videos."
+msgstr "Tu navegador no soporta videos."
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Open sidebar"
+msgstr "Abrir barra lateral"
+
+msgid "Download"
+msgstr "Descarga"
+
+msgid "View"
+msgstr "Ver"
+
+msgid "Reset"
+msgstr "Restablecer"
+
+msgid "Quality"
+msgstr "Calidad"
+
+msgid "Failed to load image."
+msgstr "Error al cargar imagen."
+
+msgid "Restart"
+msgstr "Reiniciar"
+
+msgid "Play"
+msgstr "Reproducir"
+
+msgid "Pause"
+msgstr "Pausar"
+
+msgid "Current time"
+msgstr "Hora actual"
+
+msgid "Duration"
+msgstr "Duración"
+
+msgid "Volume"
+msgstr "Volumen"
+
+msgid "Mute"
+msgstr "Silenciar"
+
+msgid "Exit fullscreen"
+msgstr "Salir de pantalla completa"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Speed"
+msgstr "Velocidad"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "Iniciar"
+
+msgid "End"
+msgstr "Final"
+
+msgid "All"
+msgstr "Todo"
+
+msgid "Disabled"
+msgstr "Deshabilitado"
+
+msgid "Enabled"
+msgstr "Habilitado"
+

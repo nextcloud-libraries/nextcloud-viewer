@@ -1,0 +1,24 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: gd\n"
+"Plural-Forms: nplurals=4; plural=(n==1 || n==11) ? 0 : (n==2 || n==12) ? 1 : (n > 2 && n < 20) ? 2 : 3;\n"
+
+msgid "Cancel"
+msgstr "Sguir dheth"
+
+msgid "Edit"
+msgstr "Deasaich"
+
+msgid "Open sidebar"
+msgstr "Fosgail am bàr-taoibh"
+
+msgid "Download"
+msgstr "Luchdaich a-nuas"
+
+msgid "Settings"
+msgstr "Roghainnean"
+
+msgid "Normal"
+msgstr "Àbhaisteach"
+

@@ -1,0 +1,90 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: sk\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n == 1 ? 0 : n % 1 == 0 && n >= 2 && n <= 4 ? 1 : n % 1 != 0 ? 2: 3);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Váš prehliadač nepodporuje zvuk."
+
+msgid "Cancel"
+msgstr "Zrušiť"
+
+msgid "Image saved"
+msgstr "Obrázok uložený"
+
+msgid "Play the live photo"
+msgstr "Prehrajte aktívnu fotografiu"
+
+msgid "LIVE"
+msgstr "NA ŽIVO"
+
+msgid "Your browser does not support videos."
+msgstr "Váš prehliadač nepodporuje videá."
+
+msgid "Edit"
+msgstr "Upraviť"
+
+msgid "Open sidebar"
+msgstr "Otvoriť bočný panel"
+
+msgid "Download"
+msgstr "Stiahnuť"
+
+msgid "View"
+msgstr "Prezerať"
+
+msgid "Reset"
+msgstr "Resetovať/Obnoviť"
+
+msgid "Quality"
+msgstr "Kvalita"
+
+msgid "Failed to load image."
+msgstr "Chyba pri načítavaní obrázku."
+
+msgid "Restart"
+msgstr "Reštartovať"
+
+msgid "Play"
+msgstr "Hrať"
+
+msgid "Pause"
+msgstr "Pauza"
+
+msgid "Current time"
+msgstr "Aktuálny čas"
+
+msgid "Duration"
+msgstr "Trvanie"
+
+msgid "Volume"
+msgstr "Hlasitosť"
+
+msgid "Mute"
+msgstr "Stlmiť"
+
+msgid "Settings"
+msgstr "Nastavenia"
+
+msgid "Speed"
+msgstr "Rýchlosť"
+
+msgid "Normal"
+msgstr "Normálna"
+
+msgid "Start"
+msgstr "Začiatok"
+
+msgid "End"
+msgstr "Koniec"
+
+msgid "All"
+msgstr "Všetko"
+
+msgid "Disabled"
+msgstr "Vypnuté"
+
+msgid "Enabled"
+msgstr "Zapnuté"
+

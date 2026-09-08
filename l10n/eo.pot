@@ -1,0 +1,51 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: eo\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Nuligi"
+
+msgid "Your browser does not support videos."
+msgstr "Via retumilo ne subtenas la vidaĵojn"
+
+msgid "Edit"
+msgstr "Modifi"
+
+msgid "Open sidebar"
+msgstr "Malfermi flankopanelon"
+
+msgid "Download"
+msgstr "Elŝuti"
+
+msgid "View"
+msgstr "Vidi"
+
+msgid "Reset"
+msgstr "Restarigi"
+
+msgid "Play"
+msgstr "Ludi"
+
+msgid "Pause"
+msgstr "Paŭzigi"
+
+msgid "Settings"
+msgstr "Agordoj"
+
+msgid "Speed"
+msgstr "Rapideco"
+
+msgid "Start"
+msgstr "Komenco"
+
+msgid "End"
+msgstr "Fino"
+
+msgid "All"
+msgstr "Ĉiuj"
+
+msgid "Disabled"
+msgstr "Malkapabligita"
+

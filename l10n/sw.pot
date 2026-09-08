@@ -1,0 +1,87 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: sw\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Kivinjari chako hakitumii sauti."
+
+msgid "Cancel"
+msgstr "Sitisha"
+
+msgid "Image saved"
+msgstr "Picha imehifadhiwa"
+
+msgid "Play the live photo"
+msgstr "Cheza picha ya moja kwa moja"
+
+msgid "LIVE"
+msgstr "MUBASHARA"
+
+msgid "Your browser does not support videos."
+msgstr "Kivinjari chako hakitumii video."
+
+msgid "Edit"
+msgstr "Hariri"
+
+msgid "Open sidebar"
+msgstr "Fungua upau wa pembeni"
+
+msgid "Download"
+msgstr "Pakua"
+
+msgid "View"
+msgstr "Angalia"
+
+msgid "Reset"
+msgstr "Pangilia upya"
+
+msgid "Quality"
+msgstr "Ubora"
+
+msgid "Failed to load image."
+msgstr "Imeshindwa kupakia picha"
+
+msgid "Restart"
+msgstr "Anza upya"
+
+msgid "Play"
+msgstr "Cheza"
+
+msgid "Pause"
+msgstr "Sitisha"
+
+msgid "Duration"
+msgstr "Muda"
+
+msgid "Volume"
+msgstr "Sauti"
+
+msgid "Mute"
+msgstr "Zima"
+
+msgid "Settings"
+msgstr "Mipangilio"
+
+msgid "Speed"
+msgstr "Kasi"
+
+msgid "Normal"
+msgstr "Kawaida"
+
+msgid "Start"
+msgstr "Anza"
+
+msgid "End"
+msgstr "Maliza"
+
+msgid "All"
+msgstr "Zote"
+
+msgid "Disabled"
+msgstr "Ilizimwa"
+
+msgid "Enabled"
+msgstr "Washwa"
+

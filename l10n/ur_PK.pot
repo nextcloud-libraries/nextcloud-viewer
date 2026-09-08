@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ur_PK\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "منسوخ کریں"
+
+msgid "Edit"
+msgstr "تدوین کریں"
+
+msgid "Download"
+msgstr "ڈاؤن لوڈ"
+
+msgid "Reset"
+msgstr "ری سیٹ"
+
+msgid "Settings"
+msgstr "سیٹینگز"
+

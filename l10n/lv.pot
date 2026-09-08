@@ -1,0 +1,60 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: lv\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);\n"
+
+msgid "Cancel"
+msgstr "Atcelt"
+
+msgid "Your browser does not support videos."
+msgstr "Pārlūks nenodrošina video"
+
+msgid "Edit"
+msgstr "Labot"
+
+msgid "Open sidebar"
+msgstr "Atvērt sānjoslu"
+
+msgid "Download"
+msgstr "Lejupielādēt"
+
+msgid "View"
+msgstr "Skats"
+
+msgid "Reset"
+msgstr "Atiestatīt"
+
+msgid "Quality"
+msgstr "Kvalitāte"
+
+msgid "Play"
+msgstr "Atskaņot"
+
+msgid "Pause"
+msgstr "Pauzēt"
+
+msgid "Duration"
+msgstr "Ilgums"
+
+msgid "Settings"
+msgstr "Iestatījumi"
+
+msgid "Speed"
+msgstr "Ātrums"
+
+msgid "Start"
+msgstr "Sākums"
+
+msgid "End"
+msgstr "Beigas"
+
+msgid "All"
+msgstr "Visi"
+
+msgid "Disabled"
+msgstr "Atspējots"
+
+msgid "Enabled"
+msgstr "Iespējots"
+

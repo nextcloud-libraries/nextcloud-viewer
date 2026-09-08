@@ -1,0 +1,81 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: is\n"
+"Plural-Forms: nplurals=2; plural=(n % 10 != 1 || n % 100 == 11);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Vafrinn þinn styður ekki hljóð."
+
+msgid "Cancel"
+msgstr "Hætta við"
+
+msgid "Image saved"
+msgstr "Mynd vistuð"
+
+msgid "Play the live photo"
+msgstr "Spila lifandi mynd"
+
+msgid "LIVE"
+msgstr "BEINT"
+
+msgid "Your browser does not support videos."
+msgstr "Vafrinn þinn styður ekki myndskeið."
+
+msgid "Edit"
+msgstr "Breyta"
+
+msgid "Open sidebar"
+msgstr "Opna hliðarspjald"
+
+msgid "Download"
+msgstr "Sækja"
+
+msgid "View"
+msgstr "Skoða"
+
+msgid "Reset"
+msgstr "Endurstilla"
+
+msgid "Quality"
+msgstr "Gæði"
+
+msgid "Failed to load image."
+msgstr "Mistókst að opna myndina."
+
+msgid "Play"
+msgstr "Spila"
+
+msgid "Pause"
+msgstr "Í bið"
+
+msgid "Duration"
+msgstr "Tímalengd"
+
+msgid "Exit fullscreen"
+msgstr "Hætta í skjáfylli"
+
+msgid "Settings"
+msgstr "Stillingar"
+
+msgid "Speed"
+msgstr "Hraði"
+
+msgid "Normal"
+msgstr "Venjulegt"
+
+msgid "Start"
+msgstr "Byrjun"
+
+msgid "End"
+msgstr "Endar"
+
+msgid "All"
+msgstr "Allt"
+
+msgid "Disabled"
+msgstr "Óvirkt"
+
+msgid "Enabled"
+msgstr "Virkt"
+

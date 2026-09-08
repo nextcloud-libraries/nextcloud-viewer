@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: sv\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Din webbläsare har inte stöd för ljud."
+
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgid "Image saved"
+msgstr "Bild sparad"
+
+msgid "Play the live photo"
+msgstr "Spela upp livefotot"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Din webbläsare har inte stöd för video."
+
+msgid "Edit"
+msgstr "Redigera"
+
+msgid "Open sidebar"
+msgstr "Öppna sidofältet"
+
+msgid "Download"
+msgstr "Hämta"
+
+msgid "View"
+msgstr "Visa"
+
+msgid "Reset"
+msgstr "Återställ"
+
+msgid "Quality"
+msgstr "Kvalitet"
+
+msgid "Failed to load image."
+msgstr "Det gick inte att ladda bilden."
+
+msgid "Restart"
+msgstr "Starta om"
+
+msgid "Rewind {seektime}s"
+msgstr "Spola tillbaka {seektime} s"
+
+msgid "Play"
+msgstr "Spela upp"
+
+msgid "Pause"
+msgstr "Pausa"
+
+msgid "Forward {seektime}s"
+msgstr "Spola framåt {seektime} s"
+
+msgid "Seek"
+msgstr "Sökposition"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} av {duration}"
+
+msgid "Played"
+msgstr "Uppspelat"
+
+msgid "Buffered"
+msgstr "Buffrat"
+
+msgid "Current time"
+msgstr "Aktuell tid"
+
+msgid "Duration"
+msgstr "Varaktighet"
+
+msgid "Volume"
+msgstr "Volym"
+
+msgid "Mute"
+msgstr "Stäng av ljudet"
+
+msgid "Unmute"
+msgstr "Slå på ljudet"
+
+msgid "Enable captions"
+msgstr "Aktivera undertexter"
+
+msgid "Disable captions"
+msgstr "Inaktivera undertexter"
+
+msgid "Enter fullscreen"
+msgstr "Aktivera helskärmsläge"
+
+msgid "Exit fullscreen"
+msgstr "Avsluta helskärm"
+
+msgid "Player for {title}"
+msgstr "Spelare för {title}"
+
+msgid "Captions"
+msgstr "Undertexter"
+
+msgid "Settings"
+msgstr "Inställningar"
+
+msgid "PIP"
+msgstr "Bild-i-bild"
+
+msgid "Go back to previous menu"
+msgstr "Gå tillbaka till föregående meny"
+
+msgid "Speed"
+msgstr "Hastighet"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Loop"
+msgstr "Upprepa"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "Slut"
+
+msgid "All"
+msgstr "Alla"
+
+msgid "Disabled"
+msgstr "Inaktiverad"
+
+msgid "Enabled"
+msgstr "Aktiverad"
+
+msgid "Ad"
+msgstr "Annons"
+

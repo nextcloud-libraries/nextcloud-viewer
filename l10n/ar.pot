@@ -1,0 +1,87 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ar\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+
+msgid "Your browser does not support audio."
+msgstr "متصفحك لا يدعم الصوت."
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "Image saved"
+msgstr "تمّ حفظ الصورة"
+
+msgid "Play the live photo"
+msgstr "شغِّل الفيديو الحي"
+
+msgid "LIVE"
+msgstr "مُباشِر"
+
+msgid "Your browser does not support videos."
+msgstr "متصفحك لا يدعم مقاطع الفيديو."
+
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "Open sidebar"
+msgstr "فتح الشريط الجانبي"
+
+msgid "Download"
+msgstr "تنزيل"
+
+msgid "View"
+msgstr "عرض"
+
+msgid "Reset"
+msgstr "إعادة تعيين"
+
+msgid "Quality"
+msgstr "الجودة"
+
+msgid "Failed to load image."
+msgstr "تعذّر رلع الصورة."
+
+msgid "Restart"
+msgstr "إعادة التشغيل"
+
+msgid "Play"
+msgstr "تشغيل"
+
+msgid "Pause"
+msgstr "إيقاف"
+
+msgid "Current time"
+msgstr "الوقت الحالي"
+
+msgid "Duration"
+msgstr "المُدَّة"
+
+msgid "Volume"
+msgstr "عُلُوُ الصّوت"
+
+msgid "Mute"
+msgstr "كتم الصوت"
+
+msgid "Settings"
+msgstr "الإعدادات"
+
+msgid "Speed"
+msgstr "السرعة"
+
+msgid "Start"
+msgstr "ابدأ"
+
+msgid "End"
+msgstr "النهاية"
+
+msgid "All"
+msgstr "الكل"
+
+msgid "Disabled"
+msgstr "مُعطّل"
+
+msgid "Enabled"
+msgstr "مُفعّل"
+

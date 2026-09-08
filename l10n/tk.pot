@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: tk\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "ýatyrmak"
+
+msgid "Edit"
+msgstr "Redaktirläň"
+
+msgid "Open sidebar"
+msgstr "Gapdal paneli açyň"
+
+msgid "Download"
+msgstr "Göçürip almak"
+
+msgid "Settings"
+msgstr "Sazlamalar"
+

@@ -1,0 +1,48 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: th\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Cancel"
+msgstr "ยกเลิก"
+
+msgid "Edit"
+msgstr "แก้ไข"
+
+msgid "Open sidebar"
+msgstr "เปิดแถบด้านข้าง"
+
+msgid "Download"
+msgstr "ดาวน์โหลด"
+
+msgid "View"
+msgstr "มุมมอง"
+
+msgid "Reset"
+msgstr "รีเซ็ต"
+
+msgid "Play"
+msgstr "เล่น"
+
+msgid "Pause"
+msgstr "หยุดชั่วคราว"
+
+msgid "Volume"
+msgstr "ระดับเสียง"
+
+msgid "Settings"
+msgstr "การตั้งค่า"
+
+msgid "Normal"
+msgstr "ปกติ"
+
+msgid "All"
+msgstr "ทั้งหมด"
+
+msgid "Disabled"
+msgstr "ปิดใช้งาน"
+
+msgid "Enabled"
+msgstr "เปิดใช้งาน"
+

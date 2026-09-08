@@ -1,0 +1,30 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: kn\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgid "Cancel"
+msgstr "﻿ರದ್ದು"
+
+msgid "Edit"
+msgstr "ಸಂಪಾದಿಸು"
+
+msgid "Download"
+msgstr "ಪ್ರತಿಯನ್ನು ಸ್ಥಳೀಯವಾಗಿ ಉಳಿಸಿಕೊಳ್ಳಿ"
+
+msgid "Reset"
+msgstr "ಮರುಹೊಂದಿಸಿ"
+
+msgid "Settings"
+msgstr "ಆಯ್ಕೆ"
+
+msgid "All"
+msgstr "﻿ಎಲ್ಲಾ"
+
+msgid "Disabled"
+msgstr "ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ"
+
+msgid "Enabled"
+msgstr "ಸಕ್ರಿಯಗೊಳಿಸಿದೆ"
+

@@ -1,0 +1,39 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: cy_GB\n"
+"Plural-Forms: nplurals=4; plural=(n==1) ? 0 : (n==2) ? 1 : (n != 8 && n != 11) ? 2 : 3;\n"
+
+msgid "Cancel"
+msgstr "Diddymu"
+
+msgid "Edit"
+msgstr "Golygu"
+
+msgid "Open sidebar"
+msgstr "Agor y bar ochr"
+
+msgid "Download"
+msgstr "Llwytho i lawr"
+
+msgid "View"
+msgstr "Golwg"
+
+msgid "Play"
+msgstr "Chwarae"
+
+msgid "Pause"
+msgstr "Seibio"
+
+msgid "Duration"
+msgstr "Hyd"
+
+msgid "Settings"
+msgstr "Gosodiadau"
+
+msgid "Normal"
+msgstr "Arferol"
+
+msgid "All"
+msgstr "Popeth"
+

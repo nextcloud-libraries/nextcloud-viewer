@@ -1,0 +1,87 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: fi\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Selaimesi ei tue äänentoistoa."
+
+msgid "Cancel"
+msgstr "Peruuta"
+
+msgid "Image saved"
+msgstr "Kuva tallennettu"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Selaimesi ei tue videoita."
+
+msgid "Edit"
+msgstr "Muokkaa"
+
+msgid "Open sidebar"
+msgstr "Avaa sivupalkki"
+
+msgid "Download"
+msgstr "Lataa"
+
+msgid "View"
+msgstr "Näytä"
+
+msgid "Reset"
+msgstr "Palauta"
+
+msgid "Quality"
+msgstr "Laatu"
+
+msgid "Failed to load image."
+msgstr "Kuvan lataus epäonnistui."
+
+msgid "Restart"
+msgstr "Käynnistä uudelleen"
+
+msgid "Play"
+msgstr "Esitys"
+
+msgid "Pause"
+msgstr "Keskeytä"
+
+msgid "Duration"
+msgstr "Kesto"
+
+msgid "Volume"
+msgstr "Äänenvoimakkuus"
+
+msgid "Mute"
+msgstr "Mykistä"
+
+msgid "Exit fullscreen"
+msgstr "Poistu koko näytön tilasta"
+
+msgid "Settings"
+msgstr "Asetukset"
+
+msgid "Speed"
+msgstr "Nopeus"
+
+msgid "Normal"
+msgstr "Normaali"
+
+msgid "Start"
+msgstr "Alku"
+
+msgid "End"
+msgstr "Loppu"
+
+msgid "All"
+msgstr "Kaikki"
+
+msgid "Disabled"
+msgstr "Pois käytöstä"
+
+msgid "Enabled"
+msgstr "Käytössä"
+
