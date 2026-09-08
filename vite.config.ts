@@ -36,7 +36,16 @@ export default defineConfig((env) => {
 			// bundle the icon SFCs instead of externalizing them
 			exclude: [/^vue-material-design-icons\//],
 		},
+		// One stylesheet, imported by the entry, rather than one per chunk.
+		// Chunk CSS relies on the consuming bundler injecting it when the
+		// chunk loads, which is not something a library can count on: the
+		// lazily loaded viewer then renders unstyled.
 		inlineCSS: true,
+		config: {
+			build: {
+				cssCodeSplit: false,
+			},
+		},
 
 		replace: {
 			__TRANSLATIONS__: JSON.stringify(translations),
