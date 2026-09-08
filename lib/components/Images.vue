@@ -75,7 +75,7 @@ import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 import axios from '@nextcloud/axios'
 import { NcLoadingIcon } from '@nextcloud/vue'
 import DOMPurify from 'dompurify'
-import { computed, ref, watch } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import { useViewerProps } from '../composables/useViewerProps.ts'
 import { logger } from '../services/logger.ts'
@@ -157,6 +157,13 @@ const livePhoto = computed(() => {
 
 const livePhotoSrc = computed(() => livePhoto.value?.source ?? null)
 
+/**
+ * What is fetching the current file, so it can be dropped when the viewer
+ * moves on. Paging quickly through a folder otherwise leaves a trail of
+ * requests for files nobody is looking at any more.
+ */
+let inFlight: { controller: AbortController, source: string } | null = null
+
 // Load data when component mounts or file changes
 watch(filename, async () => {
 	await loadData()
@@ -173,6 +180,14 @@ loadData()
  * Load the image data to be displayed
  */
 async function loadData() {
+	// Only a different file supersedes what is loading: reloading the same
+	// one (a retry, a resize) must not cancel the request already serving it
+	if (inFlight !== null && inFlight.source !== props.file.source) {
+		inFlight.controller.abort()
+	}
+	const controller = new AbortController()
+	inFlight = { controller, source: props.file.source }
+	const { signal } = controller
 	// A client-side source (e.g. a just-edited image) is shown as-is, no fetch.
 	if (props.localSource) {
 		data.value = props.localSource
@@ -181,7 +196,7 @@ async function loadData() {
 
 	// Avoid svg xss attack vector
 	if (mime.value === 'image/svg+xml') {
-		data.value = await getBase64FromImage()
+		data.value = await getBase64FromImage(signal)
 		return
 	}
 
@@ -195,7 +210,7 @@ async function loadData() {
 	if (props.file.source && !hasPreview.value && !previewUrl.value) {
 		// If loading the source failed once, let's try fetching it by hand
 		if (fallback.value) {
-			data.value = await preloadMedia(props.file)
+			data.value = await preloadMedia(props.file, signal)
 		} else {
 			data.value = props.file.source
 		}
@@ -243,11 +258,16 @@ function updateImageSize() {
 // already-known intrinsic size. A new file refits through its load event.
 watch([() => props.maxWidth, () => props.maxHeight], updateImageSize)
 
+onUnmounted(() => {
+	inFlight?.controller.abort()
+})
+
 /**
+ * @param signal aborts the request when the viewer moves to another file
  * @return base64 string of the image
  */
-async function getBase64FromImage(): Promise<string> {
-	const file = await axios.get(src.value)
+async function getBase64FromImage(signal?: AbortSignal): Promise<string> {
+	const file = await axios.get(src.value, { signal })
 	const sanitized = DOMPurify.sanitize(file.data)
 	return `data:${mime.value};base64,${btoa(unescape(encodeURIComponent(sanitized)))}`
 }

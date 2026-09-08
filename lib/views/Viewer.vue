@@ -42,6 +42,17 @@
 				{{ t('Edit') }}
 			</NcActionButton>
 
+			<!-- Full screen, which is the point of a viewer on a large photo -->
+			<NcActionButton
+				closeAfterClick
+				@click="toggleFullScreen">
+				<template #icon>
+					<FullscreenExitIcon v-if="isFullscreen" :size="20" />
+					<FullscreenIcon v-else :size="20" />
+				</template>
+				{{ isFullscreen ? t('Exit full screen') : t('Full screen') }}
+			</NcActionButton>
+
 			<!-- Open sidebar for the current file -->
 			<NcActionButton
 				v-if="!isSidebarShown && !!currentFile"
@@ -209,12 +220,16 @@ import NcTextField from '@nextcloud/vue/components/NcTextField'
 import ChevronLeft from 'vue-material-design-icons/ChevronLeft.vue'
 import DockRight from 'vue-material-design-icons/DockRight.vue'
 import FileAlertOutlineIcon from 'vue-material-design-icons/FileAlertOutline.vue'
+import FullscreenIcon from 'vue-material-design-icons/Fullscreen.vue'
+import FullscreenExitIcon from 'vue-material-design-icons/FullscreenExit.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useViewerActions } from '../composables/useViewerActions.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
 import { getHandlers } from '../index.ts'
 import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
+import { canDownload } from '../utils/canDownload.ts'
+import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
 import { t } from '../utils/l10n.ts'
 import { renameFile } from '../utils/rename.ts'
 
@@ -241,6 +256,7 @@ const reloadKey = ref(0)
 const editedSources = ref<Record<number, string>>({})
 
 const canSwipe = ref(true)
+const isFullscreen = ref(false)
 const editing = ref(false)
 const lightBackdrop = ref(false)
 
@@ -738,6 +754,12 @@ function close() {
 	// Leave editing first so its URL param is stripped while onEditingChange is
 	// still wired (before currentOptions is reset below).
 	editing.value = false
+	restoreTitle()
+	if (document.fullscreenElement) {
+		document.exitFullscreen().catch(() => {
+			// Nothing to do: the page is simply left as the browser has it
+		})
+	}
 	currentOptions.value.onClose?.()
 	currentFile.value = undefined
 	currentFileList.value = []
@@ -985,7 +1007,45 @@ function attachModal() {
 	resizeObserver?.observe(element)
 	modalContent = element.querySelector('.modal-container__content')
 	modalContent?.addEventListener('click', onClickOutside)
+	modalContent?.addEventListener('contextmenu', onContextMenu)
 	logger.debug('Resize observer initialized for viewer')
+}
+
+/**
+ * Toggle full screen.
+ *
+ * The whole document goes full screen rather than the modal, as the viewer
+ * covers the page anyway and the browser's own chrome is what is in the way.
+ */
+async function toggleFullScreen() {
+	if (document.fullscreenElement) {
+		await document.exitFullscreen()
+		return
+	}
+	await document.documentElement.requestFullscreen()
+}
+
+/**
+ * Track full screen, which the user can also leave with Escape or the
+ * browser's own control rather than the action.
+ */
+function onFullscreenChange() {
+	isFullscreen.value = document.fullscreenElement !== null
+}
+
+/**
+ * Refuse the context menu over a file that may not be downloaded.
+ *
+ * Hiding the download control is not enough on its own: the file is on
+ * screen, and the browser's own menu offers to save it. A share that
+ * forbids downloading should not be worked around with a right click.
+ *
+ * @param event the context menu event
+ */
+function onContextMenu(event: Event) {
+	if (currentFile.value && !canDownload(currentFile.value)) {
+		event.preventDefault()
+	}
 }
 
 /**
@@ -994,6 +1054,7 @@ function attachModal() {
 function detachModal() {
 	resizeObserver?.disconnect()
 	modalContent?.removeEventListener('click', onClickOutside)
+	modalContent?.removeEventListener('contextmenu', onContextMenu)
 	modalContent = null
 }
 
@@ -1001,6 +1062,10 @@ function detachModal() {
 watch(currentFile, async (newFile, oldFile) => {
 	// A submenu belongs to the previous file's action set; never carry it over.
 	openedSubmenu.value = null
+	// Here rather than on open, so paging to the next file retitles the page too
+	if (newFile) {
+		setViewerTitle(newFile.basename)
+	}
 	if (newFile && !oldFile) {
 		await nextTick()
 		attachModal()
@@ -1018,6 +1083,8 @@ onMounted(() => {
 	// Covers a viewer that is already showing a file on mount, e.g. a deep link.
 	attachModal()
 
+	document.addEventListener('fullscreenchange', onFullscreenChange)
+
 	// React to the Files app sidebar to resize the viewer accordingly
 	subscribe('files:sidebar:opened', onAppSidebarOpen)
 	subscribe('files:sidebar:closed', onAppSidebarClose)
@@ -1029,6 +1096,7 @@ onMounted(() => {
 
 onUnmounted(() => {
 	detachModal()
+	document.removeEventListener('fullscreenchange', onFullscreenChange)
 	unsubscribe('files:sidebar:opened', onAppSidebarOpen)
 	unsubscribe('files:sidebar:closed', onAppSidebarClose)
 	unsubscribe('files:node:deleted', onNodeDeleted)
