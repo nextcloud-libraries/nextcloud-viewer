@@ -40,22 +40,28 @@ const fixtures: Fixture[] = [
 	{ name: 'audio.mp3', mime: 'audio/mpeg' },
 ]
 
+/** Where the fixtures are served from, shaped like a WebDAV path */
+const DAV = '/remote.php/dav/files/playground'
+
 /**
  * The fixtures as Files nodes.
  *
- * Their source is a plain URL served by this page, not a WebDAV one. Most
- * leave `hasPreview` off so the viewer loads that URL directly instead of
- * asking a previews endpoint that does not exist here; the one that sets it
- * is there so that path can be tested with a stubbed endpoint.
+ * Nothing answers WebDAV here: these are static files, served from a path
+ * that merely looks like it. That shape is what `@nextcloud/files` needs to
+ * treat a node as the user's own — a node it considers foreign has no owner
+ * and is read-only whatever permissions it was given, so the viewer could
+ * never offer to edit one.
+ *
+ * `hasPreview` is left off so the viewer loads the file directly instead of
+ * asking a previews endpoint that does not exist here; the one fixture that
+ * sets it is there so that path can be tested against a stubbed endpoint.
  */
 const nodes: IFile[] = fixtures.map((fixture, index) => new File({
-	source: new URL(`./media/${fixture.name}`, window.location.href).href,
-	// Where these files live, as far as the node is concerned: it has to be
-	// a prefix of the source path
-	root: '/media',
+	source: `${window.location.origin}${DAV}/${fixture.name}`,
+	root: '/files/playground',
+	owner: 'playground',
 	id: index + 1,
 	mime: fixture.mime,
-	owner: 'playground',
 	mtime: new Date('2026-01-01T00:00:00Z'),
 	permissions: fixture.editable ? Permission.ALL : Permission.READ,
 	attributes: {

@@ -1,13 +1,13 @@
+import { expect, test } from '@playwright/test'
 /*!
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { expect, test } from '@playwright/test'
 import { ViewerPage } from './support/viewer.ts'
 
-const IMAGE = readFileSync(fileURLToPath(new URL('../playground/media/gradient.jpg', import.meta.url)))
+const IMAGE = readFileSync(fileURLToPath(new URL('../playground/public/remote.php/dav/files/playground/gradient.jpg', import.meta.url)))
 
 test.describe('Previews', () => {
 	test('asks the previews endpoint for a file that has one', async ({ page }) => {

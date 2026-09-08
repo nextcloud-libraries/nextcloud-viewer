@@ -33,7 +33,7 @@
 		<template #actions>
 			<!-- Internal edit action, handled by the handler itself -->
 			<NcActionButton
-				v-if="currentHandler?.canEdit && !editing"
+				v-if="canEdit && !editing"
 				closeAfterClick
 				@click="editing = true">
 				<template #icon>
@@ -166,7 +166,7 @@
 	<!-- Editing overlay, rendered at the viewer level (not inside the handler
 	     custom element) so its close/save events reach the viewer directly. -->
 	<ImageEditor
-		v-if="editing && currentFile && currentHandler?.canEdit"
+		v-if="editing && currentFile && canEdit"
 		:file="currentFile"
 		@saved="onEditSaved"
 		@close="editing = false" />
@@ -196,7 +196,7 @@ import type { ViewerAPI, ViewerOptions } from '../viewer.ts'
 
 import { showError } from '@nextcloud/dialogs'
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
-import { FileType } from '@nextcloud/files'
+import { FileType, Permission } from '@nextcloud/files'
 import debounce from 'debounce'
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, triggerRef, useTemplateRef, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -240,8 +240,6 @@ const reloadKey = ref(0)
 // Object URLs of freshly edited images, by file id, shown without refetching.
 const editedSources = ref<Record<number, string>>({})
 
-// Abilities
-const canEdit = ref(true)
 const canSwipe = ref(true)
 const editing = ref(false)
 const lightBackdrop = ref(false)
@@ -257,6 +255,16 @@ const SIDEBAR_FULLSCREEN_CLASS = 'viewer--sidebar-fullscreen'
 const currentFile = ref<IFile>()
 const currentFileList = ref<IFile[]>([])
 const currentHandler = ref<IHandler>()
+
+/**
+ * Whether the viewer offers to edit the current file.
+ *
+ * Both halves matter: the handler has to be able to edit its own file type,
+ * and the file has to be one this user may write. Offering it on a file that
+ * cannot be written means an edit that only fails on save.
+ */
+const canEdit = computed(() => currentHandler.value?.canEdit === true
+	&& ((currentFile.value?.permissions ?? Permission.NONE) & Permission.UPDATE) !== 0)
 const currentOptions = ref<ViewerOptions>({
 	canLoop: true,
 	onClose: () => {},
@@ -454,7 +462,7 @@ function clearEditedSources() {
  * @param value - Whether the viewer should be in editing mode
  */
 function setEditing(value: boolean) {
-	editing.value = value && Boolean(currentHandler.value?.canEdit)
+	editing.value = value && canEdit.value
 }
 
 // Reflect editing changes (Edit button, editor save/cancel) in the URL so a
@@ -592,7 +600,7 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 	currentOptions.value = options ?? {} as ViewerOptions
 	pendingLoads.value = 1
 	// Open straight into edit mode when requested (e.g. from an `editing=true` URL).
-	editing.value = Boolean(options?.editing) && Boolean(handler.canEdit)
+	editing.value = Boolean(options?.editing) && canEdit.value
 
 	onOpen()
 	preloadNeighbors()
