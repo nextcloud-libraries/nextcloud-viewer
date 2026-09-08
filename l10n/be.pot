@@ -1,0 +1,60 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: be\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+msgid "Cancel"
+msgstr "Скасаваць"
+
+msgid "Edit"
+msgstr "Рэдагаваць"
+
+msgid "Download"
+msgstr "Спампаваць"
+
+msgid "View"
+msgstr "Праглядзець"
+
+msgid "Reset"
+msgstr "Скінуць"
+
+msgid "Quality"
+msgstr "Якасць"
+
+msgid "Restart"
+msgstr "Перазапусціць"
+
+msgid "Play"
+msgstr "Прайграць"
+
+msgid "Pause"
+msgstr "Прыпыніць"
+
+msgid "Current time"
+msgstr "Бягучы час"
+
+msgid "Duration"
+msgstr "Працягласць"
+
+msgid "Volume"
+msgstr "Гучнасць"
+
+msgid "Mute"
+msgstr "Адключыць гук"
+
+msgid "Settings"
+msgstr "Налады"
+
+msgid "Start"
+msgstr "Запусціць"
+
+msgid "All"
+msgstr "Усе"
+
+msgid "Disabled"
+msgstr "Адключаны"
+
+msgid "Enabled"
+msgstr "Уключаны"
+

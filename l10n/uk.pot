@@ -1,0 +1,138 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: uk\n"
+"Plural-Forms: nplurals=4; plural=(n % 1 == 0 && n % 10 == 1 && n % 100 != 11 ? 0 : n % 1 == 0 && n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || (n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Ваш браузер не підтримує звук."
+
+msgid "Cancel"
+msgstr "Скасувати"
+
+msgid "Image saved"
+msgstr "Зображення збережено"
+
+msgid "Play the live photo"
+msgstr "Відтворити живе фото"
+
+msgid "LIVE"
+msgstr "НАЖИВО"
+
+msgid "Your browser does not support videos."
+msgstr "Ваш браузер не підтримує відтворення відео."
+
+msgid "Edit"
+msgstr "Редагувати"
+
+msgid "Open sidebar"
+msgstr "Відкрити бічну панель"
+
+msgid "Download"
+msgstr "Звантажити"
+
+msgid "View"
+msgstr "Перегляд"
+
+msgid "Reset"
+msgstr "Відхилити зміни"
+
+msgid "Quality"
+msgstr "Якість"
+
+msgid "Failed to load image."
+msgstr "Не вдалося додати зображення."
+
+msgid "Restart"
+msgstr "Перезавантажити"
+
+msgid "Rewind {seektime}s"
+msgstr "Назад на {seektime} с"
+
+msgid "Play"
+msgstr "Грати"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Forward {seektime}s"
+msgstr "Вперед на {seektime} с"
+
+msgid "Seek"
+msgstr "Шукати"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} із {duration}"
+
+msgid "Played"
+msgstr "Програється"
+
+msgid "Buffered"
+msgstr "Буферизовано"
+
+msgid "Current time"
+msgstr "Поточний час"
+
+msgid "Duration"
+msgstr "Тривалість"
+
+msgid "Volume"
+msgstr "Обсяг"
+
+msgid "Mute"
+msgstr "Вимкнути звук"
+
+msgid "Unmute"
+msgstr "Увімкнути звук"
+
+msgid "Enable captions"
+msgstr "Увімкнути субтрити"
+
+msgid "Disable captions"
+msgstr "Вимкнути субтрити"
+
+msgid "Enter fullscreen"
+msgstr "На весь екран"
+
+msgid "Exit fullscreen"
+msgstr "Вийти з повноекранного режиму"
+
+msgid "Player for {title}"
+msgstr "Програвач для {title}"
+
+msgid "Captions"
+msgstr "Субтитри"
+
+msgid "Settings"
+msgstr "Налаштування"
+
+msgid "Go back to previous menu"
+msgstr "Повернутися до попереднього меню"
+
+msgid "Speed"
+msgstr "Швидкість"
+
+msgid "Normal"
+msgstr "Звичайно"
+
+msgid "Loop"
+msgstr "Повторювати"
+
+msgid "Start"
+msgstr "Початок"
+
+msgid "End"
+msgstr "Кінець"
+
+msgid "All"
+msgstr "Всі"
+
+msgid "Disabled"
+msgstr "Вимкнено"
+
+msgid "Enabled"
+msgstr "Увімкнено"
+
+msgid "Ad"
+msgstr "Реклама"
+

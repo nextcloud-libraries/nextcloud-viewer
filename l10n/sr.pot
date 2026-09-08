@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: sr\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Ваш веб читач не подржава аудио."
+
+msgid "Cancel"
+msgstr "Поништи"
+
+msgid "Image saved"
+msgstr "Слика сачувана."
+
+msgid "Play the live photo"
+msgstr "Пусти фотографију уживо"
+
+msgid "LIVE"
+msgstr "УЖИВО"
+
+msgid "Your browser does not support videos."
+msgstr "Ваш веб читач не подржава видео записе."
+
+msgid "Edit"
+msgstr "Измени"
+
+msgid "Open sidebar"
+msgstr "Отвори бочну траку"
+
+msgid "Download"
+msgstr "Преузми"
+
+msgid "View"
+msgstr "Погледај"
+
+msgid "Reset"
+msgstr "Ресетуј"
+
+msgid "Quality"
+msgstr "Квалитет"
+
+msgid "Failed to load image."
+msgstr "Није успело учитавање слике."
+
+msgid "Restart"
+msgstr "Поново покрени"
+
+msgid "Play"
+msgstr "Пусти"
+
+msgid "Pause"
+msgstr "Паузирај"
+
+msgid "Current time"
+msgstr "Текуће време"
+
+msgid "Duration"
+msgstr "Трајање"
+
+msgid "Volume"
+msgstr "Јачина"
+
+msgid "Mute"
+msgstr "Утули"
+
+msgid "Exit fullscreen"
+msgstr "Напусти цео екран"
+
+msgid "Settings"
+msgstr "Поставке"
+
+msgid "Speed"
+msgstr "Брзина"
+
+msgid "Normal"
+msgstr "Нормална"
+
+msgid "Start"
+msgstr "Почетак"
+
+msgid "End"
+msgstr "Крај"
+
+msgid "All"
+msgstr "Све"
+
+msgid "Disabled"
+msgstr "Искључено"
+
+msgid "Enabled"
+msgstr "укључено"
+

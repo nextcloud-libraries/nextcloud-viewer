@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en_GB\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Your browser does not support audio."
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Image saved"
+msgstr "Image saved"
+
+msgid "Play the live photo"
+msgstr "Play the live photo"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Your browser does not support videos."
+
+msgid "Edit"
+msgstr "Edit"
+
+msgid "Open sidebar"
+msgstr "Open sidebar"
+
+msgid "Download"
+msgstr "Download"
+
+msgid "View"
+msgstr "View"
+
+msgid "Reset"
+msgstr "Reset"
+
+msgid "Quality"
+msgstr "Quality"
+
+msgid "Failed to load image."
+msgstr "Failed to load image."
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Rewind {seektime}s"
+msgstr "Rewind {seektime}s"
+
+msgid "Play"
+msgstr "Play"
+
+msgid "Pause"
+msgstr "Pause"
+
+msgid "Forward {seektime}s"
+msgstr "Forward {seektime}s"
+
+msgid "Seek"
+msgstr "Seek"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} of {duration}"
+
+msgid "Played"
+msgstr "Played"
+
+msgid "Buffered"
+msgstr "Buffered"
+
+msgid "Current time"
+msgstr "Current time"
+
+msgid "Duration"
+msgstr "Duration"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Mute"
+msgstr "Mute"
+
+msgid "Unmute"
+msgstr "Unmute"
+
+msgid "Enable captions"
+msgstr "Enable captions"
+
+msgid "Disable captions"
+msgstr "Disable captions"
+
+msgid "Enter fullscreen"
+msgstr "Enter fullscreen"
+
+msgid "Exit fullscreen"
+msgstr "Exit fullscreen"
+
+msgid "Player for {title}"
+msgstr "Player for {title}"
+
+msgid "Captions"
+msgstr "Captions"
+
+msgid "Settings"
+msgstr "Settings"
+
+msgid "PIP"
+msgstr "PIP"
+
+msgid "Go back to previous menu"
+msgstr "Go back to previous menu"
+
+msgid "Speed"
+msgstr "Speed"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Loop"
+msgstr "Loop"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "End"
+
+msgid "All"
+msgstr "All"
+
+msgid "Disabled"
+msgstr "Disabled"
+
+msgid "Enabled"
+msgstr "Enabled"
+
+msgid "Ad"
+msgstr "Ad"
+

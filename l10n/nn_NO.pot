@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: nn_NO\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgid "Edit"
+msgstr "Rediger"
+
+msgid "Open sidebar"
+msgstr "Opne sidestolpe"
+
+msgid "Download"
+msgstr "Last ned"
+
+msgid "View"
+msgstr "Vis"
+
+msgid "Play"
+msgstr "Spel"
+
+msgid "Pause"
+msgstr "Pause"
+
+msgid "Settings"
+msgstr "Innstillingar"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Disabled"
+msgstr "Deaktivert"
+

@@ -1,0 +1,90 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: pl\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : (n%10>=2 && n%10<=4) && (n%100<12 || n%100>14) ? 1 : n!=1 && (n%10>=0 && n%10<=1) || (n%10>=5 && n%10<=9) || (n%100>=12 && n%100<=14) ? 2 : 3);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Twoja przeglądarka nie obsługuje dźwięku."
+
+msgid "Cancel"
+msgstr "Anuluj"
+
+msgid "Image saved"
+msgstr "Zapisano obraz"
+
+msgid "Play the live photo"
+msgstr "Odtwórz zdjęcie na żywo"
+
+msgid "LIVE"
+msgstr "NA ŻYWO"
+
+msgid "Your browser does not support videos."
+msgstr "Twoja przeglądarka nie obsługuje wideo."
+
+msgid "Edit"
+msgstr "Edytuj"
+
+msgid "Open sidebar"
+msgstr "Otwórz pasek boczny"
+
+msgid "Download"
+msgstr "Pobierz"
+
+msgid "View"
+msgstr "Podgląd"
+
+msgid "Reset"
+msgstr "Resetuj"
+
+msgid "Quality"
+msgstr "Jakość"
+
+msgid "Failed to load image."
+msgstr "Nie udało się wczytać obrazu."
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Play"
+msgstr "Odtwarzaj"
+
+msgid "Pause"
+msgstr "Wstrzymaj"
+
+msgid "Duration"
+msgstr "Czas trwania"
+
+msgid "Volume"
+msgstr "Głośność"
+
+msgid "Mute"
+msgstr "Wycisz"
+
+msgid "Exit fullscreen"
+msgstr "Opuść tryb pełnoekranowy"
+
+msgid "Settings"
+msgstr "Ustawienia"
+
+msgid "Speed"
+msgstr "Prędkość"
+
+msgid "Normal"
+msgstr "W normie"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "Koniec"
+
+msgid "All"
+msgstr "Wszystkie"
+
+msgid "Disabled"
+msgstr "Wyłączone"
+
+msgid "Enabled"
+msgstr "Włączone"
+

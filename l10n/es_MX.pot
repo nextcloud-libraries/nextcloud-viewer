@@ -1,0 +1,75 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: es_MX\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Su navegador no soporta audio."
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Image saved"
+msgstr "Imagen guardada"
+
+msgid "Play the live photo"
+msgstr "Reproducir la fotografía en vivo"
+
+msgid "LIVE"
+msgstr "EN VIVO"
+
+msgid "Your browser does not support videos."
+msgstr "Su navegador no soporta videos."
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Open sidebar"
+msgstr "Abrir barra lateral"
+
+msgid "Download"
+msgstr "Descargar"
+
+msgid "View"
+msgstr "Ver"
+
+msgid "Reset"
+msgstr "Reiniciar"
+
+msgid "Quality"
+msgstr "Calidad"
+
+msgid "Play"
+msgstr "Reproducir"
+
+msgid "Pause"
+msgstr "Pausar"
+
+msgid "Duration"
+msgstr "Duración"
+
+msgid "Exit fullscreen"
+msgstr "Salir de la pantalla completa"
+
+msgid "Settings"
+msgstr "Ajustes"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "Inicio"
+
+msgid "End"
+msgstr "Fin"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Disabled"
+msgstr "Deshabilitado"
+
+msgid "Enabled"
+msgstr "Habilitado"
+

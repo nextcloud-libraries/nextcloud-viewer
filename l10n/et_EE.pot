@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: et_EE\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Su brauser ei toeta heli."
+
+msgid "Cancel"
+msgstr "Loobu"
+
+msgid "Image saved"
+msgstr "Pilt on salvestatud"
+
+msgid "Play the live photo"
+msgstr "Vaata pilt+video faili"
+
+msgid "LIVE"
+msgstr "OTSE"
+
+msgid "Your browser does not support videos."
+msgstr "Su brauser ei toeta videoid."
+
+msgid "Edit"
+msgstr "Redigeeri"
+
+msgid "Open sidebar"
+msgstr "Ava külgriba"
+
+msgid "Download"
+msgstr "Laadi alla"
+
+msgid "View"
+msgstr "Vaata"
+
+msgid "Reset"
+msgstr "Lähtesta"
+
+msgid "Quality"
+msgstr "Kvaliteet"
+
+msgid "Failed to load image."
+msgstr "Pildi avamine ei õnnestunud."
+
+msgid "Restart"
+msgstr "Alusta uuesti"
+
+msgid "Rewind {seektime}s"
+msgstr "Keri tagasi {seektime} sek"
+
+msgid "Play"
+msgstr "Esita"
+
+msgid "Pause"
+msgstr "Peata"
+
+msgid "Forward {seektime}s"
+msgstr "Keri edasi {seektime} sek"
+
+msgid "Seek"
+msgstr "Keri"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} / {duration}"
+
+msgid "Played"
+msgstr "Esitatud"
+
+msgid "Buffered"
+msgstr "Puhverdatud"
+
+msgid "Current time"
+msgstr "Praegune aeg"
+
+msgid "Duration"
+msgstr "Kestus"
+
+msgid "Volume"
+msgstr "Helivaljus"
+
+msgid "Mute"
+msgstr "Summuta"
+
+msgid "Unmute"
+msgstr "Lõpeta heli summutamine"
+
+msgid "Enable captions"
+msgstr "Lülita tiitrid sisse"
+
+msgid "Disable captions"
+msgstr "Lülita tiitrid välja"
+
+msgid "Enter fullscreen"
+msgstr "Näita täisekraanivaates"
+
+msgid "Exit fullscreen"
+msgstr "Sulge täisekraanivaade"
+
+msgid "Player for {title}"
+msgstr "Pleier: {title}"
+
+msgid "Captions"
+msgstr "Tiitrid"
+
+msgid "Settings"
+msgstr "Seadistused"
+
+msgid "PIP"
+msgstr "Pilt-pildis"
+
+msgid "Go back to previous menu"
+msgstr "Mine tagasi eelmise menüü juurde"
+
+msgid "Speed"
+msgstr "Kiirus"
+
+msgid "Normal"
+msgstr "Tavaline"
+
+msgid "Loop"
+msgstr "Kordus"
+
+msgid "Start"
+msgstr "Algus"
+
+msgid "End"
+msgstr "Lõpp"
+
+msgid "All"
+msgstr "Kõik"
+
+msgid "Disabled"
+msgstr "Väljalülitatud"
+
+msgid "Enabled"
+msgstr "Sisselülitatud"
+
+msgid "Ad"
+msgstr "Reklaam"
+

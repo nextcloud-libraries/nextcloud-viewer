@@ -1,0 +1,69 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: he\n"
+"Plural-Forms: nplurals=3; plural=(n == 1 && n % 1 == 0) ? 0 : (n == 2 && n % 1 == 0) ? 1: 2;\n"
+
+msgid "Your browser does not support audio."
+msgstr "הדפדפן שלך אינו תומך בשמע."
+
+msgid "Cancel"
+msgstr "ביטול"
+
+msgid "Image saved"
+msgstr "תמונה נשמרה"
+
+msgid "Your browser does not support videos."
+msgstr "הדפדפן שלך לא תומך בסרטונים."
+
+msgid "Edit"
+msgstr "עריכה"
+
+msgid "Open sidebar"
+msgstr "פתיחת סרגל הצד"
+
+msgid "Download"
+msgstr "הורדה"
+
+msgid "View"
+msgstr "צפייה"
+
+msgid "Reset"
+msgstr "איפוס"
+
+msgid "Quality"
+msgstr "איכות"
+
+msgid "Play"
+msgstr "נגן"
+
+msgid "Pause"
+msgstr "השהה"
+
+msgid "Duration"
+msgstr "משך"
+
+msgid "Settings"
+msgstr "הגדרות"
+
+msgid "Speed"
+msgstr "מהירות"
+
+msgid "Normal"
+msgstr "רגיל"
+
+msgid "Start"
+msgstr "התחלה"
+
+msgid "End"
+msgstr "סיום"
+
+msgid "All"
+msgstr "הכול"
+
+msgid "Disabled"
+msgstr "מושבת"
+
+msgid "Enabled"
+msgstr "מופעל"
+

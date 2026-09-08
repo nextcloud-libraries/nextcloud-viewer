@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: zh_TW\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Your browser does not support audio."
+msgstr "您的瀏覽器不支援音訊。"
+
+msgid "Cancel"
+msgstr "取消"
+
+msgid "Image saved"
+msgstr "圖片已儲存"
+
+msgid "Play the live photo"
+msgstr "播放原況照片"
+
+msgid "LIVE"
+msgstr "即時"
+
+msgid "Your browser does not support videos."
+msgstr "您的瀏覽器不支援視訊。"
+
+msgid "Edit"
+msgstr "編輯"
+
+msgid "Open sidebar"
+msgstr "開啟側邊攔"
+
+msgid "Download"
+msgstr "下載"
+
+msgid "View"
+msgstr "檢視"
+
+msgid "Reset"
+msgstr "重設"
+
+msgid "Quality"
+msgstr "品質"
+
+msgid "Failed to load image."
+msgstr "載入影像失敗。"
+
+msgid "Restart"
+msgstr "重新啟動"
+
+msgid "Rewind {seektime}s"
+msgstr "倒帶 {seektime} 秒"
+
+msgid "Play"
+msgstr "播放"
+
+msgid "Pause"
+msgstr "暫停"
+
+msgid "Forward {seektime}s"
+msgstr "快轉 {seektime} 秒"
+
+msgid "Seek"
+msgstr "跳轉"
+
+msgid "{currentTime} of {duration}"
+msgstr "目前 {currentTime}，共 {duration}"
+
+msgid "Played"
+msgstr "已播放"
+
+msgid "Buffered"
+msgstr "已緩衝"
+
+msgid "Current time"
+msgstr "目前時間"
+
+msgid "Duration"
+msgstr "持續時間"
+
+msgid "Volume"
+msgstr "音量"
+
+msgid "Mute"
+msgstr "靜音"
+
+msgid "Unmute"
+msgstr "解除靜音"
+
+msgid "Enable captions"
+msgstr "啟用字幕"
+
+msgid "Disable captions"
+msgstr "停用字幕"
+
+msgid "Enter fullscreen"
+msgstr "進入全螢幕"
+
+msgid "Exit fullscreen"
+msgstr "離開全螢幕"
+
+msgid "Player for {title}"
+msgstr "{title} 的播放器"
+
+msgid "Captions"
+msgstr "字幕"
+
+msgid "Settings"
+msgstr "設定"
+
+msgid "PIP"
+msgstr "畫中畫"
+
+msgid "Go back to previous menu"
+msgstr "回到上一個選單"
+
+msgid "Speed"
+msgstr "速度"
+
+msgid "Normal"
+msgstr "一般"
+
+msgid "Loop"
+msgstr "迴圈"
+
+msgid "Start"
+msgstr "開始"
+
+msgid "End"
+msgstr "結束"
+
+msgid "All"
+msgstr "全部"
+
+msgid "Disabled"
+msgstr "已停用"
+
+msgid "Enabled"
+msgstr "已啟用"
+
+msgid "Ad"
+msgstr "Ad"
+

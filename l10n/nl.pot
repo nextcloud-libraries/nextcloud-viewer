@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: nl\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Je browser ondersteunt geen audio."
+
+msgid "Cancel"
+msgstr "Annuleren"
+
+msgid "Image saved"
+msgstr "Afbeelding opgeslagen"
+
+msgid "Play the live photo"
+msgstr "Speel de live foto"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Je browser ondersteunt geen videos."
+
+msgid "Edit"
+msgstr "Bewerk"
+
+msgid "Open sidebar"
+msgstr "Open zijbalk"
+
+msgid "Download"
+msgstr "Downloaden"
+
+msgid "View"
+msgstr "Bekijken"
+
+msgid "Reset"
+msgstr "Herstellen"
+
+msgid "Quality"
+msgstr "Kwaliteit"
+
+msgid "Failed to load image."
+msgstr "Laden van afbeelding mislukt."
+
+msgid "Restart"
+msgstr "Restart"
+
+msgid "Play"
+msgstr "Spelen"
+
+msgid "Pause"
+msgstr "Pauze"
+
+msgid "Current time"
+msgstr "Huidige tijd"
+
+msgid "Duration"
+msgstr "Duur"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Mute"
+msgstr "Dempen"
+
+msgid "Exit fullscreen"
+msgstr "Terug uit volledig scherm"
+
+msgid "Settings"
+msgstr "Instellingen"
+
+msgid "Speed"
+msgstr "Snelheid"
+
+msgid "Normal"
+msgstr "Normaal"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "Einde"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Disabled"
+msgstr "Uitgeschakeld"
+
+msgid "Enabled"
+msgstr "Ingeschakeld"
+

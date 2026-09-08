@@ -1,0 +1,81 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: bg\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Вашият браузър не поддържа аудио."
+
+msgid "Cancel"
+msgstr "Отказ"
+
+msgid "Image saved"
+msgstr "Изображението е записано"
+
+msgid "Your browser does not support videos."
+msgstr "Вашият браузър не поддържа видеоклипове."
+
+msgid "Edit"
+msgstr "Редактиране"
+
+msgid "Open sidebar"
+msgstr "Отвори страничното меню"
+
+msgid "Download"
+msgstr "Изтегляне"
+
+msgid "View"
+msgstr "Изглед"
+
+msgid "Reset"
+msgstr "Възстановяване"
+
+msgid "Quality"
+msgstr "Качество "
+
+msgid "Restart"
+msgstr "Рестартиране"
+
+msgid "Play"
+msgstr "Пускане"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Duration"
+msgstr "Продължителност"
+
+msgid "Volume"
+msgstr "Сила на звука"
+
+msgid "Mute"
+msgstr "Заглушаване"
+
+msgid "Exit fullscreen"
+msgstr "Изход от цял екран"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "Speed"
+msgstr "Скорост"
+
+msgid "Normal"
+msgstr "Нормално"
+
+msgid "Start"
+msgstr "Начало"
+
+msgid "End"
+msgstr "Край"
+
+msgid "All"
+msgstr "Всички"
+
+msgid "Disabled"
+msgstr "Изключено"
+
+msgid "Enabled"
+msgstr "Включено"
+

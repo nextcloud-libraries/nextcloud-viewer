@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: de\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Dein Browser unterstützt kein Audio."
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Image saved"
+msgstr "Bild gespeichert"
+
+msgid "Play the live photo"
+msgstr "Live-Foto abspielen"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Dein Browser unterstützt keine Videos."
+
+msgid "Edit"
+msgstr "Bearbeiten"
+
+msgid "Open sidebar"
+msgstr "Seitenleiste öffnen"
+
+msgid "Download"
+msgstr "Herunterladen"
+
+msgid "View"
+msgstr "Ansicht"
+
+msgid "Reset"
+msgstr "Zurücksetzen"
+
+msgid "Quality"
+msgstr "Qualität"
+
+msgid "Failed to load image."
+msgstr "Bild konnte nicht geladen werden"
+
+msgid "Restart"
+msgstr "Neustart"
+
+msgid "Rewind {seektime}s"
+msgstr "{seektime}s zurückspulen"
+
+msgid "Play"
+msgstr "Abspielen"
+
+msgid "Pause"
+msgstr "Pausieren"
+
+msgid "Forward {seektime}s"
+msgstr "{seektime}s vorspulen"
+
+msgid "Seek"
+msgstr "Suchen"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} von {duration}"
+
+msgid "Played"
+msgstr "Abgespielt"
+
+msgid "Buffered"
+msgstr "Gepuffert"
+
+msgid "Current time"
+msgstr "Aktuelle Zeit"
+
+msgid "Duration"
+msgstr "Dauer"
+
+msgid "Volume"
+msgstr "Lautstärke"
+
+msgid "Mute"
+msgstr "Stummschalten"
+
+msgid "Unmute"
+msgstr "Stummschalten aufheben"
+
+msgid "Enable captions"
+msgstr "Untertitel aktivieren"
+
+msgid "Disable captions"
+msgstr "Untertitel deaktivieren"
+
+msgid "Enter fullscreen"
+msgstr "Vollbild anzeigen"
+
+msgid "Exit fullscreen"
+msgstr "Vollbild verlassen"
+
+msgid "Player for {title}"
+msgstr "Wiedergabe für {title}"
+
+msgid "Captions"
+msgstr "Untertitel"
+
+msgid "Settings"
+msgstr "Einstellungen"
+
+msgid "PIP"
+msgstr "PIP"
+
+msgid "Go back to previous menu"
+msgstr "Zum vorigen Menü zurückgehen"
+
+msgid "Speed"
+msgstr "Geschwindigkeit"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Loop"
+msgstr "Schleife"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "Ende"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+msgid "Enabled"
+msgstr "Aktiviert"
+
+msgid "Ad"
+msgstr "Werbung"
+

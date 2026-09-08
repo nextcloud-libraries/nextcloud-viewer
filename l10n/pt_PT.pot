@@ -1,0 +1,135 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: pt_PT\n"
+"Plural-Forms: nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+
+msgid "Your browser does not support audio."
+msgstr "O seu navegador não suporta áudio."
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Image saved"
+msgstr "Imagem guardada"
+
+msgid "Play the live photo"
+msgstr "Reproduzir a foto ao vivo"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "O seu navegador não suporta vídeos."
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Open sidebar"
+msgstr "Abrir barra lateral"
+
+msgid "Download"
+msgstr "Transferir"
+
+msgid "View"
+msgstr "Ver"
+
+msgid "Reset"
+msgstr "Reiniciar"
+
+msgid "Quality"
+msgstr "Qualidade"
+
+msgid "Failed to load image."
+msgstr "Falha no upload da imagem."
+
+msgid "Restart"
+msgstr "Reiniciar"
+
+msgid "Rewind {seektime}s"
+msgstr "Buscar {seektime}s para trás"
+
+msgid "Play"
+msgstr "Reproduzir"
+
+msgid "Pause"
+msgstr "Pausar"
+
+msgid "Forward {seektime}s"
+msgstr "Buscar {seektime}s para a frente"
+
+msgid "Seek"
+msgstr "Buscar"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} de {duration}"
+
+msgid "Played"
+msgstr "Reproduzido"
+
+msgid "Buffered"
+msgstr "Em buffer"
+
+msgid "Current time"
+msgstr "Tempo atual"
+
+msgid "Duration"
+msgstr "Duração"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Mute"
+msgstr "Desativar microfone"
+
+msgid "Unmute"
+msgstr "Ativar microfone"
+
+msgid "Enable captions"
+msgstr "Ativar legendas"
+
+msgid "Disable captions"
+msgstr "Desativar legendas"
+
+msgid "Enter fullscreen"
+msgstr "Iniciar a tela cheia"
+
+msgid "Exit fullscreen"
+msgstr "Sair de ecrã completo"
+
+msgid "Captions"
+msgstr "Legendas"
+
+msgid "Settings"
+msgstr "Definições"
+
+msgid "PIP"
+msgstr "PIP (Imagem na Imagem)"
+
+msgid "Go back to previous menu"
+msgstr "Voltar ao menu anterior"
+
+msgid "Speed"
+msgstr "velocidade"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Loop"
+msgstr "Em loop"
+
+msgid "Start"
+msgstr "Início"
+
+msgid "End"
+msgstr "Fim"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Disabled"
+msgstr "Desativado"
+
+msgid "Enabled"
+msgstr "Ativado"
+

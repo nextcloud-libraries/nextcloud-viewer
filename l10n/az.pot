@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: az\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Dayandır"
+
+msgid "Edit"
+msgstr "Dəyişiklik et"
+
+msgid "Download"
+msgstr "Yüklə"
+
+msgid "Reset"
+msgstr "Sıfırla"
+
+msgid "Play"
+msgstr "Oxu"
+
+msgid "Pause"
+msgstr "Ara ver"
+
+msgid "Settings"
+msgstr "Quraşdırmalar"
+
+msgid "All"
+msgstr "Hamısı"
+
+msgid "Disabled"
+msgstr "Dayandırılıb"
+
+msgid "Enabled"
+msgstr "İşə salınıb"
+

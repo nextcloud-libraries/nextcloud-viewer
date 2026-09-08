@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: fr\n"
+"Plural-Forms: nplurals=3; plural=(n == 0 || n == 1) ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Votre navigateur web ne prend pas en charge l'audio."
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Image saved"
+msgstr "Image sauvegardée"
+
+msgid "Play the live photo"
+msgstr "Lire la live photo"
+
+msgid "LIVE"
+msgstr "EN DIRECT"
+
+msgid "Your browser does not support videos."
+msgstr "Votre navigateur ne prend pas en charge les vidéos."
+
+msgid "Edit"
+msgstr "Modifier"
+
+msgid "Open sidebar"
+msgstr "Ouvrir le panneau latéral"
+
+msgid "Download"
+msgstr "Télécharger"
+
+msgid "View"
+msgstr "Afficher"
+
+msgid "Reset"
+msgstr "Réinitialiser"
+
+msgid "Quality"
+msgstr "Qualité"
+
+msgid "Failed to load image."
+msgstr "Échec du chargement de l'image."
+
+msgid "Restart"
+msgstr "Redémarrer"
+
+msgid "Rewind {seektime}s"
+msgstr "Reculer de {seektime}s"
+
+msgid "Play"
+msgstr "Lire"
+
+msgid "Pause"
+msgstr "Pause"
+
+msgid "Forward {seektime}s"
+msgstr "Avancer de {seektime}s"
+
+msgid "Seek"
+msgstr "Chercher"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} sur {duration}"
+
+msgid "Played"
+msgstr "Lu"
+
+msgid "Buffered"
+msgstr "Mis en mémoire tampon"
+
+msgid "Current time"
+msgstr "Heure actuelle"
+
+msgid "Duration"
+msgstr "Durée"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Mute"
+msgstr "Mettre en sourdine"
+
+msgid "Unmute"
+msgstr "Activer le son"
+
+msgid "Enable captions"
+msgstr "Activer les sous-titres"
+
+msgid "Disable captions"
+msgstr "Désactiver les sous-titres"
+
+msgid "Enter fullscreen"
+msgstr "Passer en plein écran"
+
+msgid "Exit fullscreen"
+msgstr "Quitter le plein écran"
+
+msgid "Player for {title}"
+msgstr "Lecteur pour {title}"
+
+msgid "Captions"
+msgstr "Sous-titres"
+
+msgid "Settings"
+msgstr "Paramètres"
+
+msgid "PIP"
+msgstr "PIP : incrustation d’image"
+
+msgid "Go back to previous menu"
+msgstr "Revenir au menu précédent"
+
+msgid "Speed"
+msgstr "Vitesse"
+
+msgid "Normal"
+msgstr "Normale"
+
+msgid "Loop"
+msgstr "Lire en boucle"
+
+msgid "Start"
+msgstr "Démarrer"
+
+msgid "End"
+msgstr "Arrivée"
+
+msgid "All"
+msgstr "Tout"
+
+msgid "Disabled"
+msgstr "Désactivé"
+
+msgid "Enabled"
+msgstr "Activé"
+
+msgid "Ad"
+msgstr "Publicité"
+

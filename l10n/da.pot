@@ -1,0 +1,90 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: da\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Din browser understøtter ikke lyd."
+
+msgid "Cancel"
+msgstr "Annuller"
+
+msgid "Image saved"
+msgstr "Billede gemt"
+
+msgid "Play the live photo"
+msgstr "Afspil live foto"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Din browser understøtter ikke videoer."
+
+msgid "Edit"
+msgstr "Redigér"
+
+msgid "Open sidebar"
+msgstr "Åbn sidebjælke"
+
+msgid "Download"
+msgstr "Download"
+
+msgid "View"
+msgstr "Vis"
+
+msgid "Reset"
+msgstr "Nulstil"
+
+msgid "Quality"
+msgstr "Kvalitet"
+
+msgid "Failed to load image."
+msgstr "Kunne ikke indlæse billede."
+
+msgid "Play"
+msgstr "Afspil"
+
+msgid "Pause"
+msgstr "Pause"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} af {duration}"
+
+msgid "Current time"
+msgstr "Nuværende tid"
+
+msgid "Duration"
+msgstr "Varighed"
+
+msgid "Volume"
+msgstr "Lydstyrke"
+
+msgid "Mute"
+msgstr "Mute"
+
+msgid "Exit fullscreen"
+msgstr "Luk fuldskærm"
+
+msgid "Settings"
+msgstr "Indstillinger"
+
+msgid "Speed"
+msgstr "Hastighed"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "End"
+msgstr "Stop"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Disabled"
+msgstr "Deaktiveret"
+
+msgid "Enabled"
+msgstr "Aktiveret"
+

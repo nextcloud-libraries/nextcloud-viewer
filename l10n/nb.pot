@@ -1,0 +1,90 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: nb\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Nettleseren din støtter ikke lyd."
+
+msgid "Cancel"
+msgstr "Avbryt"
+
+msgid "Image saved"
+msgstr "Bilde er lagret"
+
+msgid "Play the live photo"
+msgstr "Spill av live-fotoet"
+
+msgid "LIVE"
+msgstr "LIVE"
+
+msgid "Your browser does not support videos."
+msgstr "Nettleseren din støtter ikke videoer."
+
+msgid "Edit"
+msgstr "Rediger"
+
+msgid "Open sidebar"
+msgstr "Åpne sidepanel"
+
+msgid "Download"
+msgstr "Last ned"
+
+msgid "View"
+msgstr "Vis"
+
+msgid "Reset"
+msgstr "Tilbakestill"
+
+msgid "Quality"
+msgstr "Kvalitet"
+
+msgid "Restart"
+msgstr "Omstart"
+
+msgid "Play"
+msgstr "Spill"
+
+msgid "Pause"
+msgstr "Pause"
+
+msgid "Current time"
+msgstr "Gjeldende tidspunkt"
+
+msgid "Duration"
+msgstr "Varighet"
+
+msgid "Volume"
+msgstr "Volum"
+
+msgid "Mute"
+msgstr "Dempe"
+
+msgid "Exit fullscreen"
+msgstr "Avslutt fullskjermsvisning"
+
+msgid "Settings"
+msgstr "Innstillinger"
+
+msgid "Speed"
+msgstr "Hastighet"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "Start"
+
+msgid "End"
+msgstr "Slutt"
+
+msgid "All"
+msgstr "Alle"
+
+msgid "Disabled"
+msgstr "Deaktivert"
+
+msgid "Enabled"
+msgstr "Aktivert"
+

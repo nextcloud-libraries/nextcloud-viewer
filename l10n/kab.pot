@@ -1,0 +1,93 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: kab\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Sefsex"
+
+msgid "Image saved"
+msgstr "Tugna tekles"
+
+msgid "LIVE"
+msgstr "SRID"
+
+msgid "Edit"
+msgstr "Ẓreg"
+
+msgid "Open sidebar"
+msgstr "Ldi-d afeggag adisan"
+
+msgid "Download"
+msgstr "Sider"
+
+msgid "View"
+msgstr "Askan"
+
+msgid "Reset"
+msgstr "Ɛiwed-d s wadda"
+
+msgid "Quality"
+msgstr "Taɣara"
+
+msgid "Restart"
+msgstr "Ales tanekra"
+
+msgid "Play"
+msgstr "Urar"
+
+msgid "Pause"
+msgstr "Aḥbas"
+
+msgid "Seek"
+msgstr "Inig"
+
+msgid "Current time"
+msgstr "Akud amiran"
+
+msgid "Duration"
+msgstr "Tanzagt"
+
+msgid "Volume"
+msgstr "Ableɣ"
+
+msgid "Mute"
+msgstr "Sgugem"
+
+msgid "Unmute"
+msgstr "Err imesli"
+
+msgid "Exit fullscreen"
+msgstr "Ffeɣ seg ugdil ačuran"
+
+msgid "Captions"
+msgstr "Ti_waṭṭfiwin"
+
+msgid "Settings"
+msgstr "Iɣewwaren"
+
+msgid "Speed"
+msgstr "Arured"
+
+msgid "Normal"
+msgstr "Amagnu"
+
+msgid "Loop"
+msgstr "Tineddict"
+
+msgid "Start"
+msgstr "Bdu"
+
+msgid "End"
+msgstr "Taggara"
+
+msgid "All"
+msgstr "Akk"
+
+msgid "Disabled"
+msgstr "Ittwarermed"
+
+msgid "Enabled"
+msgstr "Yermed"
+

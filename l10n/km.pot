@@ -1,0 +1,33 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: km\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Cancel"
+msgstr "បោះបង់"
+
+msgid "Edit"
+msgstr "កែប្រែ"
+
+msgid "Download"
+msgstr "ទាញយក"
+
+msgid "Play"
+msgstr "លេង"
+
+msgid "Pause"
+msgstr "ផ្អាក"
+
+msgid "Settings"
+msgstr "ការកំណត់"
+
+msgid "All"
+msgstr "ទាំងអស់"
+
+msgid "Disabled"
+msgstr "បាន​បិទ"
+
+msgid "Enabled"
+msgstr "បាន​បើក"
+

@@ -1,0 +1,75 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: sl\n"
+"Plural-Forms: nplurals=4; plural=(n%100==1 ? 0 : n%100==2 ? 1 : n%100==3 || n%100==4 ? 2 : 3);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Spletni brskalnik ne podpira možnosti predvajanja zvoka."
+
+msgid "Cancel"
+msgstr "Prekliči"
+
+msgid "Image saved"
+msgstr "Slika je shranjena."
+
+msgid "Your browser does not support videos."
+msgstr "Spletni brskalnik ne podpira predvajanja video posnetkov."
+
+msgid "Edit"
+msgstr "Uredi"
+
+msgid "Open sidebar"
+msgstr "Odpri bočno okno"
+
+msgid "Download"
+msgstr "Prejmi"
+
+msgid "View"
+msgstr "Poglej"
+
+msgid "Reset"
+msgstr "Ponastavi"
+
+msgid "Quality"
+msgstr "Kakovost"
+
+msgid "Play"
+msgstr "Predvajaj"
+
+msgid "Pause"
+msgstr "Premor"
+
+msgid "Duration"
+msgstr "Trajanje"
+
+msgid "Volume"
+msgstr "Glasnost"
+
+msgid "Mute"
+msgstr "Utišaj"
+
+msgid "Settings"
+msgstr "Nastavitve"
+
+msgid "Speed"
+msgstr "Hitrost"
+
+msgid "Normal"
+msgstr "Običajna"
+
+msgid "Start"
+msgstr "Začetek"
+
+msgid "End"
+msgstr "Konec"
+
+msgid "All"
+msgstr "Vse"
+
+msgid "Disabled"
+msgstr "Onemogočeno"
+
+msgid "Enabled"
+msgstr "Omogočeno"
+

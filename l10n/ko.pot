@@ -1,0 +1,78 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ko\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Your browser does not support audio."
+msgstr "브라우저가 오디오를 지원하지 않습니다."
+
+msgid "Cancel"
+msgstr "취소"
+
+msgid "Image saved"
+msgstr "이미지 저장됨"
+
+msgid "LIVE"
+msgstr "라이브"
+
+msgid "Your browser does not support videos."
+msgstr "브라우저가 영상을 지원하지 않습니다."
+
+msgid "Edit"
+msgstr "편집"
+
+msgid "Open sidebar"
+msgstr "사이드바 열기"
+
+msgid "Download"
+msgstr "다운로드"
+
+msgid "View"
+msgstr "보기"
+
+msgid "Reset"
+msgstr "초기화"
+
+msgid "Quality"
+msgstr "품질"
+
+msgid "Restart"
+msgstr "재시작"
+
+msgid "Play"
+msgstr "재생"
+
+msgid "Pause"
+msgstr "일시 정지"
+
+msgid "Volume"
+msgstr "볼륨"
+
+msgid "Mute"
+msgstr "음소거"
+
+msgid "Exit fullscreen"
+msgstr "전체 화면 끝내기"
+
+msgid "Settings"
+msgstr "설정"
+
+msgid "Speed"
+msgstr "속도"
+
+msgid "Start"
+msgstr "시작"
+
+msgid "End"
+msgstr "끝"
+
+msgid "All"
+msgstr "모두"
+
+msgid "Disabled"
+msgstr "비활성화됨"
+
+msgid "Enabled"
+msgstr "활성화"
+

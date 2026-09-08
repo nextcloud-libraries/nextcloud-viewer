@@ -1,0 +1,195 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "{currentTime} of {duration}"
+msgstr ""
+
+msgid "Ad"
+msgstr ""
+
+msgid "All"
+msgstr ""
+
+msgid "An unknown error occurred while loading the file."
+msgstr ""
+
+msgid "Audio player"
+msgstr ""
+
+msgid "Buffered"
+msgstr ""
+
+msgid "Cancel"
+msgstr ""
+
+msgid "Captions"
+msgstr ""
+
+msgid "Comparing {file1} and {file2}"
+msgstr ""
+
+msgid "Could not rename the file."
+msgstr ""
+
+msgid "Could not save the image"
+msgstr ""
+
+msgid "Current time"
+msgstr ""
+
+msgid "Disable captions"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Download"
+msgstr ""
+
+msgid "Duration"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid "Enable captions"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "End"
+msgstr ""
+
+msgid "Enter fullscreen"
+msgstr ""
+
+msgid "Exit fullscreen"
+msgstr ""
+
+msgid "Failed to load image."
+msgstr ""
+
+msgid "Failed to load media."
+msgstr ""
+
+msgid "Forward {seektime}s"
+msgstr ""
+
+msgid "Go back to previous menu"
+msgstr ""
+
+msgid "Image saved"
+msgstr ""
+
+msgid "Images"
+msgstr ""
+
+msgid "LIVE"
+msgstr ""
+
+msgid "Loop"
+msgstr ""
+
+msgid "Mute"
+msgstr ""
+
+msgid "New name"
+msgstr ""
+
+msgid "No files were provided to open."
+msgstr ""
+
+msgid "Normal"
+msgstr ""
+
+msgid "Open sidebar"
+msgstr ""
+
+msgid "Open with …"
+msgstr ""
+
+msgid "Open with {handler}"
+msgstr ""
+
+msgid "Pause"
+msgstr ""
+
+msgid "PIP"
+msgstr ""
+
+msgid "Play"
+msgstr ""
+
+msgid "Play the live photo"
+msgstr ""
+
+msgid "Played"
+msgstr ""
+
+msgid "Player for {title}"
+msgstr ""
+
+msgid "Quality"
+msgstr ""
+
+msgid "Rename"
+msgstr ""
+
+msgid "Rename file"
+msgstr ""
+
+msgid "Reset"
+msgstr ""
+
+msgid "Restart"
+msgstr ""
+
+msgid "Rewind {seektime}s"
+msgstr ""
+
+msgid "Seek"
+msgstr ""
+
+msgid "Settings"
+msgstr ""
+
+msgid "Speed"
+msgstr ""
+
+msgid "Start"
+msgstr ""
+
+msgid "The image could not be edited."
+msgstr ""
+
+msgid "The name must not contain \"/\"."
+msgstr ""
+
+msgid "There was no plugin available to open this file."
+msgstr ""
+
+msgid "Unmute"
+msgstr ""
+
+msgid "Video player"
+msgstr ""
+
+msgid "View"
+msgstr ""
+
+msgid "Volume"
+msgstr ""
+
+msgid "We were not able to open the file."
+msgstr ""
+
+msgid "We were unable to display the requested file."
+msgstr ""
+
+msgid "Your browser does not support audio."
+msgstr ""
+
+msgid "Your browser does not support videos."
+msgstr ""

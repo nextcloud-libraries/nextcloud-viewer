@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: lt_LT\n"
+"Plural-Forms: nplurals=4; plural=(n % 10 == 1 && (n % 100 > 19 || n % 100 < 11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? 1 : n % 1 != 0 ? 2: 3);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Jūsų naršyklė nepalaiko garso."
+
+msgid "Cancel"
+msgstr "Atsisakyti"
+
+msgid "Image saved"
+msgstr "Paveikslas įrašytas"
+
+msgid "Play the live photo"
+msgstr "Peržiūrėti nuotrauką gyvai"
+
+msgid "LIVE"
+msgstr "GYVAI"
+
+msgid "Your browser does not support videos."
+msgstr "Jūsų naršyklė nepalaiko vaizdo įrašų. "
+
+msgid "Edit"
+msgstr "Redaguoti"
+
+msgid "Open sidebar"
+msgstr "Atverti šoninę juostą"
+
+msgid "Download"
+msgstr "Atsisiųsti"
+
+msgid "View"
+msgstr "Rodyti"
+
+msgid "Reset"
+msgstr "Atstatyti"
+
+msgid "Quality"
+msgstr "Kokybė"
+
+msgid "Failed to load image."
+msgstr "Nepavyko atverti paveikslėlio"
+
+msgid "Restart"
+msgstr "Paleisti iš naujo"
+
+msgid "Rewind {seektime}s"
+msgstr "Atsukti atgal {seektime}sek"
+
+msgid "Play"
+msgstr "Groti"
+
+msgid "Pause"
+msgstr "Pristabdyti"
+
+msgid "Forward {seektime}s"
+msgstr "Sukti pirmyn {seektime}sek"
+
+msgid "Seek"
+msgstr "Ieškoti"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} iš {duration}"
+
+msgid "Played"
+msgstr "Grota"
+
+msgid "Buffered"
+msgstr "Laikinai išsaugota"
+
+msgid "Current time"
+msgstr "Dabartinis laikas"
+
+msgid "Duration"
+msgstr "Trukmė"
+
+msgid "Volume"
+msgstr "Garsis"
+
+msgid "Mute"
+msgstr "Nutildyti"
+
+msgid "Unmute"
+msgstr "Įjungti garsą"
+
+msgid "Enable captions"
+msgstr "Įjungti subtitrus"
+
+msgid "Disable captions"
+msgstr "Išungti subtitrus"
+
+msgid "Enter fullscreen"
+msgstr "Įjungti viso ekrano režimą"
+
+msgid "Exit fullscreen"
+msgstr "Išeiti iš viso ekrano"
+
+msgid "Player for {title}"
+msgstr "Grotuvas, skirtas {title}"
+
+msgid "Captions"
+msgstr "Subtitrai"
+
+msgid "Settings"
+msgstr "Nustatymai"
+
+msgid "PIP"
+msgstr "PIP"
+
+msgid "Go back to previous menu"
+msgstr "Grįžti į ankstesnį meniu"
+
+msgid "Speed"
+msgstr "Greitis"
+
+msgid "Normal"
+msgstr "Normalus"
+
+msgid "Loop"
+msgstr "Kartoti"
+
+msgid "Start"
+msgstr "Pradėti"
+
+msgid "End"
+msgstr "Pabaiga"
+
+msgid "All"
+msgstr "Visos"
+
+msgid "Disabled"
+msgstr "Išjungta"
+
+msgid "Enabled"
+msgstr "Įjungta"
+
+msgid "Ad"
+msgstr "Skelbimas"
+

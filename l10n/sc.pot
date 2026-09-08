@@ -1,0 +1,66 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: sc\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Su navigadore tuo non suportat s'àudio."
+
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Image saved"
+msgstr "Immàgines sarvadas"
+
+msgid "Your browser does not support videos."
+msgstr "Su navigadore tuo non suportat vìdeos."
+
+msgid "Edit"
+msgstr "Modìfica"
+
+msgid "Open sidebar"
+msgstr "Aberi s'istanca laterale"
+
+msgid "Download"
+msgstr "Iscàrriga"
+
+msgid "View"
+msgstr "Visualiza"
+
+msgid "Reset"
+msgstr "Ripristina"
+
+msgid "Quality"
+msgstr "Calidade"
+
+msgid "Pause"
+msgstr "Pàusa"
+
+msgid "Duration"
+msgstr "Durata"
+
+msgid "Volume"
+msgstr "Volùmene"
+
+msgid "Mute"
+msgstr "Tira s'àudiu"
+
+msgid "Settings"
+msgstr "Cunfiguratzione"
+
+msgid "Speed"
+msgstr "Lestresa"
+
+msgid "End"
+msgstr "Acabba"
+
+msgid "All"
+msgstr "Totu"
+
+msgid "Disabled"
+msgstr "Disativadu"
+
+msgid "Enabled"
+msgstr "Ativadu"
+

@@ -1,0 +1,45 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: af\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "U blaaier ondersteun nie oudio nie."
+
+msgid "Cancel"
+msgstr "Kanselleer"
+
+msgid "Your browser does not support videos."
+msgstr "U blaaier ondersteun nie video’s nie."
+
+msgid "Edit"
+msgstr "Wysig"
+
+msgid "Open sidebar"
+msgstr "Open kantbalk"
+
+msgid "Download"
+msgstr "Laai af"
+
+msgid "View"
+msgstr "Bekyk"
+
+msgid "Reset"
+msgstr "Herstel"
+
+msgid "Quality"
+msgstr "Kwaliteit"
+
+msgid "Settings"
+msgstr "Instellings"
+
+msgid "Start"
+msgstr "Begin"
+
+msgid "End"
+msgstr "Einde"
+
+msgid "All"
+msgstr "Alle"
+

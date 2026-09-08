@@ -1,0 +1,24 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: an\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Download"
+msgstr "Escargar"
+
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "All"
+msgstr "Tot"
+
+msgid "Disabled"
+msgstr "Desactivau"
+
+msgid "Enabled"
+msgstr "Activau"
+

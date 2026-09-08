@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ga\n"
+"Plural-Forms: nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : 4);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Ní thacaíonn do bhrabhsálaí le fuaim."
+
+msgid "Cancel"
+msgstr "Cealaigh"
+
+msgid "Image saved"
+msgstr "Sábháladh an íomhá"
+
+msgid "Play the live photo"
+msgstr "Seinn an grianghraf beo"
+
+msgid "LIVE"
+msgstr "BEO"
+
+msgid "Your browser does not support videos."
+msgstr "Ní thacaíonn do bhrabhsálaí le físeáin."
+
+msgid "Edit"
+msgstr "Cuir in eagar"
+
+msgid "Open sidebar"
+msgstr "Oscail barra taoibh"
+
+msgid "Download"
+msgstr "Íoslódáil"
+
+msgid "View"
+msgstr "Amharc"
+
+msgid "Reset"
+msgstr "Athshocraigh"
+
+msgid "Quality"
+msgstr "Cáilíocht"
+
+msgid "Failed to load image."
+msgstr "Theip ar lódáil an íomhá."
+
+msgid "Restart"
+msgstr "Atosaigh"
+
+msgid "Rewind {seektime}s"
+msgstr "Athchasadh {seektime}s"
+
+msgid "Play"
+msgstr "Seinn"
+
+msgid "Pause"
+msgstr "Sos"
+
+msgid "Forward {seektime}s"
+msgstr "Ar aghaidh {seektime}s"
+
+msgid "Seek"
+msgstr "Lorg"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} de {duration}"
+
+msgid "Played"
+msgstr "Imríodh"
+
+msgid "Buffered"
+msgstr "Maolaithe"
+
+msgid "Current time"
+msgstr "Am reatha"
+
+msgid "Duration"
+msgstr "Fad"
+
+msgid "Volume"
+msgstr "Toirt"
+
+msgid "Mute"
+msgstr "Balbhaigh"
+
+msgid "Unmute"
+msgstr "Díbhalbhaigh"
+
+msgid "Enable captions"
+msgstr "Cumasaigh fotheidil"
+
+msgid "Disable captions"
+msgstr "Díchumasaigh fotheidil"
+
+msgid "Enter fullscreen"
+msgstr "Téigh isteach sa lánscáileán"
+
+msgid "Exit fullscreen"
+msgstr "Scoir lánscáileáin"
+
+msgid "Player for {title}"
+msgstr "Imreoir do {title}"
+
+msgid "Captions"
+msgstr "Fotheidil"
+
+msgid "Settings"
+msgstr "Socruithe"
+
+msgid "PIP"
+msgstr "PIP"
+
+msgid "Go back to previous menu"
+msgstr "Téigh ar ais go dtí an roghchlár roimhe seo"
+
+msgid "Speed"
+msgstr "Luas"
+
+msgid "Normal"
+msgstr "Gnáth"
+
+msgid "Loop"
+msgstr "Lúb"
+
+msgid "Start"
+msgstr "Tosaigh"
+
+msgid "End"
+msgstr "Deireadh"
+
+msgid "All"
+msgstr "Gach"
+
+msgid "Disabled"
+msgstr "Faoi mhíchumas"
+
+msgid "Enabled"
+msgstr "Cumasaithe"
+
+msgid "Ad"
+msgstr "Fógra"
+

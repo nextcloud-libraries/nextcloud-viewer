@@ -1,0 +1,141 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: el\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Το πρόγραμμα περιήγησής σας δεν υποστηρίζει ήχο."
+
+msgid "Cancel"
+msgstr "Ακύρωση"
+
+msgid "Image saved"
+msgstr "Η εικόνα αποθηκεύτηκε"
+
+msgid "Play the live photo"
+msgstr "Αναπαραγωγή ζωντανής φωτογραφίας"
+
+msgid "LIVE"
+msgstr "ΖΩΝΤΑΝΑ"
+
+msgid "Your browser does not support videos."
+msgstr "Ο περιηγητής σας δεν υποστηρίζει βίντεο."
+
+msgid "Edit"
+msgstr "Επεξεργασία"
+
+msgid "Open sidebar"
+msgstr "Άνοιγμα πλευρικής στήλης"
+
+msgid "Download"
+msgstr "Λήψη"
+
+msgid "View"
+msgstr "Προβολή"
+
+msgid "Reset"
+msgstr "Επαναφορά"
+
+msgid "Quality"
+msgstr "Ποιότητα"
+
+msgid "Failed to load image."
+msgstr "Αποτυχία φόρτωσης εικόνας."
+
+msgid "Restart"
+msgstr "Επανεκκίνηση"
+
+msgid "Rewind {seektime}s"
+msgstr "Επιστροφή {seektime}δ"
+
+msgid "Play"
+msgstr "Αναπαραγωγή"
+
+msgid "Pause"
+msgstr "Παύση"
+
+msgid "Forward {seektime}s"
+msgstr "Προώθηση {seektime}δ"
+
+msgid "Seek"
+msgstr "Αναζήτηση"
+
+msgid "{currentTime} of {duration}"
+msgstr "{currentTime} από {duration}"
+
+msgid "Played"
+msgstr "Αναπαράχθηκε"
+
+msgid "Buffered"
+msgstr "Προσωρινά αποθηκευμένο"
+
+msgid "Current time"
+msgstr "Τρέχων χρόνος"
+
+msgid "Duration"
+msgstr "Διάρκεια"
+
+msgid "Volume"
+msgstr "Ένταση"
+
+msgid "Mute"
+msgstr "Σίγαση"
+
+msgid "Unmute"
+msgstr "Κατάργηση σίγασης"
+
+msgid "Enable captions"
+msgstr "Ενεργοποίηση υποτίτλων"
+
+msgid "Disable captions"
+msgstr "Απενεργοποίηση υποτίτλων"
+
+msgid "Enter fullscreen"
+msgstr "Είσοδος σε πλήρη οθόνη"
+
+msgid "Exit fullscreen"
+msgstr "Έξοδος από πλήρη οθόνη"
+
+msgid "Player for {title}"
+msgstr "Πρόγραμμα αναπαραγωγής για {title}"
+
+msgid "Captions"
+msgstr "Υπότιτλοι"
+
+msgid "Settings"
+msgstr "Ρυθμίσεις"
+
+msgid "PIP"
+msgstr "PIP"
+
+msgid "Go back to previous menu"
+msgstr "Επιστροφή στο προηγούμενο μενού"
+
+msgid "Speed"
+msgstr "Ταχύτητα"
+
+msgid "Normal"
+msgstr "Κανονικό"
+
+msgid "Loop"
+msgstr "Επανάληψη"
+
+msgid "Start"
+msgstr "Έναρξη"
+
+msgid "End"
+msgstr "Τέλος"
+
+msgid "All"
+msgstr "Όλα"
+
+msgid "Disabled"
+msgstr "Απενεργοποιημένο"
+
+msgid "Enabled"
+msgstr "Ενεργοποιημένο"
+
+msgid "Ad"
+msgstr "Διαφήμιση"
+

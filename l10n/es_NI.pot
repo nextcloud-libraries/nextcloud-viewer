@@ -1,0 +1,42 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: es_NI\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Edit"
+msgstr "Editar"
+
+msgid "Download"
+msgstr "Descargar"
+
+msgid "Reset"
+msgstr "Restablecer"
+
+msgid "Pause"
+msgstr "Pausar"
+
+msgid "Exit fullscreen"
+msgstr "Salir de la pantalla completa"
+
+msgid "Settings"
+msgstr "Configuraciones "
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "End"
+msgstr "Fin"
+
+msgid "All"
+msgstr "Todos"
+
+msgid "Disabled"
+msgstr "Deshabilitado"
+
+msgid "Enabled"
+msgstr "Habilitado"
+

@@ -1,0 +1,60 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: mk\n"
+"Plural-Forms: nplurals=2; plural=(n % 10 == 1 && n % 100 != 11) ? 0 : 1;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Вашиот прелистувач не поддржува звук."
+
+msgid "Cancel"
+msgstr "Откажи"
+
+msgid "Your browser does not support videos."
+msgstr "Вашиот прелистувач не поддржува видео."
+
+msgid "Edit"
+msgstr "Уреди"
+
+msgid "Open sidebar"
+msgstr "Отвори странична лента"
+
+msgid "Download"
+msgstr "Преземи"
+
+msgid "View"
+msgstr "Погледни"
+
+msgid "Reset"
+msgstr "Ресетирање"
+
+msgid "Quality"
+msgstr "Квалитет"
+
+msgid "Play"
+msgstr "Слајдшоу"
+
+msgid "Pause"
+msgstr "Пауза"
+
+msgid "Mute"
+msgstr "Занеми"
+
+msgid "Settings"
+msgstr "Параметри"
+
+msgid "Speed"
+msgstr "Брзина"
+
+msgid "End"
+msgstr "Крај"
+
+msgid "All"
+msgstr "Сите"
+
+msgid "Disabled"
+msgstr "Оневозможено"
+
+msgid "Enabled"
+msgstr "Овозможено"
+

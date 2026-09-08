@@ -1,0 +1,81 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: id\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Your browser does not support audio."
+msgstr "Peramban Anda tidak mendukung suara."
+
+msgid "Cancel"
+msgstr "Membatalkan"
+
+msgid "Image saved"
+msgstr "Gambar disimpan"
+
+msgid "Play the live photo"
+msgstr "Putar foto live"
+
+msgid "LIVE"
+msgstr "LANGSUNG"
+
+msgid "Your browser does not support videos."
+msgstr "Peramban Anda tidak mendukung video."
+
+msgid "Edit"
+msgstr "Sunting"
+
+msgid "Open sidebar"
+msgstr "Buka jendela samping"
+
+msgid "Download"
+msgstr "Unduh"
+
+msgid "View"
+msgstr "Tampilan"
+
+msgid "Reset"
+msgstr "Setel ulang"
+
+msgid "Quality"
+msgstr "Kualitas"
+
+msgid "Failed to load image."
+msgstr "Gagal memuat citra."
+
+msgid "Play"
+msgstr "Putar"
+
+msgid "Pause"
+msgstr "Jeda"
+
+msgid "Current time"
+msgstr "Waktu saat ini"
+
+msgid "Duration"
+msgstr "Durasi"
+
+msgid "Volume"
+msgstr "Volume"
+
+msgid "Settings"
+msgstr "Pengaturan"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Start"
+msgstr "Mulai"
+
+msgid "End"
+msgstr "Selesai"
+
+msgid "All"
+msgstr "Semua"
+
+msgid "Disabled"
+msgstr "Dinonaktifkan"
+
+msgid "Enabled"
+msgstr "Diaktifkan"
+

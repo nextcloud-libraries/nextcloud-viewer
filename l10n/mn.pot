@@ -1,0 +1,81 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: mn\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Your browser does not support audio."
+msgstr "Таны хөтөч аудио дэмждэггүй."
+
+msgid "Cancel"
+msgstr "болиулах"
+
+msgid "Image saved"
+msgstr "Зураг хадгалагдсан"
+
+msgid "Play the live photo"
+msgstr "Амьд зураг тоглуулах"
+
+msgid "LIVE"
+msgstr "АМЬД"
+
+msgid "Your browser does not support videos."
+msgstr "Таны хөтөч видео дэмждэггүй."
+
+msgid "Edit"
+msgstr "засварлах"
+
+msgid "Open sidebar"
+msgstr "Хажуу самбар нээх"
+
+msgid "Download"
+msgstr "Татах"
+
+msgid "View"
+msgstr "Харах"
+
+msgid "Reset"
+msgstr "тохируулах"
+
+msgid "Quality"
+msgstr "Чанар"
+
+msgid "Failed to load image."
+msgstr "Зураг ачаалж чадсангүй."
+
+msgid "Restart"
+msgstr "Дахин эхлүүлэх"
+
+msgid "Pause"
+msgstr "–¢“Ø—Ä –∑–æ–≥—Å–æ–æ—Ö"
+
+msgid "Duration"
+msgstr "Хугацаа"
+
+msgid "Mute"
+msgstr "Хаах"
+
+msgid "Settings"
+msgstr "–¢–æ—Ö–∏—Ä–≥–æ–æ"
+
+msgid "Speed"
+msgstr "Хурд"
+
+msgid "Normal"
+msgstr "Хэвийн"
+
+msgid "Start"
+msgstr "—ç—Ö–ª—ç—Ö"
+
+msgid "End"
+msgstr "–¥—É—É—Å–≥–∞—Ö"
+
+msgid "All"
+msgstr "–±“Ø—Ö"
+
+msgid "Disabled"
+msgstr "–∏–¥—ç–≤—Ö–∏–≥“Ø–π"
+
+msgid "Enabled"
+msgstr "–ò–¥—ç–≤—Ö–∏–∂“Ø“Ø–ª—ç—Ö"
+

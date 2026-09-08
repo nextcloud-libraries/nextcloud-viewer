@@ -1,0 +1,42 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ia\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Cancel"
+msgstr "Cancellar"
+
+msgid "Edit"
+msgstr "Modificar"
+
+msgid "Download"
+msgstr "Discargar"
+
+msgid "View"
+msgstr "Vider"
+
+msgid "Reset"
+msgstr "Re-fixar"
+
+msgid "Play"
+msgstr "Reproducer"
+
+msgid "Pause"
+msgstr "Pausar"
+
+msgid "Settings"
+msgstr "Configurationes"
+
+msgid "Start"
+msgstr "Initio"
+
+msgid "End"
+msgstr "Fin"
+
+msgid "All"
+msgstr "Tote"
+
+msgid "Enabled"
+msgstr "Activate"
+

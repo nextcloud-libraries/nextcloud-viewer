@@ -1,0 +1,36 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: uz\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+msgid "Cancel"
+msgstr "Bekor qilish"
+
+msgid "Edit"
+msgstr "Tahrirlash"
+
+msgid "Download"
+msgstr "Yuklab olish"
+
+msgid "View"
+msgstr "Ko'rish"
+
+msgid "Reset"
+msgstr "Qayta tiklash"
+
+msgid "Play"
+msgstr "O'ynang"
+
+msgid "Duration"
+msgstr "Davomiyligi"
+
+msgid "Settings"
+msgstr "Sozlamalar"
+
+msgid "Normal"
+msgstr "Oddiy"
+
+msgid "All"
+msgstr "Barchasi"
+
