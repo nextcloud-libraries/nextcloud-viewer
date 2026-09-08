@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { beforeEach, vi } from 'vitest'
+import { scope } from '../lib/scope.ts'
 
 // Ambient Nextcloud globals referenced by some components without importing them.
 // Only set them when missing so the server's own test globals are never clobbered.
@@ -33,7 +34,10 @@ g.OCA.Files ??= {}
 // and clear mock call history (shared manual mocks keep their implementation).
 beforeEach(() => {
 	vi.clearAllMocks()
-	window._oca_viewer_handlers = new Map()
-	// @ts-expect-error test-only reset of the global viewer instance
-	window._oca_viewer_service = undefined
+	// Reset the shared scope so registrations, the elected implementation
+	// and the mounted viewer never leak between tests
+	scope.handlers = new Map()
+	scope.service = undefined
+	scope.candidates.length = 0
+	scope.implementation = undefined
 })

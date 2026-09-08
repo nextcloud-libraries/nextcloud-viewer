@@ -19,20 +19,14 @@ interface OCPFilesRouter {
 	) => void
 }
 
-import type { IHandler } from './index.ts'
-import type { Viewer } from './viewer.ts'
-
 declare global {
+	/** This package's version, replaced at build time. */
+	const __VIEWER_VERSION__: string
+
 	/** The translations bundled into the build, replaced at build time. */
 	const __TRANSLATIONS__: { locale: string, json: object }[]
 
 	interface Window {
-		/** Every handler registered on this page. */
-		_oca_viewer_handlers: Map<string, IHandler>
-
-		/** The shared viewer instance. */
-		_oca_viewer_service: Viewer
-
 		OCP?: {
 			Files?: {
 				Router?: OCPFilesRouter

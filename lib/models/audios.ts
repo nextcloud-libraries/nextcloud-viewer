@@ -5,7 +5,6 @@
 
 import AudioOutlineSvg from '@mdi/svg/svg/music-note-outline.svg?raw'
 import { defineCustomElement } from 'vue'
-import Audios from '../components/Audios.vue'
 import { registerHandler } from '../index.ts'
 import { logger } from '../services/logger.ts'
 import { t } from '../utils/l10n.ts'
@@ -27,7 +26,8 @@ export const tagname = 'oca-viewer-audio'
 /**
  * Register the audio custom element.
  */
-export function registerAudioCustomElement() {
+export async function registerAudioCustomElement(): Promise<void> {
+	const { default: Audios } = await import('../components/Audios.vue')
 	const AudioElement = defineCustomElement(Audios, {
 		shadowRoot: false,
 	})

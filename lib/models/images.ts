@@ -5,7 +5,6 @@
 
 import { loadState } from '@nextcloud/initial-state'
 import { defineCustomElement } from 'vue'
-import Images from '../components/Images.vue'
 import { registerHandler } from '../index.ts'
 import { logger } from '../services/logger.ts'
 import { t } from '../utils/l10n.ts'
@@ -65,7 +64,8 @@ export const tagname = 'oca-viewer-image'
 /**
  *
  */
-export function registerImageCustomElement() {
+export async function registerImageCustomElement(): Promise<void> {
+	const { default: Images } = await import('../components/Images.vue')
 	const ImageElement = defineCustomElement(Images, {
 		shadowRoot: false,
 	})
