@@ -12,6 +12,8 @@ API apps use to render their own file types in it. Register a handler as a custo
 element and your files open in the same viewer as everything else, with
 navigation, editing and sharing already wired up.
 
+![The viewer showing an image](https://raw.githubusercontent.com/nextcloud-libraries/nextcloud-viewer/main/.github/screenshot.jpg)
+
 [API documentation](https://nextcloud-libraries.github.io/nextcloud-viewer/)
 
 ```sh
