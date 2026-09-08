@@ -1,0 +1,35 @@
+/*!
+ * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+import type { IFile, IFolder } from '@nextcloud/files'
+import type { FileStat, ResponseDataDetailed } from 'webdav'
+
+import { FileType, sortNodes } from '@nextcloud/files'
+import { getClient, getDefaultPropfind, resultToNode } from '@nextcloud/files/dav'
+
+export const client = getClient()
+
+/**
+ * The list is ordered the way the Files app orders it. Callers that already
+ * have a list pass it to `open()` and keep their own order; only `openFolder()`
+ * builds the list here, and there is no files list to take an active sort from,
+ * so this is the Files app default: names, ascending. Leaving the WebDAV order
+ * would step through the files in whatever order the server happened to reply.
+ *
+ * @param folder - The folder whose file contents should be fetched
+ */
+export async function fetchFolderContent(folder: IFolder): Promise<IFile[]> {
+	const propfindPayload = getDefaultPropfind()
+	const result = (await client.getDirectoryContents(`${folder.root}${folder.path}`, {
+		details: true,
+		data: propfindPayload,
+	})) as ResponseDataDetailed<Array<FileStat>>
+
+	const files = result.data
+		.map((node) => resultToNode(node))
+		.filter((node) => node.type === FileType.File)
+
+	return sortNodes(files) as IFile[]
+}
