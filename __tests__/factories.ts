@@ -5,6 +5,7 @@
 import type { IHandler } from '../lib/index.ts'
 
 import { File } from '@nextcloud/files'
+import { scope } from '../lib/scope.ts'
 
 let idCounter = 1
 
@@ -59,8 +60,8 @@ export function makeHandler(overrides: Partial<IHandler> = {}): IHandler {
  * @param handlers - Handlers to register
  */
 export function registerTestHandlers(...handlers: IHandler[]): void {
-	window._oca_viewer_handlers ??= new Map()
+	scope.handlers ??= new Map()
 	for (const handler of handlers) {
-		window._oca_viewer_handlers.set(handler.id, handler)
+		scope.handlers.set(handler.id, handler)
 	}
 }

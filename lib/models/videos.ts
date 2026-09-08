@@ -5,7 +5,6 @@
 
 import MovieOutlineSvg from '@mdi/svg/svg/movie-outline.svg?raw'
 import { defineCustomElement } from 'vue'
-import Videos from '../components/Videos.vue'
 import { registerHandler } from '../index.ts'
 import { logger } from '../services/logger.ts'
 import { t } from '../utils/l10n.ts'
@@ -29,7 +28,8 @@ export const tagname = 'oca-viewer-video'
 /**
  * Register the video custom element.
  */
-export function registerVideoCustomElement() {
+export async function registerVideoCustomElement(): Promise<void> {
+	const { default: Videos } = await import('../components/Videos.vue')
 	const VideoElement = defineCustomElement(Videos, {
 		shadowRoot: false,
 	})

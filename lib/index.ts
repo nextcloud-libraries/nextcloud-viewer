@@ -7,6 +7,7 @@ import type { IFile, IFileAction, INode } from '@nextcloud/files'
 import FileSvg from '@mdi/svg/svg/file.svg?raw'
 import OpenInAppSvg from '@mdi/svg/svg/open-in-app.svg?raw'
 import { DefaultType, FileType, getFileActions, registerFileAction } from '@nextcloud/files'
+import { registerImplementation, scope } from './scope.ts'
 import { logger } from './services/logger.ts'
 import { openWithHistory } from './utils/history.ts'
 import { t } from './utils/l10n.ts'
@@ -149,13 +150,13 @@ const openWithViewerAction: IFileAction = {
 export function registerHandler(handler: IHandler): void {
 	validateHandler(handler)
 
-	window._oca_viewer_handlers ??= new Map<string, IHandler>()
-	if (window._oca_viewer_handlers.has(handler.id)) {
+	scope.handlers ??= new Map<string, IHandler>()
+	if (scope.handlers.has(handler.id)) {
 		logger.warn(`Handler with id ${handler.id} is already registered.`)
 		return
 	}
 
-	window._oca_viewer_handlers.set(handler.id, handler)
+	scope.handlers.set(handler.id, handler)
 
 	// Selector entry shown under the "Open with …" menu. Opening forces this
 	// specific handler regardless of registration order.
@@ -199,7 +200,7 @@ export function registerHandler(handler: IHandler): void {
  * Get all registered handlers.
  */
 export function getHandlers(): Map<string, IHandler> {
-	return window._oca_viewer_handlers ??= new Map<string, IHandler>()
+	return scope.handlers ??= new Map<string, IHandler>()
 }
 
 /**
@@ -262,3 +263,17 @@ function validateCustomElementName(tagname: string): void {
 		throw new Error('Handler tagname must only contain lowercase letters, numbers, and hyphens (-)')
 	}
 }
+
+// Offer this copy as the page's viewer. Registering costs nothing: the
+// implementation chunk is only fetched by whichever copy wins, and only
+// once something actually opens a file.
+registerImplementation({
+	version: __VIEWER_VERSION__,
+	load: () => import('./mount.ts').then((module) => module.mount()),
+})
+
+export { getViewer, Viewer } from './viewer.ts'
+export type { ViewerAPI, ViewerEmits, ViewerOptions, ViewerProps } from './viewer.ts'
+export { registerDefaultHandlers } from './defaults.ts'
+export type { ViewerCandidate } from './scope.ts'
+export { registerImplementation } from './scope.ts'

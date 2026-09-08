@@ -6,6 +6,8 @@
 import type { IFile, IFolder, IView } from '@nextcloud/files'
 import type ViewerVue from './views/Viewer.vue'
 
+import { loadImplementation, scope } from './scope.ts'
+
 /**
  * List of props provided to your custom component.
  * Use it like this:
@@ -194,25 +196,31 @@ export class Viewer extends EventTarget implements ViewerAPI {
 		this.viewer = viewer
 	}
 
-	async open(nodes: IFile[], file?: IFile, options: ViewerOptions = defaultViewerOptions, handlerId?: string): Promise<void> {
+	/**
+	 * The mounted viewer, loading the implementation the first time one
+	 * is needed. Nothing on the page carries the viewer's own weight
+	 * until a file is actually opened.
+	 */
+	private async mounted(): Promise<InstanceType<typeof ViewerVue>> {
 		if (!this.viewer) {
-			throw new Error('Viewer is not initialized')
+			await loadImplementation()
 		}
-		this.viewer.open(nodes, file, options, handlerId)
+		if (!this.viewer) {
+			throw new Error('The viewer implementation did not register itself')
+		}
+		return this.viewer
+	}
+
+	async open(nodes: IFile[], file?: IFile, options: ViewerOptions = defaultViewerOptions, handlerId?: string): Promise<void> {
+		(await this.mounted()).open(nodes, file, options, handlerId)
 	}
 
 	async openFolder(folder: IFolder, file?: IFile, options: ViewerOptions = defaultViewerOptions, handlerId?: string): Promise<void> {
-		if (!this.viewer) {
-			throw new Error('Viewer is not initialized')
-		}
-		this.viewer.openFolder(folder, file, options, handlerId)
+		(await this.mounted()).openFolder(folder, file, options, handlerId)
 	}
 
 	async compare(node1: IFile, node2: IFile, handlerId?: string): Promise<void> {
-		if (!this.viewer) {
-			throw new Error('Viewer is not initialized')
-		}
-		this.viewer.compare(node1, node2, handlerId)
+		(await this.mounted()).compare(node1, node2, handlerId)
 	}
 
 	goTo(fileid: number): void {
@@ -230,7 +238,10 @@ export class Viewer extends EventTarget implements ViewerAPI {
 
 /**
  * Get the shared viewer instance, creating it on first use.
+ *
+ * Shared across every copy of the library on the page that speaks the
+ * same handler ABI, so the viewer stays the single modal it has to be.
  */
 export function getViewer(): Viewer {
-	return window._oca_viewer_service ??= new Viewer()
+	return scope.service ??= new Viewer()
 }

@@ -192,7 +192,7 @@ describe('custom elements', () => {
 	it('registerVideoCustomElement defines oca-viewer-video', async () => {
 		const { registerVideoCustomElement } = await import('../lib/models/videos.ts')
 		try {
-			registerVideoCustomElement()
+			await registerVideoCustomElement()
 		} catch {
 			// already defined by a previous run
 		}
@@ -202,7 +202,7 @@ describe('custom elements', () => {
 	it('registerAudioCustomElement defines oca-viewer-audio', async () => {
 		const { registerAudioCustomElement } = await import('../lib/models/audios.ts')
 		try {
-			registerAudioCustomElement()
+			await registerAudioCustomElement()
 		} catch {
 			// already defined by a previous run
 		}
@@ -212,7 +212,7 @@ describe('custom elements', () => {
 	it('registerImageCustomElement defines oca-viewer-image', async () => {
 		const { registerImageCustomElement } = await import('../lib/models/images.ts')
 		try {
-			registerImageCustomElement()
+			await registerImageCustomElement()
 		} catch {
 			// already defined by a previous run
 		}
