@@ -75,7 +75,7 @@ import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 import axios from '@nextcloud/axios'
 import { NcLoadingIcon } from '@nextcloud/vue'
 import DOMPurify from 'dompurify'
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import { useViewerProps } from '../composables/useViewerProps.ts'
 import { logger } from '../services/logger.ts'
@@ -168,6 +168,10 @@ let inFlight: { controller: AbortController, source: string } | null = null
 watch(filename, async () => {
 	await loadData()
 })
+watch(data, () => {
+	loaded.value = false
+	catchUpIfLoaded()
+})
 // Prefer a client-side source (e.g. a freshly edited image) over any fetch.
 watch(() => props.localSource, (source) => {
 	if (source) {
@@ -227,13 +231,39 @@ async function loadData() {
 }
 
 /**
+ * Report an image that finished loading before its load handler existed.
+ *
+ * A source the browser already has — the same preview at a new size, a
+ * file being reopened — can complete between the src being set and Vue
+ * binding `@load`, and that event is then never heard. The viewer is
+ * waiting on it to stop showing its spinner, so it would wait forever.
+ */
+async function catchUpIfLoaded() {
+	await nextTick()
+	const element = image.value
+	if (element?.complete && element.naturalWidth > 0 && !loaded.value) {
+		onDoneLoading()
+	}
+}
+
+/**
  * The image/video has finished loading
  */
 function onDoneLoading() {
 	loaded.value = true
 	updateImageSize()
-	emit('loaded')
 }
+
+// The viewer hears 'loaded' as a DOM event on the custom element, and an
+// event dispatched from inside the img's own load handler can land while
+// Vue is still patching that element — the listener is attached, but not
+// yet when the event goes out, and the viewer waits for a load that has
+// already happened. Announcing it after the patch instead.
+watch(loaded, (isLoaded) => {
+	if (isLoaded) {
+		emit('loaded')
+	}
+}, { flush: 'post' })
 
 /**
  * Fit the media element to the available space while keeping its aspect ratio.
