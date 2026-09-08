@@ -290,6 +290,11 @@ and since there is only one viewer, a split registry means handlers that quietly
 never open. The key moves only when the shape of `IHandler` itself breaks, at
 which point the two generations genuinely cannot share a viewer.
 
+Copies within a major are compatible, so the newest simply wins and nothing is
+said about it. Copies from **different majors** are worth a word: the library
+warns in the console, naming what it found and which one will run. Only one of
+them can, and the apps that pinned the other expect behaviour it may not have.
+
 Two consequences worth knowing:
 
 - Registering a handler is cheap. It costs the handler definition, not the

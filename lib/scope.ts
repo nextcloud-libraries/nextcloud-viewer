@@ -5,6 +5,8 @@
 import type { IHandler } from './index.ts'
 import type { Viewer } from './viewer.ts'
 
+import { logger } from './services/logger.ts'
+
 /**
  * The shape of what handlers register, independent of this package's own
  * version. Copies of the library that agree on this shape share one
@@ -77,7 +79,46 @@ export function compareVersions(a: string, b: string): number {
 	if (bPre === undefined) {
 		return -1
 	}
-	return aPre < bPre ? -1 : 1
+
+	// Dot-separated identifiers, numeric ones compared as numbers: beta.10
+	// comes after beta.2, which a plain string comparison gets backwards
+	const aIds = aPre.split('.')
+	const bIds = bPre.split('.')
+	for (let i = 0; i < Math.max(aIds.length, bIds.length); i++) {
+		const left = aIds[i]
+		const right = bIds[i]
+		if (left === right) {
+			continue
+		}
+		// A shorter run of identifiers sorts first
+		if (left === undefined) {
+			return -1
+		}
+		if (right === undefined) {
+			return 1
+		}
+		const leftNumeric = /^\d+$/.test(left)
+		const rightNumeric = /^\d+$/.test(right)
+		if (leftNumeric && rightNumeric) {
+			return Number(left) - Number(right)
+		}
+		// Numeric identifiers always sort below alphanumeric ones
+		if (leftNumeric !== rightNumeric) {
+			return leftNumeric ? -1 : 1
+		}
+		return left < right ? -1 : 1
+	}
+	return 0
+}
+
+/**
+ * The major of a version, which is what decides whether two copies are
+ * compatible with each other.
+ *
+ * @param version the version to read
+ */
+function major(version: string): string {
+	return version.split('.', 1)[0] ?? version
 }
 
 /**
@@ -90,6 +131,20 @@ export function compareVersions(a: string, b: string): number {
  * @param candidate the offer
  */
 export function registerImplementation(candidate: ViewerCandidate): void {
+	// Copies within a major are compatible: the newest simply wins and there
+	// is nothing to say. Different majors are worth a word, because the apps
+	// that pinned them expect behaviour the elected copy may not have
+	const clashes = scope.candidates.some((entry) => major(entry.version) !== major(candidate.version))
+	if (clashes) {
+		const versions = [...new Set([...scope.candidates.map((entry) => entry.version), candidate.version])]
+		const winner = [...versions].sort(compareVersions).at(-1)
+		logger.warn(
+			`Incompatible versions of @nextcloud/viewer are loaded on this page (${versions.join(', ')}). `
+			+ `Only ${winner} will be used. Align the majors the apps on this page depend on.`,
+			{ versions, winner },
+		)
+	}
+
 	scope.candidates.push(candidate)
 }
 
