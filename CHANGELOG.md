@@ -6,6 +6,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.2
+
+Fixes found by reading the viewer this one replaced side by side with it.
+
+### Fixed
+
+- The spinner no longer stays up forever when a file is reopened. The Files app
+  opens the same file more than once, and every open was treated as a fresh
+  load the handler would never report finishing.
+- The viewer is dark whatever theme the user runs, rather than following it.
+  A handler can still ask for a light backdrop.
+- Editing is only offered for a file the user may write, and the viewer is only
+  offered for a file they may read. Deleted files stay viewable.
+- The context menu is refused over a file a share forbids downloading.
+- A folder the viewer fetches itself is sorted the way the user sorted their
+  files list, rather than by name.
+- The page title names the file being viewed again, full screen is back in the
+  menu, and loading a file is dropped when the viewer moves to another one.
+
 ## 2.0.0-beta.1
 
 First release from this repository. The viewer itself now lives here, not only
