@@ -11,6 +11,7 @@ import { registerImplementation, scope } from './scope.ts'
 import { logger } from './services/logger.ts'
 import { openWithHistory } from './utils/history.ts'
 import { t } from './utils/l10n.ts'
+import { getViewer } from './viewer.ts'
 
 /** Default click-to-open action id */
 const ACTION_VIEWER = 'viewer-open'
@@ -271,6 +272,11 @@ registerImplementation({
 	version: __VIEWER_VERSION__,
 	load: () => import('./mount.ts').then((module) => module.mount()),
 })
+
+// The service exists as soon as the library is loaded, so everything holding
+// a reference holds the same one whether or not a file has been opened yet.
+// It is an empty shell until the viewer is mounted.
+getViewer()
 
 export { getViewer, Viewer } from './viewer.ts'
 export type { ViewerAPI, ViewerEmits, ViewerOptions, ViewerProps } from './viewer.ts'
