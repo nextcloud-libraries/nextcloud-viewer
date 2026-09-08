@@ -397,7 +397,10 @@ describe('Viewer sidebar', () => {
 		await vm.open([f1], f1)
 		await wrapper.vm.$nextTick()
 
-		await wrapper.find('.nc-action-button-stub').trigger('click')
+		// By its label rather than by position: the actions around it change
+		const sidebar = wrapper.findAll('.nc-action-button-stub')
+			.find((button) => button.text().includes('Open sidebar'))
+		await sidebar!.trigger('click')
 
 		expect(emit).toHaveBeenCalledWith('viewer:sidebar:open', { source: f1.source })
 	})
