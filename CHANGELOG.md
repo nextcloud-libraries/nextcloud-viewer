@@ -6,6 +6,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.3
+
+### Fixed
+
+- Accept `@nextcloud/sharing` 1.x as a peer alongside 0.4. The server has moved
+  to 1.x, and pinning 0.4 made the package uninstallable there. The two
+  functions the viewer uses, `isPublicShare` and `getSharingToken`, are the same
+  in both.
+
 ## 2.0.0-beta.2
 
 Fixes found by reading the viewer this one replaced side by side with it.
