@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { createLibConfig } from '@nextcloud/vite-config'
+import injectCSS from 'vite-plugin-css-injected-by-js'
 
 import { readdirSync, readFileSync } from 'node:fs'
 import { po as poParser } from 'gettext-parser'
@@ -36,15 +37,15 @@ export default defineConfig((env) => {
 			// bundle the icon SFCs instead of externalizing them
 			exclude: [/^vue-material-design-icons\//],
 		},
-		// One stylesheet, imported by the entry, rather than one per chunk.
-		// Chunk CSS relies on the consuming bundler injecting it when the
-		// chunk loads, which is not something a library can count on: the
-		// lazily loaded viewer then renders unstyled.
-		inlineCSS: true,
+		// The styles are carried inside the javascript and injected as it
+		// runs, each chunk bringing its own. Emitting stylesheets instead
+		// leaves it to the consuming bundler to link a chunk's CSS when
+		// that chunk loads, which is not something a library can count on:
+		// in the server it did not happen, and the lazily loaded viewer
+		// rendered with none of its styles.
+		inlineCSS: false,
 		config: {
-			build: {
-				cssCodeSplit: false,
-			},
+			plugins: [injectCSS({ relativeCSSInjection: true })],
 		},
 
 		replace: {

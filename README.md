@@ -20,12 +20,6 @@ navigation, editing and sharing already wired up.
 npm install @nextcloud/viewer
 ```
 
-The viewer ships one stylesheet, which your app needs to import once:
-
-```ts
-import '@nextcloud/viewer/style'
-```
-
 ## Usage
 ### 🔍 Add your own file view
 
