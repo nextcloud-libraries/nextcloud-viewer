@@ -4,12 +4,14 @@
  */
 import type { IHandler } from '../lib/index.ts'
 
-import { File } from '@nextcloud/files'
+import { File, Permission } from '@nextcloud/files'
 import { scope } from '../lib/scope.ts'
 
 let idCounter = 1
 
 interface MakeFileOptions {
+	/** Defaults to everything; pass Permission.NONE for an unreadable file */
+	permissions?: number
 	id?: number
 	basename?: string
 	mime?: string
@@ -36,6 +38,9 @@ export function makeFile(options: MakeFileOptions = {}): File {
 		owner,
 		mtime: options.mtime ?? new Date('2024-01-01T00:00:00Z'),
 		size: options.size ?? 1024,
+		// A dav node reports whatever it was given, and a file nobody can
+		// read is not what these tests are about unless they say so
+		permissions: options.permissions ?? Permission.ALL,
 	})
 }
 

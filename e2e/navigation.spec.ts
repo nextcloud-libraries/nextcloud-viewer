@@ -7,7 +7,7 @@ import { ViewerPage } from './support/viewer.ts'
 
 // The order the playground lists them in, which is the order the viewer is
 // handed and the order it has to step through
-const IMAGES = ['photo.jpg', 'gradient.jpg', 'portrait.jpg', 'animation.gif']
+const IMAGES = ['photo.jpg', 'gradient.jpg', 'portrait.jpg', 'animation.gif', 'protected.jpg']
 
 test.describe('Viewer navigation', () => {
 	test('steps forward through the list and loops back to the first', async ({ page }) => {

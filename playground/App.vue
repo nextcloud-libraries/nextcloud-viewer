@@ -17,6 +17,8 @@ interface Fixture {
 	mime: string
 	/** Whether the viewer offers its editor for this one */
 	editable?: boolean
+	/** Whether the share this file came from forbids downloading it */
+	noDownload?: boolean
 	/**
 	 * Whether the server would have a preview for it. There is no previews
 	 * endpoint here, so this is what lets that path be exercised at all: the
@@ -36,6 +38,7 @@ const fixtures: Fixture[] = [
 	{ name: 'gradient.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'portrait.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'animation.gif', mime: 'image/gif' },
+	{ name: 'protected.jpg', mime: 'image/jpeg', noDownload: true },
 	{ name: 'video.mp4', mime: 'video/mp4' },
 	{ name: 'audio.mp3', mime: 'audio/mpeg' },
 ]
@@ -67,6 +70,7 @@ const nodes: IFile[] = fixtures.map((fixture, index) => new File({
 	attributes: {
 		hasPreview: fixture.hasPreview === true,
 		etag: `etag-${index + 1}`,
+		hideDownload: fixture.noDownload === true,
 	},
 }))
 

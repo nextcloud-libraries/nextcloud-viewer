@@ -4,6 +4,7 @@
  */
 import type { IFileAction as FileAction } from '@nextcloud/files'
 
+import { Permission } from '@nextcloud/files'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Capture every FileAction registered by the API package so we can inspect
@@ -171,6 +172,30 @@ describe('action gate', () => {
 
 		expect(action(ACTION_VIEWER)!.enabled!(ctx([folder]))).toBe(false)
 		expect(action(ACTION_VIEWER_MENU)!.enabled!(ctx([folder]))).toBe(false)
+	})
+
+	it('is not enabled for a file the user cannot read', () => {
+		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
+		const file = makeFile({ permissions: Permission.NONE })
+
+		expect(action(ACTION_VIEWER)!.enabled!(ctx([file]))).toBe(false)
+		expect(action(ACTION_VIEWER_MENU)!.enabled!(ctx([file]))).toBe(false)
+	})
+
+	it('is enabled for a file that is only readable, as deleted files are', () => {
+		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
+		// The trashbin reports its files as GD: readable and deletable
+		const file = makeFile({ permissions: Permission.READ | Permission.DELETE })
+
+		expect(action(ACTION_VIEWER)!.enabled!(ctx([file]))).toBe(true)
+	})
+
+	it('is not enabled when one of several files cannot be read', () => {
+		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
+		const readable = makeFile()
+		const other = makeFile({ permissions: Permission.NONE })
+
+		expect(action(ACTION_VIEWER)!.enabled!(ctx([readable, other]))).toBe(false)
 	})
 
 	it('is not enabled when no handler matches the file', () => {
