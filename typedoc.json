@@ -4,6 +4,7 @@
 	"out": "dist/doc",
 	"excludePrivate": true,
 	"navigationLinks": {
-		"GitHub": "https://github.com/nextcloud-libraries/nextcloud-viewer/"
+		"GitHub": "https://github.com/nextcloud-libraries/nextcloud-viewer/",
+		"Demo": "https://nextcloud-libraries.github.io/nextcloud-viewer/demo/"
 	}
 }

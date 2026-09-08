@@ -1,0 +1,10 @@
+/*!
+ * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+body {
+	margin: 0;
+	font-family: var(--font-face, system-ui, sans-serif);
+	color: var(--color-main-text, #222);
+	background: var(--color-main-background, #fff);
+}
