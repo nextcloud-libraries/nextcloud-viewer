@@ -55,6 +55,16 @@ describe('electing an implementation', () => {
 		expect(loaded).toEqual(['3.0.0'])
 	})
 
+	it('loads the highest of several copies of one major, once', async () => {
+		const loaded: string[] = []
+		registerImplementation({ version: '2.1.0', load: async () => void loaded.push('2.1.0') })
+		registerImplementation({ version: '2.2.0', load: async () => void loaded.push('2.2.0') })
+
+		await loadImplementation()
+		// Two apps on one major share a viewer rather than mounting two
+		expect(loaded).toEqual(['2.2.0'])
+	})
+
 	it('loads once however many callers ask', async () => {
 		const load = vi.fn().mockResolvedValue(undefined)
 		registerImplementation({ version: '2.0.0', load })
