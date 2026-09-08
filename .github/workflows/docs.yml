@@ -6,6 +6,9 @@ on:
   push:
     branches:
       - main
+  # So the docs can be rebuilt without pushing, e.g. the first time after
+  # Pages is enabled on the repository
+  workflow_dispatch:
 
 permissions:
   contents: read
