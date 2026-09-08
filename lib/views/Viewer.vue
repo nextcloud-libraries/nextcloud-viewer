@@ -542,7 +542,6 @@ const hasPrevious = computed(() => {
 
 const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 	logger.debug('Opening files', { files, file, options, handlerId })
-	loading.value = true
 
 	// Filter out any non-file files
 	files = files.filter((n) => n.type === FileType.File)
@@ -609,12 +608,23 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 		})
 	}
 
+	// Opening what is already open is not a new load. The Files app asks
+	// more than once — clicking a file, and again as the sidebar opens —
+	// and the handler keeps the file it already has, so nothing would tell
+	// us it had loaded a second time and the spinner would never go away.
+	const isSameFile = currentFile.value?.fileid === file.fileid
+		&& currentHandler.value?.id === handler.id
+		&& comparisonFile.value === undefined
+
 	comparisonFile.value = undefined
 	comparisonHandler.value = undefined
 	currentHandler.value = handler
 	currentFile.value = file
 	currentOptions.value = options ?? {} as ViewerOptions
-	pendingLoads.value = 1
+	if (!isSameFile) {
+		loading.value = true
+		pendingLoads.value = 1
+	}
 	// Open straight into edit mode when requested (e.g. from an `editing=true` URL).
 	editing.value = Boolean(options?.editing) && canEdit.value
 
@@ -1076,6 +1086,15 @@ watch(currentFile, async (newFile, oldFile) => {
 })
 
 onMounted(() => {
+	// TEMP DEBUG
+	;(window as unknown as { __vd: unknown }).__vd = () => ({
+		loading: loading.value,
+		pending: pendingLoads.value,
+		file: currentFile.value?.basename,
+		handler: currentHandler.value?.id,
+		error: errorString.value,
+	})
+
 	resizeObserver = new ResizeObserver(debounce(() => {
 		onViewerResize()
 	}, 100))

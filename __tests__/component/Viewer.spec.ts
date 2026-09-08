@@ -469,6 +469,40 @@ describe('Viewer loading gate', () => {
 		expect(renderedTags()).toContain('oca-viewer-image')
 	})
 
+	// Regression guard: the Files app opens the same file more than once —
+	// clicking it, and again as the sidebar opens. The handler keeps the file
+	// it already has and never says it loaded a second time, so treating that
+	// as a fresh load left the spinner up forever.
+	it('does not go back to loading when the same file is opened again', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+
+		// The handler reports it has loaded
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+	})
+
+	it('goes back to loading when a different file is opened', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		const f2 = makeFile({ mime: 'image/jpeg' })
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+
+		await vm.open([f1, f2], f2)
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+	})
+
 	it('mounts both handler elements in comparison mode', async () => {
 		const { vm, wrapper, renderedTags } = mountViewer([imageHandler()])
 		const f1 = makeFile({ mime: 'image/jpeg' })
