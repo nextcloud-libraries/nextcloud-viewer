@@ -208,10 +208,10 @@ in whatever order the user has it sorted, including a sort the viewer knows
 nothing about. Pass the list you are showing, not a list you have re-sorted.
 
 `openFolder()` is the exception, because it fetches the folder itself and a
-WebDAV reply has no order worth relying on. It sorts by name ascending, using
-the same helper the files list sorts with, which is what that list shows before
-anyone changes the sorting. There is no files list in that path to take an
-active sort from, so pass your own list to `open()` if the order matters.
+WebDAV reply has no order worth relying on. It asks the files list how the user
+has it sorted and sorts the folder the same way, so paging through it matches
+what the user would see in the list. A public share has no such setting, and
+neither does a request that fails: both fall back to names ascending.
 
 `ViewerOptions` lets you hook into navigation and paging:
 

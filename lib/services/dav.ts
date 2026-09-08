@@ -8,15 +8,16 @@ import type { FileStat, ResponseDataDetailed } from 'webdav'
 
 import { FileType, sortNodes } from '@nextcloud/files'
 import { getClient, getDefaultPropfind, resultToNode } from '@nextcloud/files/dav'
+import { getSortingConfig } from './sortingConfig.ts'
 
 export const client = getClient()
 
 /**
- * The list is ordered the way the Files app orders it. Callers that already
- * have a list pass it to `open()` and keep their own order; only `openFolder()`
- * builds the list here, and there is no files list to take an active sort from,
- * so this is the Files app default: names, ascending. Leaving the WebDAV order
- * would step through the files in whatever order the server happened to reply.
+ * The list is ordered the way the user has their files list ordered. Callers
+ * that already have a list pass it to `open()` and keep their own order; only
+ * `openFolder()` builds the list here, and it asks the files list how it is
+ * sorted rather than assuming. Leaving the WebDAV order would step through the
+ * files in whatever order the server happened to reply.
  *
  * @param folder - The folder whose file contents should be fetched
  */
@@ -31,5 +32,5 @@ export async function fetchFolderContent(folder: IFolder): Promise<IFile[]> {
 		.map((node) => resultToNode(node))
 		.filter((node) => node.type === FileType.File)
 
-	return sortNodes(files) as IFile[]
+	return sortNodes(files, await getSortingConfig()) as IFile[]
 }
