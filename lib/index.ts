@@ -6,7 +6,7 @@ import type { IFile, IFileAction, INode } from '@nextcloud/files'
 
 import FileSvg from '@mdi/svg/svg/file.svg?raw'
 import OpenInAppSvg from '@mdi/svg/svg/open-in-app.svg?raw'
-import { DefaultType, FileType, getFileActions, registerFileAction } from '@nextcloud/files'
+import { DefaultType, FileType, getFileActions, Permission, registerFileAction } from '@nextcloud/files'
 import { registerImplementation, scope } from './scope.ts'
 import { logger } from './services/logger.ts'
 import { openWithHistory } from './utils/history.ts'
@@ -85,6 +85,13 @@ export interface IHandler {
  */
 function countEnabledHandlers(nodes: INode[], min: number): boolean {
 	if (nodes.length === 0 || nodes.some((node) => node.type !== FileType.File)) {
+		return false
+	}
+
+	// Nothing to show for a file this user cannot read. Deleted files pass
+	// this: the trashbin reports them as readable, and previewing them is
+	// the point. A node that is not dav-backed always reports readable.
+	if (nodes.some((node) => (node.permissions & Permission.READ) === 0)) {
 		return false
 	}
 
