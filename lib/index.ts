@@ -77,6 +77,21 @@ export interface IHandler {
 }
 
 /**
+ * Whether the viewer can open the given nodes.
+ *
+ * Answers what clicking them would do without opening anything, for a
+ * caller that has to decide whether to offer the viewer at all — a
+ * "View" button in a sidebar, say. Only files are supported, folders
+ * never match, and a set of nodes matches when one handler takes all
+ * of them.
+ *
+ * @param nodes - The node, or nodes, to test the handlers against
+ */
+export function canView(nodes: INode | INode[]): boolean {
+	return countEnabledHandlers(Array.isArray(nodes) ? nodes : [nodes], 1)
+}
+
+/**
  * Whether at least `min` registered handlers can open the given nodes.
  * Only files are supported, folders never match.
  *
