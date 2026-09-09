@@ -6,6 +6,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.5
+
+### Fixed
+
+- Video and audio controls are translated again. The viewer this replaced handed
+  plyr its own translations and relabelled the speed menu once the controls
+  existed; the composable that replaced those components did neither, so every
+  control read in English in beta.1 through beta.4 whatever language the user
+  ran in.
+
+### Internal
+
+- `npm run check:size` fails the build if importing the package stops being
+  cheap. The entry is meant to cost the handler registration and nothing else,
+  and a single top-level import of a component quietly puts the whole viewer
+  back on every page of every consumer.
+- Dropped `camelcase` and the `@nextcloud/auth` peer dependency, left behind by
+  the `fileinfo` utilities that went in beta.4.
+
 ## 2.0.0-beta.4
 
 ### Fixed
