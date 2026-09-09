@@ -6,6 +6,69 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.7
+
+### Fixed
+
+- A handler whose `enabled()` throws no longer takes the Files actions menu and
+  `open()` down for every file on the page. It is logged and treated as not
+  matching, from every place that asks.
+- A `preload()` that throws synchronously, or returns no promise, no longer
+  makes `open()` reject: the clicked file shows and the preload is logged as
+  the failure it is.
+- `onEditingChange` fires when the viewer closes while editing. The watch ran
+  after `close()` had already dropped the options.
+- The error of a failed `open()` is dropped by the next `open()` that succeeds,
+  instead of staying up until that handler reports loaded.
+- The events a handler emits reach the viewer. `errored` arrives as a
+  `CustomEvent` whose detail holds the arguments, so its message was never
+  read and every handler error showed the generic text; `update:canSwipe`
+  lost its payload the same way and `update:editing` had no listener. A
+  handler reporting a string, an Error with no message, an object or nothing
+  at all now ends up as a sensible message, and only an explicit `false`
+  turns swiping off.
+- Swiping is off while zoomed in or while editing, not only when both.
+
+### Internal
+
+- Tests for the service every app calls, the entry, mounting, the handler
+  contract and the modal chrome. Statements 77% to 83%, `Viewer.vue` 80% to
+  91%.
+
+## 2.0.0-beta.6
+
+### Added
+
+- `canView(node)` and `canView(nodes)`: whether the viewer can open what it is
+  handed. Files only, never a node the user cannot read, and for several nodes
+  only when one handler takes all of them.
+- `open()` takes `enableSidebar: false` for a file the Files sidebar cannot
+  resolve, such as an old version served from the versions endpoint.
+- The image, video and audio handlers are registered by importing the package.
+  `registerDefaultHandlers()` stays exported and is a no-op after the first
+  call.
+
+### Changed
+
+- **Breaking**: the enabled preview providers are read from the
+  `core.previews.enabled_providers` capability, not from an initial state the
+  viewer app provided. Needs a server exposing it; on an older one no
+  preview-only mime is offered. `@nextcloud/initial-state` is no longer a peer
+  dependency.
+- The modal, document title, comparison header, alt text and editor label use
+  the node's display name, falling back to the basename.
+
+### Fixed
+
+- The published build no longer contains `?raw` imports only vite can resolve;
+  the icons are bundled. A build check fails if any build-time suffix survives
+  into `dist`.
+- Importing a handler module before the entry no longer hits the entry
+  mid-evaluation (`Cannot access '__vite_ssr_import_2__' before
+  initialization`). The registry lives in `lib/handlers.ts` now.
+- The entry carries only the six strings the file actions are named after, in
+  every locale; the rest of the catalog loads with the viewer. 214 kB to 28 kB.
+
 ## 2.0.0-beta.5
 
 ### Fixed
