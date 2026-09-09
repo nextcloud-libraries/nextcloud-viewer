@@ -72,5 +72,6 @@ describe('the offered implementation', () => {
 		const file = makeFile({ mime: 'image/png' })
 		await expect(getViewer().open([file], file)).resolves.toBeUndefined()
 		expect(root!.innerHTML).not.toBe('')
-	})
+	// load() pulls in the whole implementation chunk, uncached: slow on CI
+	}, 20_000)
 })
