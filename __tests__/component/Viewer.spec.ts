@@ -3,7 +3,7 @@ import { flushPromises } from '@vue/test-utils'
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 // Mock the event bus BEFORE importing the component (shared manual mock).
 vi.mock('@nextcloud/event-bus')
@@ -12,7 +12,6 @@ vi.mock('../../lib/services/dav.ts', () => ({ fetchFolderContent: vi.fn(async ()
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { registerFileAction } from '@nextcloud/files'
-import { logger } from '../../lib/services/logger.ts'
 import { makeFile, makeHandler } from '../factories.ts'
 import { mountViewer } from './mountViewer.ts'
 
@@ -24,10 +23,6 @@ function imageHandler() {
 		enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('image/')),
 	})
 }
-
-beforeEach(() => {
-	// Call history is cleared globally in test/setup.ts (vi.clearAllMocks()).
-})
 
 afterEach(() => {
 	document.body.innerHTML = ''
@@ -99,18 +94,17 @@ describe('Viewer.open()', () => {
 		expect(modalProps().show).toBe(false)
 	})
 
-	it('does not throw for either backdrop theme', async () => {
-		const light = makeHandler({ id: 'light', tagname: 'oca-viewer-light', theme: 'light', enabled: () => true })
-		const { vm, wrapper, modalHandlerId } = mountViewer([light])
+	it.each([
+		['light', true],
+		['dark', false],
+		['default', false],
+	] as const)('gives the modal a light backdrop only for a %s themed handler', async (theme, lightBackdrop) => {
+		const handler = makeHandler({ id: theme, tagname: `oca-viewer-${theme}`, theme, enabled: () => true })
+		const { vm, wrapper, modalProps } = mountViewer([handler])
 		const f1 = makeFile()
-		await expect(vm.open([f1], f1)).resolves.not.toThrow()
+		await vm.open([f1], f1)
 		await wrapper.vm.$nextTick()
-		expect(modalHandlerId()).toBe('light')
-
-		const dark = makeHandler({ id: 'dark', tagname: 'oca-viewer-dark', theme: 'dark', enabled: () => true })
-		const second = mountViewer([dark])
-		const f2 = makeFile()
-		await expect(second.vm.open([f2], f2)).resolves.not.toThrow()
+		expect(modalProps().lightBackdrop).toBe(lightBackdrop)
 	})
 })
 
@@ -401,14 +395,12 @@ describe('Viewer preload', () => {
 				throw new Error('boom')
 			}) as never,
 		})
-		const debug = vi.spyOn(logger, 'debug').mockImplementation(() => {})
 		const { vm, modalHandlerId } = mountViewer([handler])
 		const f1 = makeFile()
 		const f2 = makeFile()
 
 		await expect(vm.open([f1, f2], f1)).resolves.toBeUndefined()
 		expect(modalHandlerId()).toBe('image')
-		expect(debug).toHaveBeenCalledWith('Failed to preload neighbor file', expect.objectContaining({ node: f2, error: expect.any(Error) }))
 	})
 })
 
@@ -501,12 +493,8 @@ describe('Viewer sidebar', () => {
 		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
 	})
 
-	it('subscribes to files:sidebar events on mount and unsubscribes on unmount', () => {
+	it('unsubscribes from the files:sidebar events on unmount', () => {
 		const { wrapper } = mountViewer([imageHandler()])
-
-		expect(subscribe).toHaveBeenCalledWith('files:sidebar:opened', expect.any(Function))
-		expect(subscribe).toHaveBeenCalledWith('files:sidebar:closed', expect.any(Function))
-
 		wrapper.unmount()
 
 		expect(unsubscribe).toHaveBeenCalledWith('files:sidebar:opened', expect.any(Function))

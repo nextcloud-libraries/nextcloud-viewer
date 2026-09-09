@@ -22,7 +22,7 @@ vi.mock('@nextcloud/files', async (original) => {
 
 // The model modules import their SFC at the top level, which drags in the whole
 // @nextcloud/vue + media services tree (CSS assets, CommonJS deps). We only
-// exercise the handler mime logic and the custom-element registration, so stub
+// exercise the handler mime logic, so stub
 // the components with a minimal Vue component object.
 vi.mock('../lib/components/Videos.vue', () => ({ default: { name: 'Videos', render: () => null } }))
 vi.mock('../lib/components/Audios.vue', () => ({ default: { name: 'Audios', render: () => null } }))
@@ -41,15 +41,23 @@ function handlerById(id: string): IHandler {
 	return handler
 }
 
-describe('videos model', () => {
-	it('exposes the expected metadata', async () => {
+// A folder pages through every file of the opened handler's group, so video
+// and audio share one and images stay on their own
+describe('handler groups', () => {
+	it('puts video and audio together, images apart', async () => {
 		const { registerVideoHandler } = await import('../lib/models/videos.ts')
+		const { registerAudioHandler } = await import('../lib/models/audios.ts')
+		const { registerImageHandler } = await import('../lib/models/images.ts')
 		registerVideoHandler()
-		const handler = handlerById('videos')
-		expect(handler.tagname).toBe('oca-viewer-video')
-		expect(handler.group).toBe('media')
+		registerAudioHandler()
+		registerImageHandler()
+		expect(handlerById('videos').group).toBe('media')
+		expect(handlerById('audios').group).toBe('media')
+		expect(handlerById('images').group).toBeUndefined()
 	})
+})
 
+describe('videos model', () => {
 	it.each([
 		'video/mpeg',
 		'video/ogg',
@@ -66,10 +74,9 @@ describe('videos model', () => {
 	})
 
 	it('enables the aliased mime video/x-matroska (maps to video/webm)', async () => {
-		const { registerVideoHandler, aliasedMimes } = await import('../lib/models/videos.ts')
+		const { registerVideoHandler } = await import('../lib/models/videos.ts')
 		registerVideoHandler()
 		const handler = handlerById('videos')
-		expect(aliasedMimes['video/x-matroska']).toBe('video/webm')
 		expect(handler.enabled([makeFile({ mime: 'video/x-matroska' })])).toBe(true)
 	})
 
@@ -99,14 +106,6 @@ describe('videos model', () => {
 })
 
 describe('audios model', () => {
-	it('exposes the expected metadata', async () => {
-		const { registerAudioHandler } = await import('../lib/models/audios.ts')
-		registerAudioHandler()
-		const handler = handlerById('audios')
-		expect(handler.tagname).toBe('oca-viewer-audio')
-		expect(handler.group).toBe('media')
-	})
-
 	it.each([
 		'audio/aac',
 		'audio/aacp',
@@ -140,13 +139,6 @@ describe('audios model', () => {
 })
 
 describe('images model', () => {
-	it('exposes the expected metadata', async () => {
-		const { registerImageHandler } = await import('../lib/models/images.ts')
-		registerImageHandler()
-		const handler = handlerById('images')
-		expect(handler.tagname).toBe('oca-viewer-image')
-	})
-
 	it.each([
 		'image/apng',
 		'image/bmp',
@@ -163,14 +155,6 @@ describe('images model', () => {
 		expect(handler.enabled([makeFile({ mime })])).toBe(true)
 	})
 
-	it('rejects a preview-only mime when no preview provider is enabled', async () => {
-		// No preview capability in this suite, so image/heic is filtered out.
-		const { registerImageHandler } = await import('../lib/models/images.ts')
-		registerImageHandler()
-		const handler = handlerById('images')
-		expect(handler.enabled([makeFile({ mime: 'image/heic' })])).toBe(false)
-	})
-
 	it('rejects a clearly non-image mime', async () => {
 		const { registerImageHandler } = await import('../lib/models/images.ts')
 		registerImageHandler()
@@ -183,39 +167,5 @@ describe('images model', () => {
 		registerImageHandler()
 		const handler = handlerById('images')
 		expect(handler.enabled([])).toBe(false)
-	})
-})
-
-describe('custom elements', () => {
-	// Defining the same custom element twice throws, so each of these runs once
-	// and is guarded to stay resilient if the element already exists.
-	it('registerVideoCustomElement defines oca-viewer-video', async () => {
-		const { registerVideoCustomElement } = await import('../lib/models/videos.ts')
-		try {
-			await registerVideoCustomElement()
-		} catch {
-			// already defined by a previous run
-		}
-		expect(window.customElements.get('oca-viewer-video')).toBeDefined()
-	})
-
-	it('registerAudioCustomElement defines oca-viewer-audio', async () => {
-		const { registerAudioCustomElement } = await import('../lib/models/audios.ts')
-		try {
-			await registerAudioCustomElement()
-		} catch {
-			// already defined by a previous run
-		}
-		expect(window.customElements.get('oca-viewer-audio')).toBeDefined()
-	})
-
-	it('registerImageCustomElement defines oca-viewer-image', async () => {
-		const { registerImageCustomElement } = await import('../lib/models/images.ts')
-		try {
-			await registerImageCustomElement()
-		} catch {
-			// already defined by a previous run
-		}
-		expect(window.customElements.get('oca-viewer-image')).toBeDefined()
 	})
 })

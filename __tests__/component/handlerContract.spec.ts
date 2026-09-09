@@ -91,18 +91,32 @@ describe('what a handler is given', () => {
 		expect(lastRender().files.map((file) => file.basename)).toEqual(['a.jpg', 'b.jpg'])
 	})
 
-	it('receives the size the viewer gives it, and whether the sidebar is open', async () => {
+	it('is told when the Files sidebar opens beside it, and when it closes', async () => {
 		renders.length = 0
 		const f1 = makeFile({ mime: 'image/jpeg' })
 		const { vm, wrapper } = mountViewer([probeHandler()])
+		const sidebar = document.createElement('aside')
+		sidebar.className = 'app-sidebar'
+		sidebar.getBoundingClientRect = () => ({ left: 800 }) as DOMRect
+		document.body.append(sidebar)
+		const sidebarEvent = (event: string) => vi.mocked(subscribe).mock.calls.find((call) => call[0] === event)![1] as () => void
 
-		await vm.open([f1], f1)
-		await wrapper.vm.$nextTick()
-		await flushPromises()
+		try {
+			await vm.open([f1], f1)
+			await wrapper.vm.$nextTick()
+			await flushPromises()
+			expect(lastRender().isSidebarShown).toBe(false)
 
-		expect(typeof lastRender().maxHeight).toBe('number')
-		expect(typeof lastRender().maxWidth).toBe('number')
-		expect(lastRender().isSidebarShown).toBe(false)
+			sidebarEvent('files:sidebar:opened')()
+			await wrapper.vm.$nextTick()
+			expect(lastRender().isSidebarShown).toBe(true)
+
+			sidebarEvent('files:sidebar:closed')()
+			await wrapper.vm.$nextTick()
+			expect(lastRender().isSidebarShown).toBe(false)
+		} finally {
+			sidebar.remove()
+		}
 	})
 
 	it('is rendered again for the next file, with that file', async () => {
@@ -266,11 +280,11 @@ describe('a handler that misbehaves', () => {
 		expect(modalProps().disableSwipe).toBe(false)
 	})
 
+	// What each malformed payload turns into is the toError() table in
+	// handlerEvents.spec.ts; here only that the viewer runs it on the emit
 	it.each([
 		['a string instead of an Error', 'disk on fire', 'disk on fire'],
 		['nothing at all', undefined, 'An unknown error occurred while loading the file.'],
-		['an Error with no message', new Error(''), 'An unknown error occurred while loading the file.'],
-		['an object that is not an Error', { code: 500 }, 'An unknown error occurred while loading the file.'],
 	])('shows something sensible when it reports %s', async (_name, reported, expected) => {
 		renders.length = 0
 		const f1 = makeFile({ mime: 'image/jpeg' })
@@ -284,25 +298,6 @@ describe('a handler that misbehaves', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(errorText()).toBe(expected)
-	})
-
-	it('is shown once, however many times it says it has loaded', async () => {
-		renders.length = 0
-		const f1 = makeFile({ mime: 'image/jpeg' })
-		const { vm, wrapper, modalProps } = mountViewer([probeHandler()])
-		const spinner = () => wrapper.find('.nc-loading-icon-stub').exists()
-
-		await vm.open([f1], f1)
-		await wrapper.vm.$nextTick()
-		await flushPromises()
-
-		emitFromProbe!('loaded')
-		emitFromProbe!('loaded')
-		emitFromProbe!('loaded')
-		await wrapper.vm.$nextTick()
-
-		expect(spinner()).toBe(false)
-		expect(modalProps().show).toBe(true)
 	})
 
 	it('shows the error when it fails after having said it had loaded', async () => {

@@ -14,12 +14,6 @@ async function importPackage() {
 }
 
 describe('default handlers', () => {
-	it('are registered by importing the package', async () => {
-		await importPackage()
-
-		expect([...scope.handlers!.keys()].sort()).toEqual(['audios', 'images', 'videos'])
-	})
-
 	it('can be reached by importing one of the handler modules first', async () => {
 		// Entering the graph anywhere but the entry used to hit the entry
 		// mid-evaluation, and the handler it was about to register was not

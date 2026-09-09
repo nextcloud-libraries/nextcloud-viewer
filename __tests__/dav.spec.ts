@@ -30,18 +30,8 @@ function folder(): IFolder {
 describe('fetchFolderContent', () => {
 	it('orders the files the way the Files app does, not the way the server replied', async () => {
 		// WebDAV gives no ordering guarantee, so the reply order here is
-		// deliberately neither sorted nor reversed
-		getDirectoryContents.mockResolvedValue({
-			data: [{ basename: 'b.jpg' }, { basename: 'c.jpg' }, { basename: 'a.jpg' }],
-		})
-
-		const files = await fetchFolderContent(folder())
-		expect(files.map((file) => file.basename)).toEqual(['a.jpg', 'b.jpg', 'c.jpg'])
-	})
-
-	it('orders numbered names the way the files list reads them', async () => {
-		// The natural order the Files app uses: 2 before 10, which a plain
-		// string comparison gets backwards
+		// deliberately neither sorted nor reversed. Natural order (2 before
+		// 10) is the Files comparator's, not a plain string sort
 		getDirectoryContents.mockResolvedValue({
 			data: [{ basename: 'img10.jpg' }, { basename: 'img2.jpg' }, { basename: 'img1.jpg' }],
 		})

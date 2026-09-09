@@ -10,7 +10,7 @@ import { ViewerPage } from './support/viewer.ts'
 const IMAGES = ['photo.jpg', 'gradient.jpg', 'portrait.jpg', 'animation.gif', 'protected.jpg']
 
 test.describe('Viewer navigation', () => {
-	test('steps forward through the list and loops back to the first', async ({ page }) => {
+	test('steps through the list and loops around at both ends', async ({ page }) => {
 		const viewer = new ViewerPage(page)
 		await viewer.open('photo.jpg')
 		await viewer.waitForOpen()
@@ -25,12 +25,11 @@ test.describe('Viewer navigation', () => {
 			await viewer.waitForOpen()
 			expect(await viewer.currentName()).toBe(image)
 		}
-	})
 
-	test('steps backward from the first file to the last', async ({ page }) => {
-		const viewer = new ViewerPage(page)
-		await viewer.open('photo.jpg')
+		// Past the last file is the first again, and back past it the last
+		await viewer.next()
 		await viewer.waitForOpen()
+		expect(await viewer.currentName()).toBe(IMAGES[0])
 
 		await viewer.previous()
 		await viewer.waitForOpen()

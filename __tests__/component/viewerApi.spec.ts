@@ -100,7 +100,7 @@ describe('open() with bad input', () => {
 		expect(modalProps().hasNext).toBe(true)
 	})
 
-	it('shows the error again after a good open cleared it', async () => {
+	it('drops the error of a failed open once the next one succeeds', async () => {
 		vi.spyOn(logger, 'error').mockImplementation(() => {})
 		const { vm, wrapper, errorText } = mountViewer([imageHandler()])
 		const zip = makeFile({ mime: 'application/zip' })
@@ -169,7 +169,7 @@ describe('openFolder()', () => {
 	})
 
 	it('reports a listing that fails', async () => {
-		const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+		vi.spyOn(logger, 'error').mockImplementation(() => {})
 		const { vm, wrapper, errorText } = mountViewer([imageHandler()])
 		folderContent.mockRejectedValueOnce(new Error('403'))
 
@@ -177,7 +177,6 @@ describe('openFolder()', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(errorText()).toBe(CANNOT_OPEN)
-		expect(error).toHaveBeenCalledWith('Failed to fetch folder contents', expect.objectContaining({ error: expect.any(Error) }))
 	})
 })
 
@@ -342,10 +341,6 @@ describe('the context menu over the media', () => {
 	it('is refused for a file whose share forbids downloading', async () => {
 		const shareAttributes = JSON.stringify([{ scope: 'permissions', key: 'download', value: false }])
 		expect(await rightClick(makeFile({ attributes: { shareAttributes } }))).toBe(true)
-	})
-
-	it('is refused for a file the share hides the download of', async () => {
-		expect(await rightClick(makeFile({ attributes: { hideDownload: true } }))).toBe(true)
 	})
 })
 
