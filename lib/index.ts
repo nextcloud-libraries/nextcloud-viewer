@@ -10,7 +10,7 @@ import { DefaultType, FileType, getFileActions, Permission, registerFileAction }
 import { registerImplementation, scope } from './scope.ts'
 import { logger } from './services/logger.ts'
 import { openWithHistory } from './utils/history.ts'
-import { t } from './utils/l10n.ts'
+import { loadTranslations, t } from './utils/l10n.ts'
 import { getViewer } from './viewer.ts'
 
 /** Default click-to-open action id */
@@ -277,7 +277,14 @@ function validateCustomElementName(tagname: string): void {
 // once something actually opens a file.
 registerImplementation({
 	version: __VIEWER_VERSION__,
-	load: () => import('./mount.ts').then((module) => module.mount()),
+	// The catalog first: modules of the viewer translate strings as they are
+	// evaluated, not only as they render, so it has to be in before the first
+	// of them runs.
+	load: async () => {
+		await loadTranslations()
+		const { mount } = await import('./mount.ts')
+		return mount()
+	},
 })
 
 // The service exists as soon as the library is loaded, so everything holding

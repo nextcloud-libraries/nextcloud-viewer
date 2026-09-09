@@ -22,10 +22,10 @@ import { readFileSync } from 'node:fs'
 import { dirname, relative, resolve } from 'node:path'
 
 /** What the entry may cost, gzipped, before anyone has opened a file */
-const BUDGET_GZIP = 40 * 1024
+const BUDGET_GZIP = 10 * 1024
 
 /** Chunks that must only ever be reached through a dynamic import */
-const MUST_BE_LAZY = ['mount', 'Images', 'Videos', 'Audios', 'ImageEditor', 'usePlyrPlayer']
+const MUST_BE_LAZY = ['mount', 'Images', 'Videos', 'Audios', 'ImageEditor', 'usePlyrPlayer', 'translations']
 
 const ENTRY = 'dist/index.mjs'
 
