@@ -21,6 +21,8 @@ interface MakeFileOptions {
 	root?: string
 	/** What the server calls the file, when that differs from its name */
 	displayname?: string
+	/** Extra dav attributes, such as what a share allows */
+	attributes?: Record<string, unknown>
 }
 
 /**
@@ -44,6 +46,7 @@ export function makeFile(options: MakeFileOptions = {}): File {
 		// read is not what these tests are about unless they say so
 		permissions: options.permissions ?? Permission.ALL,
 		displayname: options.displayname,
+		attributes: options.attributes,
 	})
 }
 

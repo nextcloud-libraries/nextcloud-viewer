@@ -2,8 +2,10 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import type { VueWrapper } from '@vue/test-utils'
+
 import { flushPromises } from '@vue/test-utils'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 
 vi.mock('@nextcloud/event-bus')
@@ -288,5 +290,134 @@ describe('the view and folder options', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(enabled).toHaveBeenCalledWith(expect.objectContaining({ nodes: [file], view, folder }))
+	})
+})
+
+describe('clicking beside the media', () => {
+	it('closes the viewer', async () => {
+		const onClose = vi.fn()
+		const { vm, wrapper, modalExists } = mountViewer([imageHandler()])
+		const file = makeFile()
+
+		await vm.open([file], file, { onClose })
+		await flushPromises()
+
+		await wrapper.find('.modal-container__content').trigger('click')
+
+		expect(onClose).toHaveBeenCalledTimes(1)
+		expect(modalExists()).toBe(false)
+	})
+
+	it('does not close it for a click on the media itself', async () => {
+		const onClose = vi.fn()
+		const { vm, wrapper, modalExists } = mountViewer([imageHandler()])
+		const file = makeFile()
+
+		await vm.open([file], file, { onClose })
+		await flushPromises()
+
+		// The click lands on the handler element, and bubbles up through the content
+		await wrapper.find('oca-viewer-image').trigger('click')
+
+		expect(onClose).not.toHaveBeenCalled()
+		expect(modalExists()).toBe(true)
+	})
+})
+
+describe('the context menu over the media', () => {
+	async function rightClick(file: ReturnType<typeof makeFile>) {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		await vm.open([file], file)
+		await flushPromises()
+
+		const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
+		wrapper.find('oca-viewer-image').element.dispatchEvent(event)
+		return event.defaultPrevented
+	}
+
+	it('is left to the browser for a file that may be downloaded', async () => {
+		expect(await rightClick(makeFile())).toBe(false)
+	})
+
+	it('is refused for a file whose share forbids downloading', async () => {
+		const shareAttributes = JSON.stringify([{ scope: 'permissions', key: 'download', value: false }])
+		expect(await rightClick(makeFile({ attributes: { shareAttributes } }))).toBe(true)
+	})
+
+	it('is refused for a file the share hides the download of', async () => {
+		expect(await rightClick(makeFile({ attributes: { hideDownload: true } }))).toBe(true)
+	})
+})
+
+describe('full screen', () => {
+	// jsdom has no Fullscreen API: fake the two calls and the element they toggle
+	let fullscreenElement: Element | null = null
+	const requestFullscreen = vi.fn(async () => {
+		fullscreenElement = document.documentElement
+		document.dispatchEvent(new Event('fullscreenchange'))
+	})
+	const exitFullscreen = vi.fn(async () => {
+		fullscreenElement = null
+		document.dispatchEvent(new Event('fullscreenchange'))
+	})
+
+	beforeEach(() => {
+		fullscreenElement = null
+		Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => fullscreenElement })
+		document.documentElement.requestFullscreen = requestFullscreen
+		document.exitFullscreen = exitFullscreen
+	})
+
+	const fullscreenButton = (wrapper: VueWrapper) => wrapper
+		.findAll('.nc-action-button-stub')
+		.find((button) => /full screen/i.test(button.text()))!
+
+	it('puts the whole page full screen from the action, and offers the way back', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+		expect(fullscreenButton(wrapper).text()).toBe('Full screen')
+
+		await fullscreenButton(wrapper).trigger('click')
+		await flushPromises()
+
+		expect(requestFullscreen).toHaveBeenCalledTimes(1)
+		expect(fullscreenButton(wrapper).text()).toBe('Exit full screen')
+
+		await fullscreenButton(wrapper).trigger('click')
+		await flushPromises()
+
+		expect(exitFullscreen).toHaveBeenCalledTimes(1)
+		expect(fullscreenButton(wrapper).text()).toBe('Full screen')
+	})
+
+	it('follows the browser when the user leaves full screen with Escape', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+		await fullscreenButton(wrapper).trigger('click')
+		await flushPromises()
+
+		fullscreenElement = null
+		document.dispatchEvent(new Event('fullscreenchange'))
+		await wrapper.vm.$nextTick()
+
+		expect(fullscreenButton(wrapper).text()).toBe('Full screen')
+	})
+
+	it('leaves full screen when the viewer closes', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+		await fullscreenButton(wrapper).trigger('click')
+		await flushPromises()
+
+		vm.close()
+		await flushPromises()
+
+		expect(exitFullscreen).toHaveBeenCalledTimes(1)
 	})
 })
