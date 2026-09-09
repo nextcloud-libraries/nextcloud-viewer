@@ -23,8 +23,11 @@ declare global {
 	/** This package's version, replaced at build time. */
 	const __VIEWER_VERSION__: string
 
-	/** The translations bundled into the build, replaced at build time. */
-	const __TRANSLATIONS__: { locale: string, json: object }[]
+	/** Every string of the library in every locale, replaced at build time. */
+	const __TRANSLATIONS__: import('./utils/l10n.ts').Catalog[]
+
+	/** Only the strings the entry itself shows, replaced at build time. */
+	const __TRANSLATIONS_EAGER__: import('./utils/l10n.ts').Catalog[]
 
 	interface Window {
 		OCP?: {

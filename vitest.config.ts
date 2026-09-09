@@ -22,8 +22,8 @@ export default async (env) => {
 			include: ['__tests__/**/*.spec.ts'],
 			coverage: {
 				include: ['lib/**'],
-				// Translation bootstrap has no testable logic
-				exclude: ['lib/utils/l10n.ts'],
+				// Nothing but the catalog vite substitutes into it
+				exclude: ['lib/utils/translations.ts'],
 				reporter: ['lcov', 'text'],
 			},
 		} as UserConfig,

@@ -11,6 +11,7 @@ export default defineConfig({
 	define: {
 		// No bundled translations while serving the playground
 		__TRANSLATIONS__: '[]',
+		__TRANSLATIONS_EAGER__: '[]',
 		// The version this copy would offer as a candidate
 		__VIEWER_VERSION__: '"0.0.0-playground"',
 	},

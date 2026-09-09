@@ -2,13 +2,15 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import type { GettextTranslationBundle } from '@nextcloud/l10n/gettext'
+
 import { getGettextBuilder } from '@nextcloud/l10n/gettext'
 
-const gtBuilder = getGettextBuilder()
-	.detectLocale()
-
-// @ts-expect-error __TRANSLATIONS__ is replaced by vite
-__TRANSLATIONS__.map((data) => gtBuilder.addTranslation(data.locale, data.json))
+/** One locale's parsed po file, as gettext-parser returns it */
+export interface Catalog {
+	locale: string
+	json: GettextTranslationBundle
+}
 
 interface Gettext {
 	/**
@@ -30,7 +32,38 @@ interface Gettext {
 	ngettext(singular: string, plural: string, count: number, placeholders?: Record<string, string | number>): string
 }
 
-const gt = gtBuilder.build() as Gettext
+/**
+ * Build a gettext instance for the user's locale out of the given catalogs.
+ *
+ * @param catalogs - The parsed po files to translate from
+ */
+function build(catalogs: Catalog[]): Gettext {
+	const builder = getGettextBuilder().detectLocale()
+	catalogs.forEach(({ locale, json }) => builder.addTranslation(locale, json))
+	return builder.build() as Gettext
+}
 
-export const n = gt.ngettext.bind(gt) as typeof gt.ngettext
-export const t = gt.gettext.bind(gt) as typeof gt.gettext
+// Importing the package only ever shows the handful of strings its file
+// actions are named after, so that is all it carries. Anything else
+// translates to itself until the full catalog is in.
+let gt = build(__TRANSLATIONS_EAGER__)
+
+let loading: Promise<void> | undefined
+
+/**
+ * Load the rest of the catalog and translate from it from then on.
+ *
+ * Called by the viewer as it mounts, before anything renders. Repeated
+ * calls share the one fetch.
+ */
+export function loadTranslations(): Promise<void> {
+	loading ??= import('./translations.ts').then(({ translations }) => {
+		gt = build(translations)
+	})
+	return loading
+}
+
+// Bound through the current instance rather than to it, so that strings
+// looked up after the full catalog lands come out translated.
+export const t: Gettext['gettext'] = (original, placeholders) => gt.gettext(original, placeholders)
+export const n: Gettext['ngettext'] = (singular, plural, count, placeholders) => gt.ngettext(singular, plural, count, placeholders)
