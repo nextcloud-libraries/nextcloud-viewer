@@ -2,6 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import { flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { scope } from '../lib/scope.ts'
 import { version } from '../package.json'
@@ -72,6 +73,12 @@ describe('the offered implementation', () => {
 		const file = makeFile({ mime: 'image/png' })
 		await expect(getViewer().open([file], file)).resolves.toBeUndefined()
 		expect(root!.innerHTML).not.toBe('')
+
+		// The real modal traps focus once its enter transition ends: wait for that
+		// and close, so nothing of it fires after the document is torn down
+		await vi.waitFor(() => expect(document.activeElement).not.toBe(document.body), { timeout: 5000 })
+		getViewer().close()
+		await flushPromises()
 	// load() pulls in the whole implementation chunk, uncached: slow on CI
 	}, 20_000)
 })
