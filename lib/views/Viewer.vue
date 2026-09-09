@@ -761,8 +761,7 @@ function onLoad() {
  * Handle error while loading the current file
  * This is emitted by the handler web component
  *
- * @param error The error that occurred
- * @param reported
+ * @param reported What the handler emitted: the event, or the error itself
  */
 function onError(reported: unknown) {
 	const error = toError(emittedValue(reported), t('An unknown error occurred while loading the file.'))
