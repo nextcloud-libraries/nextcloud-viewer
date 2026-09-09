@@ -55,7 +55,7 @@
 
 			<!-- Open sidebar for the current file -->
 			<NcActionButton
-				v-if="!isSidebarShown && !!currentFile"
+				v-if="!isSidebarShown && !!currentFile && canOpenSidebar"
 				closeAfterClick
 				@click="showSidebar">
 				<template #icon>
@@ -283,11 +283,16 @@ const canEdit = computed(() => currentHandler.value?.canEdit === true
 	&& ((currentFile.value?.permissions ?? Permission.NONE) & Permission.UPDATE) !== 0)
 const currentOptions = ref<ViewerOptions>({
 	canLoop: true,
+	enableSidebar: true,
 	onClose: () => {},
 	onNext: () => {},
 	onPrev: () => {},
 	loadMore: () => Promise.resolve([]),
 })
+
+// The sidebar resolves a file by its dav source, so it can only be offered
+// for a file the Files app can find there.
+const canOpenSidebar = computed(() => currentOptions.value.enableSidebar !== false)
 
 // Comparison context (compare API)
 const comparisonFile = ref<IFile>()

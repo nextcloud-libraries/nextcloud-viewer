@@ -137,6 +137,13 @@ export type ViewerOptions = {
 	canLoop?: boolean
 
 	/**
+	 * Whether to offer the Files sidebar for the open file. Defaults to true.
+	 * Turn it off for a file the sidebar cannot resolve, such as an old
+	 * version of a file, which is served from its own dav endpoint.
+	 */
+	enableSidebar?: boolean
+
+	/**
 	 * The files view the viewer was opened from. Forwarded to the file actions
 	 * rendered inside the viewer (download, delete, details, …) so they can run
 	 * with the same context as in the files list.
@@ -155,6 +162,7 @@ const defaultViewerOptions: ViewerOptions = {
 	onNext: () => {},
 	onClose: () => {},
 	canLoop: true,
+	enableSidebar: true,
 }
 
 export interface ViewerAPI {

@@ -316,6 +316,30 @@ describe('Viewer action submenu', () => {
 	})
 })
 
+describe('Viewer sidebar', () => {
+	const sidebarButton = (wrapper: ReturnType<typeof mountViewer>['wrapper']) => wrapper.findAll('.nc-action-button-stub').find((button) => button.text().includes('Open sidebar'))
+
+	it('offers the sidebar for an ordinary file', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const f1 = makeFile({ mime: 'image/jpeg' })
+
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+
+		expect(sidebarButton(wrapper)).toBeTruthy()
+	})
+
+	it('does not offer it for a file the sidebar cannot resolve', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const version = makeFile({ mime: 'image/jpeg' })
+
+		await vm.open([version], version, { enableSidebar: false })
+		await wrapper.vm.$nextTick()
+
+		expect(sidebarButton(wrapper)).toBeUndefined()
+	})
+})
+
 describe('Viewer loadMore', () => {
 	it('appends files returned by loadMore when reaching the last item', async () => {
 		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
