@@ -13,7 +13,7 @@
 		:closeButtonOutside="true"
 		:dark="true"
 		:data-handler="currentHandler?.id"
-		:disableSwipe="!canSwipe && editing"
+		:disableSwipe="!canSwipe || editing"
 		:enableSlideshow="!isComparing && (hasPrevious || hasNext)"
 		:hasNext="!isComparing && hasNext"
 		:hasPrevious="!isComparing && hasPrevious"
@@ -161,7 +161,8 @@
 			v-else-if="currentFile"
 			v-show="!loading && !errorString"
 			:key="`${currentFile.fileid}-${reloadKey}`"
-			v-model:can-swipe="canSwipe"
+			ref="handlerElement"
+			:can-swipe="canSwipe"
 			:file="currentFile"
 			:files="currentFileList"
 			:is-sidebar-shown="isSidebarShown"
@@ -230,6 +231,7 @@ import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
 import { canDownload } from '../utils/canDownload.ts'
 import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
+import { emittedValue, toError } from '../utils/handlerEvents.ts'
 import { t } from '../utils/l10n.ts'
 import { renameFile } from '../utils/rename.ts'
 
@@ -754,12 +756,52 @@ function onLoad() {
  * This is emitted by the handler web component
  *
  * @param error The error that occurred
+ * @param reported
  */
-function onError(error: Error) {
+function onError(reported: unknown) {
+	const error = toError(emittedValue(reported), t('An unknown error occurred while loading the file.'))
 	logger.error('Error while loading file in viewer', { error })
 	loading.value = false
 	pendingLoads.value = 0
-	errorString.value = error.message || t('An unknown error occurred while loading the file.')
+	errorString.value = error.message
+}
+
+// `update:canSwipe` and `update:editing` are bound by hand rather than with
+// v-on. A handler is a custom element, so its emits leave as DOM events under
+// the name it declared, while v-on hyphenates the listener it is given
+// (`update:canSwipe` becomes `update:can-swipe`) and then matches nothing.
+const handlerElement = useTemplateRef<HTMLElement>('handlerElement')
+
+watch(handlerElement, (element, previous) => {
+	if (previous) {
+		previous.removeEventListener('update:canSwipe', onCanSwipe)
+		previous.removeEventListener('update:editing', onHandlerEditing)
+	}
+	if (element) {
+		element.addEventListener('update:canSwipe', onCanSwipe)
+		element.addEventListener('update:editing', onHandlerEditing)
+	}
+})
+
+/**
+ * A handler reporting whether the viewer may swipe to the next file. Handlers
+ * with their own gestures, such as the video controls, turn it off.
+ *
+ * @param reported - What the handler emitted
+ */
+function onCanSwipe(reported: unknown) {
+	// Anything but an explicit false leaves swiping on, so a handler emitting
+	// nothing cannot trap the user on one file.
+	canSwipe.value = emittedValue<boolean>(reported) !== false
+}
+
+/**
+ * A handler reporting that it left, or entered, editing mode by itself.
+ *
+ * @param reported - What the handler emitted
+ */
+function onHandlerEditing(reported: unknown) {
+	setEditing(emittedValue<boolean>(reported) === true)
 }
 
 /**
