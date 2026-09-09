@@ -265,14 +265,29 @@ The `OCA.Viewer` global is gone. Everything is imported from the
 instead, and the viewer works with `@nextcloud/files` nodes rather than the
 `fileinfo` objects and path strings it used to take.
 
-| Before                                          | Now                                                          |
-| ----------------------------------------------- | ------------------------------------------------------------ |
-| `OCA.Viewer.open({ path })`                     | `getViewer().openFolder(folder, file)`                       |
-| `OCA.Viewer.open({ path, list })`               | `getViewer().open(nodes, file)`                              |
-| `OCA.Viewer.open({ fileInfo, list })`           | `getViewer().open(nodes, file)`                              |
-| `OCA.Viewer.close()`                            | `getViewer().close()`                                        |
-| `OCA.Viewer.registerHandler({ component })`     | `registerHandler({ tagname })`, see above                    |
-| `\OCP\Util::addScript` for the registration      | `\OCP\Util::addInitScript`                                    |
+| Before                                            | Now                                                            |
+| ------------------------------------------------- | -------------------------------------------------------------- |
+| `OCA.Viewer.open({ path })`                       | `getViewer().openFolder(folder, file)`                         |
+| `OCA.Viewer.open({ path, list })`                 | `getViewer().open(nodes, file)`                                |
+| `OCA.Viewer.open({ fileInfo, list })`             | `getViewer().open(nodes, file)`                                |
+| `OCA.Viewer.openWith(id, { … })`                  | `getViewer().open(nodes, file, options, id)`                   |
+| `OCA.Viewer.compare(fileInfo1, fileInfo2)`        | `getViewer().compare(node1, node2)`                            |
+| `OCA.Viewer.close()`                              | `getViewer().close()`                                          |
+| `OCA.Viewer.mimetypes.includes(node.mime)`        | `canView(node)`                                                |
+| `OCA.Viewer.mimetypesCompare.includes(node.mime)` | `canView(node)`                                                |
+| `OCA.Viewer.availableHandlers`                    | `getHandlers()`, or `canView(node)` to test one file           |
+| `OCA.Viewer.registerHandler({ component })`       | `registerHandler({ tagname })`, see above                      |
+| `canCompare: true` on a handler                   | nothing, any handler can be compared                           |
+| `\OCP\Util::addScript` for the registration        | `\OCP\Util::addInitScript`                                      |
+
+Inside a handler, what used to be read off the global comes in as props:
+
+| Before                     | Now                                                     |
+| -------------------------- | ------------------------------------------------------- |
+| `OCA.Viewer.file`          | the `file` prop                                         |
+| `OCA.Viewer.list`          | the `files` prop                                        |
+| `OCA.Viewer.enableSidebar` | the `isSidebarShown` prop                               |
+| `OCA.Viewer.loadMore`      | no equivalent, the viewer calls it and handles the list |
 
 Two changes are worth calling out because they are not a rename:
 
