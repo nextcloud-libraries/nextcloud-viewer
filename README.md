@@ -21,6 +21,17 @@ npm install @nextcloud/viewer
 ```
 
 ## Usage
+
+This package covers two independent needs. Most apps only have one:
+
+- **Rendering your own file type in the viewer** — [register a handler](#-add-your-own-file-view)
+  so files of your mimetype open in the viewer instead of downloading.
+- **Opening the viewer from your own code** — [call `getViewer()`](#-open-the-viewer-programmatically),
+  e.g. to open an image from a dashboard widget or a search result.
+
+Registering a handler does not require you to also open the viewer yourself, and
+opening the viewer does not require registering a handler.
+
 ### 🔍 Add your own file view
 
 If you want to make your app compatible with this app, you can register your own
@@ -148,6 +159,22 @@ The full handler shape (see the `IHandler` interface):
 | `preload`       | `(node: File) => Promise<void>`       | no       | Preload data for neighbouring files                                |
 | `theme`         | `'dark' \| 'light' \| 'default'`      | no       | Viewer modal theme                                                 |
 
+Gotchas:
+
+- `tagname` must be lowercase, contain a hyphen, and have no leading, trailing
+  or consecutive hyphens (e.g. `my-app-viewer`). An invalid one throws.
+- `id` must be unique **across every app on the page**, not just your own —
+  it is not namespaced for you. A collision does not throw: the second
+  registration is silently dropped with a console warning, so pick something
+  specific to your app (`myapp-image`, not `image`).
+- Registering after the viewer has already read the handler list is not an
+  error either — the handler just never appears in the "Open with …" menu.
+  See [step 3](#3-load-your-registration-before-the-viewer) below for why
+  that means an init script.
+- `registerImplementation` is exported alongside `registerHandler` but is not
+  part of this API — it is what this package calls on itself to offer as the
+  page's viewer. Apps register handlers, they don't call this.
+
 #### 3. Load your registration before the viewer
 
 The handler must be registered **before** the viewer initializes. Load your
@@ -173,6 +200,14 @@ See [how a page ends up with one viewer](#-how-a-page-ends-up-with-one-viewer)
 for what happens between those two sentences.
 
 ### 🚀 Open the viewer programmatically
+
+If you are not registering a handler, no server-side setup is needed. A plain
+`import { getViewer } from '@nextcloud/viewer'` in your regular bundle is enough —
+no `\OCP\Util::addInitScript` required, the server always ships a copy of its own.
+
+Only call `open()` in response to an actual user interaction, not eagerly at
+import or mount time — see [how a page ends up with one
+viewer](#-how-a-page-ends-up-with-one-viewer) for why that matters.
 
 Use the public `getViewer()` API to open the viewer from your own code. It returns
 a shared `Viewer` instance:
@@ -294,6 +329,13 @@ Copies within a major are compatible, so the newest simply wins and nothing is
 said about it. Copies from **different majors** are worth a word: the library
 warns in the console, naming what it found and which one will run. Only one of
 them can, and the apps that pinned the other expect behaviour it may not have.
+
+The election happens once, on the first call to `open()`, `openFolder()` or
+`compare()` — whichever candidate is newest **at that moment** wins, and every
+handler registration script on the page runs synchronously during page load, so
+by the time a user can click anything, every candidate is already in. Calling
+`open()` yourself before that point, e.g. eagerly at import or mount, can elect
+a viewer before every app has had the chance to register its handlers.
 
 The entry is kept small on purpose, and `npm run check:size` fails the build if
 that stops being true: it walks what the entry reaches without a dynamic import
