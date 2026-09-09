@@ -48,7 +48,8 @@
 		"test:e2e": "playwright test",
 		"test:watch": "vitest watch",
 		"typecheck": "vue-tsc --noEmit -p tsconfig.check.json",
-		"watch": "vite --mode development build --watch"
+		"watch": "vite --mode development build --watch",
+		"check:imports": "node build/check-published-imports.mjs"
 	},
 	"dependencies": {
 		"@mdi/svg": "^7.4.47",
