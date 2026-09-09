@@ -5,7 +5,7 @@
 <template>
 	<NcImageEditor
 		:src="file.source"
-		:label="file.basename"
+		:label="file.displayname"
 		:exportOptions="exportOptions"
 		:saving="saving"
 		class="viewer__image-editor"

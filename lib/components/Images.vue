@@ -131,7 +131,7 @@ const previewPath = computed(() => getPreviewIfAny(props.file))
 
 const zoomHeight = computed(() => Math.round(height.value * zoomRatio.value))
 const zoomWidth = computed(() => Math.round(width.value * zoomRatio.value))
-const alt = computed(() => props.file.basename)
+const alt = computed(() => props.file.displayname)
 
 const imgStyle = computed(() => {
 	if (zoomRatio.value === 1) {

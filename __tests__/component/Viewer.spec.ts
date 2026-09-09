@@ -46,6 +46,17 @@ describe('Viewer.open()', () => {
 		expect(modalProps().show).toBe(true)
 	})
 
+	it('titles the modal with the display name when the server gives one', async () => {
+		const { vm, wrapper, modalName } = mountViewer([imageHandler()])
+		// A version of a file is served under its version id but reads as a date
+		const version = makeFile({ basename: '1737542400', mime: 'image/jpeg', displayname: '22 January 2025, 11:20:00' })
+
+		await vm.open([version], version)
+		await wrapper.vm.$nextTick()
+
+		expect(modalName()).toBe('22 January 2025, 11:20:00')
+	})
+
 	it('filters currentFileList to files of the same handler group', async () => {
 		const pdfHandler = makeHandler({
 			id: 'pdf',

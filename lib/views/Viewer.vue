@@ -490,11 +490,11 @@ watch(editing, (value) => {
 const modalName = computed(() => {
 	if (isComparing.value) {
 		return t('Comparing {file1} and {file2}', {
-			file1: currentFile.value?.basename ?? '',
-			file2: comparisonFile.value?.basename ?? '',
+			file1: currentFile.value?.displayname ?? '',
+			file2: comparisonFile.value?.displayname ?? '',
 		})
 	}
-	return currentFile.value?.basename || ''
+	return currentFile.value?.displayname || ''
 })
 
 const hasNext = computed(() => {
@@ -1074,7 +1074,7 @@ watch(currentFile, async (newFile, oldFile) => {
 	openedSubmenu.value = null
 	// Here rather than on open, so paging to the next file retitles the page too
 	if (newFile) {
-		setViewerTitle(newFile.basename)
+		setViewerTitle(newFile.displayname)
 	}
 	if (newFile && !oldFile) {
 		await nextTick()
