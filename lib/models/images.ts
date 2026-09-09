@@ -3,13 +3,21 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import { loadState } from '@nextcloud/initial-state'
+import { getCapabilities } from '@nextcloud/capabilities'
 import { defineCustomElement } from 'vue'
 import { registerHandler } from '../index.ts'
 import { logger } from '../services/logger.ts'
 import { t } from '../utils/l10n.ts'
 
-const enabledPreviewProviders = loadState<string[]>('viewer', 'enabled_preview_providers', [])
+interface PreviewCapabilities {
+	core?: {
+		previews?: {
+			enabled_providers?: string[]
+		}
+	}
+}
+
+const enabledPreviewProviders = (getCapabilities() as PreviewCapabilities).core?.previews?.enabled_providers ?? []
 
 /**
  * Those mimes needs a proper preview to be displayed

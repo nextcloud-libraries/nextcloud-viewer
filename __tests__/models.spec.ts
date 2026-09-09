@@ -164,7 +164,7 @@ describe('images model', () => {
 	})
 
 	it('rejects a preview-only mime when no preview provider is enabled', async () => {
-		// enabled_preview_providers is empty (no initial-state), so image/heic is filtered out.
+		// No preview capability in this suite, so image/heic is filtered out.
 		const { registerImageHandler } = await import('../lib/models/images.ts')
 		registerImageHandler()
 		const handler = handlerById('images')
