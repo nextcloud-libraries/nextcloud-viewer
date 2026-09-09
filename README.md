@@ -295,6 +295,12 @@ said about it. Copies from **different majors** are worth a word: the library
 warns in the console, naming what it found and which one will run. Only one of
 them can, and the apps that pinned the other expect behaviour it may not have.
 
+The entry is kept small on purpose, and `npm run check:size` fails the build if
+that stops being true: it walks what the entry reaches without a dynamic import
+and checks it against a budget. A single top-level import of a component is
+enough to put the whole viewer back on every page of every consumer, and
+nothing else would complain.
+
 Two consequences worth knowing:
 
 - Registering a handler is cheap. It costs the handler definition, not the

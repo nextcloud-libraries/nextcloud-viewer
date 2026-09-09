@@ -69,7 +69,7 @@ function ctx(nodes: unknown[]) {
 beforeEach(() => {
 	registered.length = 0
 	viewer.open.mockClear()
-	// setup.ts already resets window._oca_viewer_handlers before each test.
+	// setup.ts already resets the shared scope, handlers included, before each test.
 })
 
 describe('registerHandler validation', () => {

@@ -36,6 +36,7 @@
 		"build": "vite --mode production build",
 		"build:demo": "vite build --config playground/vite.config.ts",
 		"build:doc": "typedoc && touch dist/doc/.nojekyll",
+		"check:size": "node build/check-bundle-size.mjs",
 		"dev": "vite --mode development build",
 		"l10n:extract": "node build/extract-l10n.js",
 		"lint": "eslint lib/ __tests__/ e2e/ playground/",
@@ -54,14 +55,12 @@
 		"@nextcloud/image-editor": "^1.0.0-beta.2",
 		"@nextcloud/logger": "^3.0.3",
 		"@skjnldsv/vue-plyr": "^7.5.0",
-		"camelcase": "^9.0.0",
 		"debounce": "^3.0.0",
 		"dompurify": "^3.4.14",
 		"vue-material-design-icons": "^5.3.1",
 		"webdav": "^5.10.0"
 	},
 	"peerDependencies": {
-		"@nextcloud/auth": "^2.6.0",
 		"@nextcloud/axios": "^2.5.2",
 		"@nextcloud/dialogs": "^7.5.0",
 		"@nextcloud/event-bus": "^3.3.3",
@@ -75,7 +74,6 @@
 		"vue": "^3.5.0"
 	},
 	"devDependencies": {
-		"@nextcloud/auth": "^2.6.0",
 		"@nextcloud/axios": "^2.5.2",
 		"@nextcloud/dialogs": "^7.5.0",
 		"@nextcloud/eslint-config": "^9.0.1",
