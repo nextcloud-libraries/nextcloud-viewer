@@ -45,6 +45,8 @@ vi.mock('@skjnldsv/vue-plyr', async () => {
 	return {
 		default: defineComponent({
 			name: 'VuePlyrStub',
+			// Declared so a test can read what the component hands plyr
+			props: { options: { type: Object, default: () => ({}) } },
 			data() {
 				return {
 					player: {
@@ -155,6 +157,17 @@ describe('Videos.vue (smoke)', () => {
 
 		expect(wrapper.find('video').exists()).toBe(true)
 		expect(wrapper.find('.vue-plyr-stub').exists()).toBe(true)
+	})
+
+	// Plyr labels its own controls in English unless it is handed these
+	it('hands plyr the translated control labels', async () => {
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+
+		const options = wrapper.findComponent({ name: 'VuePlyrStub' }).props('options') as { i18n?: Record<string, string> }
+		expect(options.i18n).toBeDefined()
+		expect(options.i18n).toHaveProperty('play')
 	})
 })
 
