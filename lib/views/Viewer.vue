@@ -733,7 +733,9 @@ function preloadNeighbors() {
 		if (!handler?.preload) {
 			continue
 		}
-		handler.preload(node).catch((error) => {
+		// Wrapped so a preload that throws synchronously, or returns no promise,
+		// is a logged failure of the handler and not of the open
+		Promise.resolve().then(() => handler.preload!(node)).catch((error) => {
 			logger.debug('Failed to preload neighbor file', { node, error })
 		})
 	}
