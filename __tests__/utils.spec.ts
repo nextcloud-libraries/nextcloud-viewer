@@ -4,20 +4,13 @@
  */
 import type { File as NcFile } from '@nextcloud/files'
 
-import { getCurrentUser } from '@nextcloud/auth'
 import { File } from '@nextcloud/files'
 import { isPublicShare } from '@nextcloud/sharing/public'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-	extractFilePathFromSource,
-	extractFilePaths,
-	genFileInfo,
-} from '../lib/utils/fileUtils.ts'
-import {
 	findLivePhotoPeerFromFileId,
 	findLivePhotoPeerFromName,
 } from '../lib/utils/livePhotoUtils.ts'
-import { isNumber } from '../lib/utils/numberUtil.ts'
 import { getPreviewIfAny } from '../lib/utils/previewUtils.ts'
 import { makeFile } from './factories.ts'
 
@@ -36,128 +29,6 @@ vi.mock('@nextcloud/sharing/public', () => ({
 	isPublicShare: vi.fn(() => false),
 	getSharingToken: vi.fn(() => 'share-token'),
 }))
-
-describe('fileUtils.extractFilePaths', () => {
-	it('splits a nested path into [dir, name]', () => {
-		expect(extractFilePaths('/foo/bar/baz.txt')).toEqual(['/foo/bar', 'baz.txt'])
-	})
-
-	it('returns an empty dir for a bare file name', () => {
-		expect(extractFilePaths('file.txt')).toEqual(['', 'file.txt'])
-	})
-
-	it('throws on a trailing slash (empty file name)', () => {
-		expect(() => extractFilePaths('/foo/bar/')).toThrow(/Unable to extract file name/)
-	})
-
-	it('throws on an empty string', () => {
-		expect(() => extractFilePaths('')).toThrow(/Unable to extract file name/)
-	})
-})
-
-describe('fileUtils.extractFilePathFromSource', () => {
-	beforeEach(() => {
-		vi.mocked(getCurrentUser).mockReturnValue({ uid: 'admin' } as ReturnType<typeof getCurrentUser>)
-	})
-
-	it('extracts the path following the current user segment', () => {
-		const source = 'https://cloud.example.com/remote.php/dav/files/admin/path/to/file.txt'
-		expect(extractFilePathFromSource(source)).toBe('path/to/file.txt')
-	})
-
-	it('throws when the source does not contain the user segment', () => {
-		const source = 'https://cloud.example.com/remote.php/dav/files/other/file.txt'
-		expect(() => extractFilePathFromSource(source)).toThrow(/Unable to extract file paths/)
-	})
-
-	it('throws when there is no current user', () => {
-		vi.mocked(getCurrentUser).mockReturnValueOnce(null)
-		const source = 'https://cloud.example.com/remote.php/dav/files/admin/file.txt'
-		expect(() => extractFilePathFromSource(source)).toThrow(/Unable to extract file paths/)
-	})
-})
-
-describe('fileUtils.genFileInfo', () => {
-	it('camelCases keys and coerces string booleans', () => {
-		const info = genFileInfo({
-			'is-favorite': 'true',
-			'hide-download': 'false',
-		} as never)
-		expect(info).toEqual({ isFavorite: true, hideDownload: false })
-	})
-
-	it('coerces numeric strings to numbers but keeps string-typed properties as strings', () => {
-		const info = genFileInfo({
-			filename: '/files/admin/photo.jpg',
-			basename: 'photo.jpg',
-			'owner-id': 'admin',
-			size: '1024',
-			fileid: '42',
-			etag: 'abc123',
-		} as never)
-		expect(info).toEqual({
-			filename: '/files/admin/photo.jpg',
-			basename: 'photo.jpg',
-			ownerId: 'admin',
-			size: 1024,
-			fileid: 42,
-			etag: 'abc123',
-		})
-		expect(typeof info.size).toBe('number')
-		expect(typeof info.fileid).toBe('number')
-	})
-
-	it('keeps a fully-numeric owner-id as a string', () => {
-		const info = genFileInfo({ 'owner-id': '12345' } as never)
-		expect(info['ownerId' as keyof typeof info]).toBe('12345')
-		expect(typeof info['ownerId' as keyof typeof info]).toBe('string')
-	})
-
-	it('flattens nested objects and merges their camelCased keys', () => {
-		const info = genFileInfo({
-			props: {
-				'has-preview': 'true',
-				getcontentlength: '2048',
-			},
-		} as never)
-		expect(info).toEqual({ hasPreview: true, getcontentlength: 2048 })
-	})
-
-	it('preserves array values as-is', () => {
-		const attrs = [{ key: 'a', scope: 'user', value: true }]
-		const info = genFileInfo({ 'share-attributes': attrs } as never)
-		expect(info.shareAttributes).toBe(attrs)
-	})
-})
-
-describe('numberUtil.isNumber', () => {
-	it.each([
-		[5, true],
-		[3.14, true],
-		['42', true],
-		['3.14', true],
-	])('treats %o as a number', (input, expected) => {
-		expect(isNumber(input)).toBe(expected)
-	})
-
-	it.each([
-		['abc', false],
-		['', false],
-		['   ', false],
-		['0x1F', false],
-		['1e3', false],
-		[NaN, false],
-		[null, false],
-		[undefined, false],
-	])('treats %o as not a number', (input, expected) => {
-		expect(isNumber(input)).toBe(expected)
-	})
-
-	// Documented quirk: the leading `!num` guard makes 0 report as non-numeric.
-	it('reports 0 as not a number (falsy guard quirk)', () => {
-		expect(isNumber(0)).toBe(false)
-	})
-})
 
 describe('previewUtils.getPreviewIfAny', () => {
 	beforeEach(() => {

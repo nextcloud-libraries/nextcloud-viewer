@@ -6,6 +6,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.4
+
+### Fixed
+
+- Remove a debugging hook that was left on `window.__vd` in beta.2 and beta.3.
+  It exposed the viewer's internal loading state and was never meant to ship.
+
+### Removed
+
+- `genFileInfo`, `extractFilePaths`, `extractFilePathFromSource` and the
+  `FileInfo` type. They converted WebDAV responses into the object shape the
+  old `OCA.Viewer.open({ fileinfo })` API took; nothing has called them since
+  the viewer moved to `@nextcloud/files` nodes throughout.
+
 ## 2.0.0-beta.3
 
 ### Fixed
