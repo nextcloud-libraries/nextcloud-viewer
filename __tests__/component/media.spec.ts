@@ -40,11 +40,20 @@ vi.mock('plyr', () => ({
 // @skjnldsv/vue-plyr wraps plyr in a Vue component. Replace it with a passthrough
 // that renders its default slot (so the inner <video>/<audio> still mounts) and
 // exposes a `player` object so the composable's lifecycle hooks never throw.
+const localizeSpeedLabels = vi.fn()
+vi.mock('../../lib/utils/plyrTranslations.ts', async (importOriginal) => ({
+	// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest importOriginal idiom
+	...await importOriginal<typeof import('../../lib/utils/plyrTranslations.ts')>(),
+	localizeSpeedLabels: (root: ParentNode) => localizeSpeedLabels(root),
+}))
+
 vi.mock('@skjnldsv/vue-plyr', async () => {
 	const { defineComponent, h } = await import('vue')
 	return {
 		default: defineComponent({
 			name: 'VuePlyrStub',
+			// Declared so a test can read what the component hands plyr
+			props: { options: { type: Object, default: () => ({}) } },
 			data() {
 				return {
 					player: {
@@ -57,7 +66,8 @@ vi.mock('@skjnldsv/vue-plyr', async () => {
 				}
 			},
 			render() {
-				return h('div', { class: 'vue-plyr-stub' }, this.$slots.default?.())
+				// plyr wraps the media in a .plyr root, which the composable looks for
+				return h('div', { class: 'plyr vue-plyr-stub' }, this.$slots.default?.())
 			},
 		}),
 	}
@@ -155,6 +165,32 @@ describe('Videos.vue (smoke)', () => {
 
 		expect(wrapper.find('video').exists()).toBe(true)
 		expect(wrapper.find('.vue-plyr-stub').exists()).toBe(true)
+	})
+
+	// The speed menu is built from numbers plyr formats itself, which its own
+	// i18n never reaches, so it is relabelled once the controls exist
+	it('relabels the speed menu once the media is ready', async () => {
+		localizeSpeedLabels.mockClear()
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+
+		await wrapper.find('video').trigger('canplay')
+		await flushPromises()
+
+		expect(localizeSpeedLabels).toHaveBeenCalledOnce()
+		expect(wrapper.emitted('loaded')).toBeTruthy()
+	})
+
+	// Plyr labels its own controls in English unless it is handed these
+	it('hands plyr the translated control labels', async () => {
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+
+		const options = wrapper.findComponent({ name: 'VuePlyrStub' }).props('options') as { i18n?: Record<string, string> }
+		expect(options.i18n).toBeDefined()
+		expect(options.i18n).toHaveProperty('play')
 	})
 })
 

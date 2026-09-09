@@ -12,6 +12,7 @@ import blankVideo from '../img/blank.mp4'
 import { logger } from '../services/logger.ts'
 import { preloadMedia } from '../services/mediaPreloader.ts'
 import { t } from '../utils/l10n.ts'
+import { localizeSpeedLabels, plyrTranslations } from '../utils/plyrTranslations.ts'
 import { useViewerProps } from './useViewerProps.ts'
 
 /**
@@ -36,6 +37,8 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	const options = computed(() => {
 		return {
 			autoplay: true,
+			// Plyr labels its own controls, in English, unless given these
+			i18n: plyrTranslations,
 			// Used to reset the video streams https://github.com/sampotts/plyr#javascript-1
 			blankVideo,
 			controls: [
@@ -58,6 +61,12 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	 * Tell Viewer that the video is ready to be shown
 	 */
 	function doneLoading() {
+		// The speed menu is built from numbers plyr formats itself, which its
+		// i18n does not reach, so those are relabelled once the controls exist
+		const root = (forAudio ? audio : video).value?.closest('.plyr')
+		if (root) {
+			localizeSpeedLabels(root)
+		}
 		emit('loaded')
 	}
 
