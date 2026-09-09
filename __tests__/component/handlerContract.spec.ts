@@ -9,6 +9,8 @@ import { flushPromises } from '@vue/test-utils'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { defineComponent, defineCustomElement, h } from 'vue'
 
+vi.mock('@nextcloud/event-bus')
+
 // Editing renders the image editor, which drags in canvas, webgl and a
 // stylesheet node cannot parse. None of that is what these tests are about.
 vi.mock('@nextcloud/image-editor', () => ({
@@ -18,6 +20,8 @@ vi.mock('@nextcloud/image-editor', () => ({
 		template: '<div class="image-editor-stub" />',
 	}),
 }))
+import { subscribe } from '@nextcloud/event-bus'
+import ImageEditor from '../../lib/components/ImageEditor.vue'
 import { makeFile, makeHandler } from '../factories.ts'
 import { mountViewer } from './mountViewer.ts'
 
@@ -177,7 +181,72 @@ describe('what a handler emits', () => {
 
 		expect(errorText()).toBe('this file is beyond me')
 	})
+	it('is rendered again when the file changes on the server', async () => {
+		renders.length = 0
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		const { vm, wrapper } = mountViewer([probeHandler()])
+
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+		const before = wrapper.find('oca-viewer-probe').element
+
+		nodeUpdated()(f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		// A new element: the handler starts over rather than showing a stale render
+		expect(wrapper.find('oca-viewer-probe').element).not.toBe(before)
+		expect(lastRender().file.fileid).toBe(f1.fileid)
+	})
+
+	it('is not rendered again for an update to some other file', async () => {
+		renders.length = 0
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		const { vm, wrapper } = mountViewer([probeHandler()])
+
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+		const before = wrapper.find('oca-viewer-probe').element
+
+		nodeUpdated()(makeFile({ mime: 'image/jpeg' }))
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('oca-viewer-probe').element).toBe(before)
+	})
+
+	it('is given the edited image as localSource once the editor saves, instead of a refetch', async () => {
+		renders.length = 0
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		const { vm, wrapper } = mountViewer([probeHandler({ canEdit: true })])
+
+		await vm.open([f1], f1, { editing: true })
+		// The editor is an async component: let it resolve and mount
+		await flushPromises()
+		await flushPromises()
+		expect(lastRender().localSource).toBeUndefined()
+
+		wrapper.findComponent(ImageEditor).vm.$emit('saved', 'blob:edited')
+		await wrapper.vm.$nextTick()
+		expect(lastRender().localSource).toBe('blob:edited')
+
+		// The server will report the file as changed; the local copy is what
+		// the user just saved, so nothing has to be reloaded
+		const element = wrapper.find('oca-viewer-probe').element
+		nodeUpdated()(f1)
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('oca-viewer-probe').element).toBe(element)
+	})
 })
+
+/**
+ * The files:node:updated listener the viewer registered on mount.
+ */
+function nodeUpdated(): (node: IFile) => void {
+	const call = vi.mocked(subscribe).mock.calls.find((c) => c[0] === 'files:node:updated')
+	return call![1] as (node: IFile) => void
+}
 
 describe('a handler that misbehaves', () => {
 	it('keeps swiping on when it reports nothing', async () => {
@@ -215,6 +284,62 @@ describe('a handler that misbehaves', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(errorText()).toBe(expected)
+	})
+
+	it('is shown once, however many times it says it has loaded', async () => {
+		renders.length = 0
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		const { vm, wrapper, modalProps } = mountViewer([probeHandler()])
+		const spinner = () => wrapper.find('.nc-loading-icon-stub').exists()
+
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		emitFromProbe!('loaded')
+		emitFromProbe!('loaded')
+		emitFromProbe!('loaded')
+		await wrapper.vm.$nextTick()
+
+		expect(spinner()).toBe(false)
+		expect(modalProps().show).toBe(true)
+	})
+
+	it('shows the error when it fails after having said it had loaded', async () => {
+		renders.length = 0
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		const { vm, wrapper, errorText } = mountViewer([probeHandler()])
+
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		emitFromProbe!('loaded')
+		emitFromProbe!('errored', new Error('decoder gave up'))
+		await wrapper.vm.$nextTick()
+
+		expect(errorText()).toBe('decoder gave up')
+	})
+
+	it('recovers from an error on the next file', async () => {
+		renders.length = 0
+		const f1 = makeFile({ mime: 'image/jpeg' })
+		const f2 = makeFile({ mime: 'image/jpeg' })
+		const { vm, wrapper, errorText, emitModal } = mountViewer([probeHandler()])
+
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+		emitFromProbe!('errored', new Error('broken file'))
+		await wrapper.vm.$nextTick()
+		expect(errorText()).toBe('broken file')
+
+		await emitModal('next')
+		await flushPromises()
+		emitFromProbe!('loaded')
+		await wrapper.vm.$nextTick()
+
+		expect(errorText()).toBeUndefined()
 	})
 
 	it('is not offered the editing action unless it says it can edit', async () => {

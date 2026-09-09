@@ -91,6 +91,25 @@ export function canView(nodes: INode | INode[]): boolean {
 }
 
 /**
+ * Whether a handler accepts the given files.
+ *
+ * A handler is third-party code: one that throws from `enabled()` is
+ * reported and treated as not matching, so it cannot break the Files
+ * actions or the viewer for every other handler on the page.
+ *
+ * @param handler - The handler to ask
+ * @param nodes - The files to test it against
+ */
+export function isHandlerEnabled(handler: IHandler, nodes: IFile[]): boolean {
+	try {
+		return Boolean(handler.enabled(nodes))
+	} catch (error) {
+		logger.error(`Handler ${handler.id} threw from enabled(), treating it as disabled`, { handler, nodes, error })
+		return false
+	}
+}
+
+/**
  * Whether at least `min` registered handlers can open the given nodes.
  * Only files are supported, folders never match.
  *
@@ -111,7 +130,7 @@ function countEnabledHandlers(nodes: INode[], min: number): boolean {
 
 	let count = 0
 	for (const handler of getHandlers().values()) {
-		if (handler.enabled(nodes as IFile[])) {
+		if (isHandlerEnabled(handler, nodes as IFile[])) {
 			count++
 		}
 		if (count >= min) {
@@ -196,7 +215,7 @@ export function registerHandler(handler: IHandler): void {
 				return false
 			}
 
-			return handler.enabled(nodes as IFile[])
+			return isHandlerEnabled(handler, nodes as IFile[])
 		},
 		async exec({ nodes, contents, view, folder }) {
 			if (nodes[0]?.type !== FileType.File) {

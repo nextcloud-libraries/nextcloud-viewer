@@ -490,9 +490,11 @@ function setEditing(value: boolean) {
 
 // Reflect editing changes (Edit button, editor save/cancel) in the URL so a
 // refresh reopens in the same state.
+// Synchronous so leaving editing on close still reaches the opener, before
+// close() drops the options.
 watch(editing, (value) => {
 	currentOptions.value.onEditingChange?.(value)
-})
+}, { flush: 'sync' })
 
 const modalName = computed(() => {
 	if (isComparing.value) {
@@ -632,6 +634,8 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 		loading.value = true
 		pendingLoads.value = 1
 	}
+	// A failure to open something else earlier is not this file's problem
+	errorString.value = null
 	// Open straight into edit mode when requested (e.g. from an `editing=true` URL).
 	editing.value = Boolean(options?.editing) && canEdit.value
 
@@ -733,7 +737,9 @@ function preloadNeighbors() {
 		if (!handler?.preload) {
 			continue
 		}
-		handler.preload(node).catch((error) => {
+		// Wrapped so a preload that throws synchronously, or returns no promise,
+		// is a logged failure of the handler and not of the open
+		Promise.resolve().then(() => handler.preload!(node)).catch((error) => {
 			logger.debug('Failed to preload neighbor file', { node, error })
 		})
 	}
@@ -755,8 +761,7 @@ function onLoad() {
  * Handle error while loading the current file
  * This is emitted by the handler web component
  *
- * @param error The error that occurred
- * @param reported
+ * @param reported What the handler emitted: the event, or the error itself
  */
 function onError(reported: unknown) {
 	const error = toError(emittedValue(reported), t('An unknown error occurred while loading the file.'))

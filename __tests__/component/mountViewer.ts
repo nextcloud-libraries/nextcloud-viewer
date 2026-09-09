@@ -31,6 +31,7 @@ export const NcModalStub = defineComponent({
 		hasPrevious: { type: Boolean, default: false },
 		enableSlideshow: { type: Boolean, default: false },
 		disableSwipe: { type: Boolean, default: false },
+		slideshowPaused: { type: Boolean, default: false },
 		lightBackdrop: { type: Boolean, default: false },
 	},
 	emits: ['next', 'previous', 'close'],
@@ -43,7 +44,11 @@ export const NcModalStub = defineComponent({
 			:data-has-next="String(hasNext)"
 			:data-has-previous="String(hasPrevious)">
 			<div class="nc-modal-stub__actions"><slot name="actions" /></div>
-			<div class="nc-modal-stub__content"><slot /></div>
+			<!-- The class names NcModal renders, which the viewer looks up to size
+			     itself and to tell a click beside the media from one on it -->
+			<div class="modal-container">
+				<div class="nc-modal-stub__content modal-container__content"><slot /></div>
+			</div>
 		</div>
 	`,
 })

@@ -13,10 +13,22 @@ type NcGlobal = typeof globalThis & {
 	OCA?: { Files?: Record<string, unknown> }
 }
 
-// jsdom implements neither of these, and the viewer uses both: object URLs
-// for edited images, and ResizeObserver on mount.
+// jsdom implements none of these, and the viewer uses them all: object URLs
+// for edited images, matchMedia and ResizeObserver on mount.
 URL.createObjectURL ??= () => 'blob:test'
 URL.revokeObjectURL ??= () => {}
+
+// plyr reads it while its module is evaluated
+window.matchMedia ??= (query: string) => ({
+	matches: false,
+	media: query,
+	onchange: null,
+	addEventListener() {},
+	removeEventListener() {},
+	addListener() {},
+	removeListener() {},
+	dispatchEvent: () => false,
+})
 
 globalThis.ResizeObserver ??= class {
 	observe() {}

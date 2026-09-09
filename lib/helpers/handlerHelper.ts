@@ -6,7 +6,7 @@
 import type { IFile } from '@nextcloud/files'
 import type { IHandler } from '../handlers.ts'
 
-import { getHandlers } from '../handlers.ts'
+import { getHandlers, isHandlerEnabled } from '../handlers.ts'
 
 /**
  * Get a handler by its ID
@@ -29,6 +29,6 @@ export function getHandlerForFile(file: IFile, group?: string): IHandler | undef
 		if (group && handler.group !== group) {
 			return false
 		}
-		return handler.enabled([file])
+		return isHandlerEnabled(handler, [file])
 	})
 }

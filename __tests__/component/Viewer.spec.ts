@@ -12,6 +12,7 @@ vi.mock('../../lib/services/dav.ts', () => ({ fetchFolderContent: vi.fn(async ()
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { registerFileAction } from '@nextcloud/files'
+import { logger } from '../../lib/services/logger.ts'
 import { makeFile, makeHandler } from '../factories.ts'
 import { mountViewer } from './mountViewer.ts'
 
@@ -387,6 +388,27 @@ describe('Viewer preload', () => {
 		expect(preload).toHaveBeenCalledTimes(2)
 		expect(preload).toHaveBeenCalledWith(f1)
 		expect(preload).toHaveBeenCalledWith(f3)
+	})
+
+	it('still opens the file when a neighbour preload throws instead of rejecting', async () => {
+		// `preload` is documented to return a promise; a handler that throws
+		// synchronously (or returns nothing) is a bug in that handler, not a
+		// reason for the file the user clicked to never show up
+		const handler = makeHandler({
+			id: 'image',
+			tagname: 'oca-viewer-image',
+			preload: (() => {
+				throw new Error('boom')
+			}) as never,
+		})
+		const debug = vi.spyOn(logger, 'debug').mockImplementation(() => {})
+		const { vm, modalHandlerId } = mountViewer([handler])
+		const f1 = makeFile()
+		const f2 = makeFile()
+
+		await expect(vm.open([f1, f2], f1)).resolves.toBeUndefined()
+		expect(modalHandlerId()).toBe('image')
+		expect(debug).toHaveBeenCalledWith('Failed to preload neighbor file', expect.objectContaining({ node: f2, error: expect.any(Error) }))
 	})
 })
 
