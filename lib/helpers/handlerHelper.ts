@@ -4,9 +4,9 @@
  */
 
 import type { IFile } from '@nextcloud/files'
-import type { IHandler } from '../index.ts'
+import type { IHandler } from '../handlers.ts'
 
-import { getHandlers } from '../index.ts'
+import { getHandlers } from '../handlers.ts'
 
 /**
  * Get a handler by its ID

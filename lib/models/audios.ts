@@ -5,7 +5,7 @@
 
 import AudioOutlineSvg from '@mdi/svg/svg/music-note-outline.svg?raw'
 import { defineCustomElement } from 'vue'
-import { registerHandler } from '../index.ts'
+import { registerHandler } from '../handlers.ts'
 import { logger } from '../services/logger.ts'
 import { t } from '../utils/l10n.ts'
 

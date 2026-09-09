@@ -19,6 +19,8 @@ interface MakeFileOptions {
 	mtime?: Date
 	size?: number
 	root?: string
+	/** What the server calls the file, when that differs from its name */
+	displayname?: string
 }
 
 /**
@@ -41,6 +43,7 @@ export function makeFile(options: MakeFileOptions = {}): File {
 		// A dav node reports whatever it was given, and a file nobody can
 		// read is not what these tests are about unless they say so
 		permissions: options.permissions ?? Permission.ALL,
+		displayname: options.displayname,
 	})
 }
 

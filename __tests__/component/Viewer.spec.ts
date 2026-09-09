@@ -46,6 +46,17 @@ describe('Viewer.open()', () => {
 		expect(modalProps().show).toBe(true)
 	})
 
+	it('titles the modal with the display name when the server gives one', async () => {
+		const { vm, wrapper, modalName } = mountViewer([imageHandler()])
+		// A version of a file is served under its version id but reads as a date
+		const version = makeFile({ basename: '1737542400', mime: 'image/jpeg', displayname: '22 January 2025, 11:20:00' })
+
+		await vm.open([version], version)
+		await wrapper.vm.$nextTick()
+
+		expect(modalName()).toBe('22 January 2025, 11:20:00')
+	})
+
 	it('filters currentFileList to files of the same handler group', async () => {
 		const pdfHandler = makeHandler({
 			id: 'pdf',
@@ -302,6 +313,30 @@ describe('Viewer action submenu', () => {
 
 		await buttons().find((b) => b.text().includes('Child action'))!.trigger('click')
 		expect(childExec).toHaveBeenCalled()
+	})
+})
+
+describe('Viewer sidebar', () => {
+	const sidebarButton = (wrapper: ReturnType<typeof mountViewer>['wrapper']) => wrapper.findAll('.nc-action-button-stub').find((button) => button.text().includes('Open sidebar'))
+
+	it('offers the sidebar for an ordinary file', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const f1 = makeFile({ mime: 'image/jpeg' })
+
+		await vm.open([f1], f1)
+		await wrapper.vm.$nextTick()
+
+		expect(sidebarButton(wrapper)).toBeTruthy()
+	})
+
+	it('does not offer it for a file the sidebar cannot resolve', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const version = makeFile({ mime: 'image/jpeg' })
+
+		await vm.open([version], version, { enableSidebar: false })
+		await wrapper.vm.$nextTick()
+
+		expect(sidebarButton(wrapper)).toBeUndefined()
 	})
 })
 

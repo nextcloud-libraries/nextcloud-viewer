@@ -13,7 +13,7 @@ import { computed, ref, watch } from 'vue'
  * @param props The viewer props
  */
 export function useViewerProps(props: ViewerProps) {
-	const filename = computed(() => props.file.basename)
+	const filename = computed(() => props.file.displayname)
 
 	// Src is not a computed as we want to be able to change it on error.
 	// Use the encoded source so special characters in the name don't break the
