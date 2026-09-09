@@ -490,9 +490,11 @@ function setEditing(value: boolean) {
 
 // Reflect editing changes (Edit button, editor save/cancel) in the URL so a
 // refresh reopens in the same state.
+// Synchronous so leaving editing on close still reaches the opener, before
+// close() drops the options.
 watch(editing, (value) => {
 	currentOptions.value.onEditingChange?.(value)
-})
+}, { flush: 'sync' })
 
 const modalName = computed(() => {
 	if (isComparing.value) {
@@ -632,6 +634,8 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 		loading.value = true
 		pendingLoads.value = 1
 	}
+	// A failure to open something else earlier is not this file's problem
+	errorString.value = null
 	// Open straight into edit mode when requested (e.g. from an `editing=true` URL).
 	editing.value = Boolean(options?.editing) && canEdit.value
 
