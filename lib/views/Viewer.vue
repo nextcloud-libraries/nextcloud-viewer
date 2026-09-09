@@ -1086,15 +1086,6 @@ watch(currentFile, async (newFile, oldFile) => {
 })
 
 onMounted(() => {
-	// TEMP DEBUG
-	;(window as unknown as { __vd: unknown }).__vd = () => ({
-		loading: loading.value,
-		pending: pendingLoads.value,
-		file: currentFile.value?.basename,
-		handler: currentHandler.value?.id,
-		error: errorString.value,
-	})
-
 	resizeObserver = new ResizeObserver(debounce(() => {
 		onViewerResize()
 	}, 100))
