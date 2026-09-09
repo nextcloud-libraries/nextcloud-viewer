@@ -20,6 +20,18 @@ describe('default handlers', () => {
 		expect([...scope.handlers!.keys()].sort()).toEqual(['audios', 'images', 'videos'])
 	})
 
+	it('can be reached by importing one of the handler modules first', async () => {
+		// Entering the graph anywhere but the entry used to hit the entry
+		// mid-evaluation, and the handler it was about to register was not
+		// initialised yet
+		vi.resetModules()
+		const { registerImageHandler } = await import('../lib/models/images.ts')
+
+		registerImageHandler()
+
+		expect(scope.handlers!.has('images')).toBe(true)
+	})
+
 	it('do not complain about themselves when asked for explicitly', async () => {
 		const { registerDefaultHandlers } = await importPackage()
 		const { logger } = await import('../lib/services/logger.ts')

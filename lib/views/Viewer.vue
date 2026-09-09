@@ -202,7 +202,7 @@
 <script setup lang="ts">
 import type { IFile, IFolder, INode, IView } from '@nextcloud/files'
 import type { IFileAction } from '@nextcloud/files'
-import type { IHandler } from '../index.ts'
+import type { IHandler } from '../handlers.ts'
 import type { ViewerAPI, ViewerOptions } from '../viewer.ts'
 
 import { showError } from '@nextcloud/dialogs'
@@ -224,8 +224,8 @@ import FullscreenIcon from 'vue-material-design-icons/Fullscreen.vue'
 import FullscreenExitIcon from 'vue-material-design-icons/FullscreenExit.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useViewerActions } from '../composables/useViewerActions.ts'
+import { getHandlers } from '../handlers.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
-import { getHandlers } from '../index.ts'
 import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
 import { canDownload } from '../utils/canDownload.ts'

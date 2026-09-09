@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import type { IHandler } from './index.ts'
+import type { IHandler } from './handlers.ts'
 import type { Viewer } from './viewer.ts'
 
 import { logger } from './services/logger.ts'
