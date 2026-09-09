@@ -7,6 +7,7 @@ import type { IFile, IFileAction, INode } from '@nextcloud/files'
 import FileSvg from '@mdi/svg/svg/file.svg?raw'
 import OpenInAppSvg from '@mdi/svg/svg/open-in-app.svg?raw'
 import { DefaultType, FileType, getFileActions, Permission, registerFileAction } from '@nextcloud/files'
+import { registerDefaultHandlers } from './defaults.ts'
 import { registerImplementation, scope } from './scope.ts'
 import { logger } from './services/logger.ts'
 import { openWithHistory } from './utils/history.ts'
@@ -291,6 +292,12 @@ registerImplementation({
 // a reference holds the same one whether or not a file has been opened yet.
 // It is an empty shell until the viewer is mounted.
 getViewer()
+
+// Images, video and audio are what the viewer is for, so an app gets them by
+// importing the package rather than by remembering to ask. It has to happen
+// here, at import: the Files list reads the available actions when it first
+// renders, and a handler registered after that is a file that does not open.
+registerDefaultHandlers()
 
 export { getViewer, Viewer } from './viewer.ts'
 export type { ViewerAPI, ViewerEmits, ViewerOptions, ViewerProps } from './viewer.ts'
