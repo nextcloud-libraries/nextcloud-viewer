@@ -8,6 +8,16 @@ import type { ViewerEmits, ViewerProps } from '../../lib/viewer.ts'
 import { flushPromises } from '@vue/test-utils'
 import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { defineComponent, defineCustomElement, h } from 'vue'
+
+// Editing renders the image editor, which drags in canvas, webgl and a
+// stylesheet node cannot parse. None of that is what these tests are about.
+vi.mock('@nextcloud/image-editor', () => ({
+	ImageEditor: defineComponent({
+		name: 'LibImageEditor',
+		emits: ['save', 'cancel', 'error'],
+		template: '<div class="image-editor-stub" />',
+	}),
+}))
 import { makeFile, makeHandler } from '../factories.ts'
 import { mountViewer } from './mountViewer.ts'
 
