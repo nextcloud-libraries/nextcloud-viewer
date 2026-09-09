@@ -68,8 +68,11 @@ export default defineConfig((env) => {
 		nodeExternalsOptions: {
 			// for subpath imports like '@nextcloud/l10n/gettext'
 			include: [/^@nextcloud\//],
-			// bundle the icon SFCs instead of externalizing them
-			exclude: [/^vue-material-design-icons\//],
+			// Bundle the icons rather than externalizing them. They are
+			// imported with vite's `?raw` suffix, which is not something a
+			// consumer's bundler can be expected to understand, so it must
+			// not survive into what we publish.
+			exclude: [/^vue-material-design-icons\//, /^@mdi\/svg\//],
 		},
 		// The styles are carried inside the javascript and injected as it
 		// runs, each chunk bringing its own. Emitting stylesheets instead
