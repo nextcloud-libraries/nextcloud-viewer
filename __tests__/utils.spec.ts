@@ -14,11 +14,6 @@ import {
 import { getPreviewIfAny } from '../lib/utils/previewUtils.ts'
 import { makeFile } from './factories.ts'
 
-// getCurrentUser drives extractFilePathFromSource.
-vi.mock('@nextcloud/auth', () => ({
-	getCurrentUser: vi.fn(() => ({ uid: 'admin' })),
-}))
-
 // generateUrl echoes the given path so we can assert on the built query string.
 vi.mock('@nextcloud/router', () => ({
 	generateUrl: vi.fn((url: string) => url),
