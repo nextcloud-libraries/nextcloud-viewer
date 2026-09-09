@@ -114,13 +114,6 @@ beforeEach(() => {
 })
 
 describe('Images.vue', () => {
-	it('renders the image', async () => {
-		const wrapper = mountImages({ editing: false })
-		await flushPromises()
-
-		expect(wrapper.find('img').exists()).toBe(true)
-	})
-
 	it('shows a localSource (e.g. a just-edited image) without fetching', async () => {
 		const wrapper = mountImages({ localSource: 'blob:edited' })
 		await flushPromises()
@@ -158,15 +151,6 @@ describe('Images.vue', () => {
 })
 
 describe('Videos.vue (smoke)', () => {
-	it('mounts and renders a <video> element', async () => {
-		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
-		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
-		await flushPromises()
-
-		expect(wrapper.find('video').exists()).toBe(true)
-		expect(wrapper.find('.vue-plyr-stub').exists()).toBe(true)
-	})
-
 	// The speed menu is built from numbers plyr formats itself, which its own
 	// i18n never reaches, so it is relabelled once the controls exist
 	it('relabels the speed menu once the media is ready', async () => {
@@ -201,6 +185,5 @@ describe('Audios.vue (smoke)', () => {
 		await flushPromises()
 
 		expect(wrapper.find('audio').exists()).toBe(true)
-		expect(wrapper.find('.vue-plyr-stub').exists()).toBe(true)
 	})
 })

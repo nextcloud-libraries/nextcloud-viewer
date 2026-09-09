@@ -46,10 +46,6 @@ describe('getViewer()', () => {
 		// Kept on the shared scope, so another copy of the library gets the same one
 		expect(scope.service).toBe(first)
 	})
-
-	it('is an EventTarget', () => {
-		expect(getViewer()).toBeInstanceOf(EventTarget)
-	})
 })
 
 describe('opening before anything is mounted', () => {

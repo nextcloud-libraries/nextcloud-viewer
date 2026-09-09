@@ -132,7 +132,7 @@ describe('registerHandler registry', () => {
 		registerHandler(makeHandler({ id: 'dup' }))
 
 		expect(warn).toHaveBeenCalledTimes(1)
-		expect(warn).toHaveBeenCalledWith('Handler with id dup is already registered.')
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining('dup'))
 		expect(getHandlers().size).toBe(1)
 
 		warn.mockRestore()

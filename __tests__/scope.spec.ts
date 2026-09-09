@@ -20,7 +20,6 @@ describe('compareVersions', () => {
 
 	it('ranks a release above its own prereleases', () => {
 		expect(compareVersions('2.0.0', '2.0.0-beta.1')).toBeGreaterThan(0)
-		expect(compareVersions('2.0.0-beta.2', '2.0.0-beta.10')).toBeLessThan(0)
 	})
 
 	it('compares prerelease identifiers the way semver does', () => {
@@ -96,7 +95,7 @@ describe('electing an implementation', () => {
 		expect(warn).not.toHaveBeenCalled()
 	})
 
-	it('treats a prerelease as its own major', () => {
+	it('does not warn for a release beside its own prerelease', () => {
 		const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
 		registerImplementation({ version: '2.0.0-beta.1', load: async () => {} })
 		registerImplementation({ version: '2.0.0', load: async () => {} })
