@@ -156,7 +156,8 @@ const livePhoto = computed(() => {
 	return findLivePhotoPeerFromFileId(metadataFilesLivePhoto.value, props.files)
 })
 
-const livePhotoSrc = computed(() => livePhoto.value?.source ?? null)
+// Encoded, as it goes straight into the video element's `src`
+const livePhotoSrc = computed(() => livePhoto.value?.encodedSource ?? null)
 
 /**
  * What is fetching the current file, so it can be dropped when the viewer
@@ -224,7 +225,7 @@ async function loadData() {
 
 	// If there is no preview and we have a direct source, load it instead
 	if (props.file.source && !hasPreview.value && !previewUrl.value) {
-		data.value = props.file.source
+		data.value = src.value
 		return
 	}
 

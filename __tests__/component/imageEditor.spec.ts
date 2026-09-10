@@ -80,6 +80,16 @@ describe('ImageEditor wrapper', () => {
 		expect(wrapper.emitted('close')).toBeUndefined()
 	})
 
+	// The editor loads the image from that URL, so a name holding a `#` or
+	// a `?` has to be encoded the same way the save request encodes it.
+	it('hands the editor the encoded source', async () => {
+		const file = makeFile({ basename: 'a#b c?.jpg', mime: 'image/jpeg' })
+		const wrapper = mount(ImageEditor, { props: { file } })
+		await flushPromises()
+
+		expect(wrapper.findComponent({ name: 'LibImageEditor' }).attributes('src')).toBe(file.encodedSource)
+	})
+
 	it('closes without saving on cancel', async () => {
 		const { wrapper, editor } = mountEditor()
 		editor.vm.$emit('cancel')

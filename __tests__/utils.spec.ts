@@ -121,6 +121,14 @@ describe('previewUtils.getPreviewIfAny', () => {
 		const file = makeFileWithAttributes({ hasPreview: false })
 		expect(getPreviewIfAny(file)).toBe(file.source)
 	})
+
+	// What comes back is handed to a media element as its `src`, so a name
+	// holding a `#` or a `?` has to be encoded or the URL is cut short.
+	it('encodes the fallback source', () => {
+		const file = makeFile({ basename: 'a#b c?.jpg', attributes: { hasPreview: false } })
+		expect(getPreviewIfAny(file)).toBe(file.encodedSource)
+		expect(getPreviewIfAny(file)).not.toContain('#')
+	})
 })
 
 describe('livePhotoUtils.findLivePhotoPeerFromFileId', () => {
