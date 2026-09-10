@@ -7,6 +7,7 @@ import AudioOutlineSvg from '@mdi/svg/svg/music-note-outline.svg?raw'
 import { defineCustomElement } from 'vue'
 import { registerHandler } from '../handlers.ts'
 import { logger } from '../services/logger.ts'
+import { defineCustomElementOnce } from '../utils/customElements.ts'
 import { t } from '../utils/l10n.ts'
 
 const browserSupportedMimes = [
@@ -32,7 +33,7 @@ export async function registerAudioCustomElement(): Promise<void> {
 		shadowRoot: false,
 	})
 
-	window.customElements.define(tagname, AudioElement)
+	defineCustomElementOnce(tagname, AudioElement)
 }
 
 /**

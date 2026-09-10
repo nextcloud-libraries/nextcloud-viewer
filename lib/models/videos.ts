@@ -7,6 +7,7 @@ import MovieOutlineSvg from '@mdi/svg/svg/movie-outline.svg?raw'
 import { defineCustomElement } from 'vue'
 import { registerHandler } from '../handlers.ts'
 import { logger } from '../services/logger.ts'
+import { defineCustomElementOnce } from '../utils/customElements.ts'
 import { t } from '../utils/l10n.ts'
 
 const browserSupportedMimes = [
@@ -34,7 +35,7 @@ export async function registerVideoCustomElement(): Promise<void> {
 		shadowRoot: false,
 	})
 
-	window.customElements.define(tagname, VideoElement)
+	defineCustomElementOnce(tagname, VideoElement)
 }
 
 /**

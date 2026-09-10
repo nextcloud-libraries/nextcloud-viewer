@@ -65,6 +65,9 @@ msgstr ""
 msgid "Enter fullscreen"
 msgstr ""
 
+msgid "Exit full screen"
+msgstr ""
+
 msgid "Exit fullscreen"
 msgstr ""
 
@@ -75,6 +78,9 @@ msgid "Failed to load media."
 msgstr ""
 
 msgid "Forward {seektime}s"
+msgstr ""
+
+msgid "Full screen"
 msgstr ""
 
 msgid "Go back to previous menu"
@@ -165,6 +171,9 @@ msgid "The image could not be edited."
 msgstr ""
 
 msgid "The name must not contain \"/\"."
+msgstr ""
+
+msgid "The viewer could not be loaded."
 msgstr ""
 
 msgid "There was no plugin available to open this file."

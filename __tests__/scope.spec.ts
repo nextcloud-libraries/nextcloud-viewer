@@ -76,6 +76,19 @@ describe('electing an implementation', () => {
 		await expect(loadImplementation()).rejects.toThrow('No viewer implementation')
 	})
 
+	// A chunk missed once, on a deploy or a lost connection, must not be the
+	// answer for the rest of the page's life
+	it('tries again after a load that failed', async () => {
+		const load = vi.fn()
+			.mockRejectedValueOnce(new Error('Failed to fetch dynamically imported module'))
+			.mockResolvedValueOnce(undefined)
+		registerImplementation({ version: '2.0.0', load })
+
+		await expect(loadImplementation()).rejects.toThrow('Failed to fetch')
+		await expect(loadImplementation()).resolves.toBeUndefined()
+		expect(load).toHaveBeenCalledTimes(2)
+	})
+
 	it('warns when incompatible majors share the page, naming the one that wins', () => {
 		const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
 		registerImplementation({ version: '2.0.0', load: async () => {} })

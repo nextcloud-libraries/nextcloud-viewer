@@ -163,6 +163,12 @@ export function loadImplementation(): Promise<unknown> {
 			throw new Error('No viewer implementation is available on this page')
 		}
 		return best.load()
-	})()
+	})().catch((error) => {
+		// A load that failed is not the answer for the rest of the page's
+		// life: a chunk missed once (a deploy, a lost connection) would
+		// otherwise leave every later open rejecting with it.
+		scope.implementation = undefined
+		throw error
+	})
 	return scope.implementation
 }
