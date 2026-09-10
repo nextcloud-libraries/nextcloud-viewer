@@ -40,6 +40,7 @@ export const NcModalStub = defineComponent({
 	emits: ['next', 'previous', 'close'],
 	template: `
 		<div
+			v-show="show"
 			class="nc-modal-stub"
 			:style="$attrs.style"
 			:data-handler="$attrs['data-handler']"
@@ -203,8 +204,11 @@ export function mountViewer(handlers: IHandler[] = []): MountViewerResult {
 		modalExists: () => findModal().exists(),
 		renderedTags,
 		errorText: () => {
+			// The real modal hides its content with `v-show`, which the stub
+			// mirrors: an error inside a modal that is not shown is an error
+			// nobody can read, so it does not count as being reported.
 			const ec = wrapper.find('.nc-empty-content-stub')
-			return ec.exists() ? ec.attributes('data-name') : undefined
+			return ec.exists() && ec.isVisible() ? ec.attributes('data-name') : undefined
 		},
 	}
 }

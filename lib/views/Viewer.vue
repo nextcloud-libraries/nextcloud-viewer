@@ -20,7 +20,7 @@
 		:inlineActions="canEdit ? 1 : 0"
 		:lightBackdrop="lightBackdrop"
 		:name="modalName"
-		:show="!!currentFile"
+		:show="!!currentFile || !!errorString"
 		:slideshowPaused="editing"
 		:spreadNavigation="true"
 		:style="{ width: isSidebarShown ? `${sidebarPosition}px` : null }"
