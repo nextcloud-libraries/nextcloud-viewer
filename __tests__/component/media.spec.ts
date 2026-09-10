@@ -76,6 +76,7 @@ vi.mock('@skjnldsv/vue-plyr', async () => {
 import Audios from '../../lib/components/Audios.vue'
 import Images from '../../lib/components/Images.vue'
 import Videos from '../../lib/components/Videos.vue'
+import { logger } from '../../lib/services/logger.ts'
 import { preloadMedia } from '../../lib/services/mediaPreloader.ts'
 
 const preloadMediaMock = vi.mocked(preloadMedia)
@@ -148,6 +149,64 @@ describe('Images.vue', () => {
 	// The double-failure path (the hand-fetched fallback also fails → `errored`)
 	// needs a real <img> remount to re-arm the `.once` @error handler, which the
 	// viewer no longer drives from Images, so it is not unit-testable here.
+})
+
+describe('a live photo', () => {
+	/**
+	 * Mount Images on the still half of a live photo, with its video peer,
+	 * and get as far as the state where the play button is rendered: the
+	 * button is placed from the measured media, which jsdom reports as zero
+	 * unless the intrinsic size is given to it.
+	 *
+	 * @param ready - Whether to report the video as playable
+	 */
+	async function mountLivePhoto(ready = true) {
+		const photo = makeFile({ id: 1, basename: 'IMG_1234.jpg', attributes: { 'metadata-files-live-photo': 2 } })
+		const movie = makeFile({ id: 2, basename: 'IMG_1234.mov', mime: 'video/quicktime' })
+		const wrapper = mountImages({ file: photo, files: [photo, movie] })
+		await flushPromises()
+
+		const video = wrapper.find('video').element as HTMLVideoElement
+		Object.defineProperty(video, 'videoWidth', { value: 320, configurable: true })
+		Object.defineProperty(video, 'videoHeight', { value: 240, configurable: true })
+		await wrapper.find('video').trigger('loadedmetadata')
+		if (ready) {
+			await wrapper.find('video').trigger('canplaythrough')
+		}
+		await flushPromises()
+
+		return { wrapper, video, photo, movie }
+	}
+
+	// Hovering the button is not a user gesture, so a clip with a sound
+	// track is refused outright by the browser's autoplay policy
+	it('is muted, as nothing else may play on hover', async () => {
+		const { video } = await mountLivePhoto()
+
+		expect(video.muted).toBe(true)
+	})
+
+	it('says what its button does, in an attribute browsers support', async () => {
+		const { wrapper } = await mountLivePhoto()
+
+		const button = wrapper.find('.live-photo_play_button')
+		expect(button.attributes('aria-label')).toBe('Play the live photo')
+		// aria-description reaches neither Firefox nor Safari
+		expect(button.attributes('aria-description')).toBeUndefined()
+	})
+
+	it('does not leave a rejection behind when the browser refuses to play', async () => {
+		const { wrapper, video } = await mountLivePhoto()
+		const refused = new DOMException('play() failed because the user did not interact', 'NotAllowedError')
+		video.play = vi.fn().mockRejectedValue(refused)
+		const logged = vi.spyOn(logger, 'debug').mockImplementation(() => {})
+
+		await wrapper.find('.live-photo_play_button').trigger('pointerenter')
+		await flushPromises()
+
+		expect(video.play).toHaveBeenCalled()
+		expect(logged).toHaveBeenCalledWith('The browser refused to play the live photo', { error: refused })
+	})
 })
 
 describe('Videos.vue (smoke)', () => {

@@ -133,4 +133,26 @@ describe('livePhotoUtils.findLivePhotoPeerFromName', () => {
 		const png = makeFile({ id: 2, basename: 'clip.png' })
 		expect(findLivePhotoPeerFromName(video, [video, png])).toBe(png)
 	})
+
+	// The names have to match, not merely start alike: a camera fills a
+	// folder with IMG_1234, IMG_1235, IMG_1239 and so on
+	it('does not pair a video with the photo of another shot', () => {
+		const video = makeFile({ id: 1, basename: 'IMG_1234.mov', mime: 'video/quicktime' })
+		const other = makeFile({ id: 2, basename: 'IMG_1239.jpg' })
+		expect(findLivePhotoPeerFromName(video, [video, other])).toBeUndefined()
+	})
+
+	it('pairs the still image back with its video', () => {
+		const photo = makeFile({ id: 1, basename: 'IMG_1234.jpg' })
+		const peer = makeFile({ id: 2, basename: 'IMG_1234.png' })
+		expect(findLivePhotoPeerFromName(photo, [photo, peer])).toBe(peer)
+	})
+
+	it('reads the whole name of a file that has no extension', () => {
+		const video = makeFile({ id: 1, basename: 'clip', mime: 'video/quicktime' })
+		const longer = makeFile({ id: 2, basename: 'clips.jpg' })
+		const exact = makeFile({ id: 3, basename: 'clip.jpg' })
+		expect(findLivePhotoPeerFromName(video, [video, longer])).toBeUndefined()
+		expect(findLivePhotoPeerFromName(video, [video, exact])).toBe(exact)
+	})
 })
