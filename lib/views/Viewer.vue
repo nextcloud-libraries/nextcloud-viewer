@@ -285,14 +285,10 @@ const currentHandler = ref<IHandler>()
  */
 const canEdit = computed(() => currentHandler.value?.canEdit === true
 	&& ((currentFile.value?.permissions ?? Permission.NONE) & Permission.UPDATE) !== 0)
-const currentOptions = ref<ViewerOptions>({
-	canLoop: true,
-	enableSidebar: true,
-	onClose: () => {},
-	onNext: () => {},
-	onPrev: () => {},
-	loadMore: () => Promise.resolve([]),
-})
+// What the opener asked for, or nothing at all: every read of this falls
+// back to the default of that one option, and the service fills in the rest
+// for a caller that passes no options (see defaultViewerOptions).
+const currentOptions = ref<ViewerOptions>({})
 
 // The sidebar resolves a file by its dav source, so it can only be offered
 // for a file the Files app can find there.
@@ -1029,11 +1025,6 @@ function onAppSidebarClose() {
 	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
 }
 
-/**
- * Close viewer when clicking outside of the modal content
- *
- * @param event The mouse event
- */
 /**
  * The modal root, or null while the viewer shows no file.
  *

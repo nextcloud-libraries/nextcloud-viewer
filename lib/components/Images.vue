@@ -165,8 +165,10 @@ const livePhotoSrc = computed(() => livePhoto.value?.source ?? null)
  */
 let inFlight: { controller: AbortController, source: string } | null = null
 
-// Load data when component mounts or file changes
-watch(filename, async () => {
+// Load data when component mounts or file changes. Keyed on the source, as
+// two files can be shown under one name and it is the source that says
+// which bytes to fetch.
+watch(() => props.file.source, async () => {
 	await loadData()
 })
 watch(data, () => {
@@ -304,7 +306,6 @@ async function getBase64FromImage(signal?: AbortSignal): Promise<string> {
 }
 
 /**
- *
  * @param newShiftX - The desired horizontal shift in pixels (clamped to the zoomed bounds)
  * @param newShiftY - The desired vertical shift in pixels (clamped to the zoomed bounds)
  * @param newZoomRatio - The zoom ratio used to compute the maximum allowed shift
@@ -317,7 +318,6 @@ function updateShift(newShiftX: number, newShiftY: number, newZoomRatio: number)
 }
 
 /**
- *
  * @param stableX - The horizontal viewport coordinate to keep stable while zooming
  * @param stableY - The vertical viewport coordinate to keep stable while zooming
  * @param newZoomRatio - The new zoom ratio to apply
@@ -346,7 +346,8 @@ function updateZoomAndShift(stableX: number, stableY: number, newZoomRatio: numb
 }
 
 /**
- *
+ * How far apart the two cached pointers are, which is what a pinch is
+ * measured against. Zero unless there are two of them.
  */
 function distanceBetweenTouches(): number {
 	const t0 = pointerCache.value[0]
@@ -360,7 +361,6 @@ function distanceBetweenTouches(): number {
 }
 
 /**
- *
  * @param event - The wheel event driving the zoom in/out
  */
 function updateZoom(event: WheelEvent) {
@@ -488,7 +488,8 @@ function onDblclick() {
 }
 
 /**
- *
+ * The element could not load what it was given: fetch the file by hand
+ * once, and report the failure if that does not work either.
  */
 async function onFail() {
 	if (fallback.value) {

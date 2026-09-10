@@ -213,6 +213,37 @@ describe('a live photo', () => {
 	})
 })
 
+// Two files can carry one name: a version of a file is served under its
+// version id but reads as a date, and a rename keeps the same node. The
+// source is what says which bytes to fetch.
+describe('moving to another file of the same name', () => {
+	it('reloads the image', async () => {
+		const first = makeFile({ id: 1, basename: 'photo.jpg', displayname: 'Yesterday' })
+		const second = makeFile({ id: 2, basename: 'older.jpg', displayname: 'Yesterday' })
+		const wrapper = mountImages({ file: first, files: [first] })
+		await flushPromises()
+		expect(wrapper.find('img').attributes('src')).toBe(first.source)
+
+		await wrapper.setProps({ file: second, files: [second] })
+		await flushPromises()
+
+		expect(wrapper.find('img').attributes('src')).toBe(second.source)
+	})
+
+	it('reloads the media player', async () => {
+		const first = makeFile({ id: 1, basename: 'clip.mp4', mime: 'video/mp4', displayname: 'Yesterday' })
+		const second = makeFile({ id: 2, basename: 'older.mp4', mime: 'video/mp4', displayname: 'Yesterday' })
+		const wrapper = mount(Videos, { props: makeProps({ file: first, files: [first] }) })
+		await flushPromises()
+		expect(wrapper.find('video').attributes('src')).toBe(first.encodedSource)
+
+		await wrapper.setProps({ file: second, files: [second] })
+		await flushPromises()
+
+		expect(wrapper.find('video').attributes('src')).toBe(second.encodedSource)
+	})
+})
+
 describe('Videos.vue (smoke)', () => {
 	// The speed menu is built from numbers plyr formats itself, which its own
 	// i18n never reaches, so it is relabelled once the controls exist

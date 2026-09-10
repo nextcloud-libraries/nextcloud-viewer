@@ -48,10 +48,9 @@ const browserSupportedMimes = [
 	'image/x-icon',
 ]
 
-// Filter out supported mimes that are _not_
-// enabled in the preview API
 /**
- *
+ * The mimes that need a preview, minus the ones this server will not
+ * generate one for: offering those would open a file that cannot be shown.
  */
 function filterEnabledMimes() {
 	return previewSupportedMimes.filter((filter) => {
@@ -70,8 +69,9 @@ if (ignoredMimes.length > 0) {
 }
 
 export const tagname = 'oca-viewer-image'
+
 /**
- *
+ * Define the custom element the image handler names.
  */
 export async function registerImageCustomElement(): Promise<void> {
 	const { default: Images } = await import('../components/Images.vue')
@@ -83,7 +83,7 @@ export async function registerImageCustomElement(): Promise<void> {
 }
 
 /**
- *
+ * Register the image handler.
  */
 export function registerImageHandler() {
 	registerHandler({
