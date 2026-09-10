@@ -20,9 +20,12 @@ export function useViewerProps(props: ViewerProps) {
 	// media element's `src` URL.
 	const src = ref(props.file.encodedSource)
 
-	// Update the src when the file changes
-	watch(filename, () => {
-		src.value = props.file.encodedSource
+	// Update the src when the file changes. Watching the source rather than
+	// the name: two files can be shown under one name (a version of a file
+	// reads as a date, a rename keeps the same node) and it is the source
+	// that says which bytes to fetch.
+	watch(() => props.file.encodedSource, (source) => {
+		src.value = source
 	})
 
 	return {

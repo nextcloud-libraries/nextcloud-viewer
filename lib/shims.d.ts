@@ -8,6 +8,21 @@ declare module '*.svg?raw' {
 	export default content
 }
 
+// The icons ship their types beside each component, at a path the package's
+// own `exports` map does not offer, so nothing resolves them under bundler
+// resolution. Declared for that package alone: a blanket `*.vue` would
+// shadow the real types of this library's own components.
+declare module 'vue-material-design-icons/*.vue' {
+	import type { DefineComponent } from 'vue'
+
+	const component: DefineComponent<{
+		size?: number | string
+		fillColor?: string
+		title?: string
+	}>
+	export default component
+}
+
 // The plyr export is broken, let's fix it here
 declare module 'plyr' {
 	// Import the *type* from the real declaration file
