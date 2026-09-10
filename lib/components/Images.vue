@@ -17,7 +17,7 @@
 				}"
 				:src="data"
 				:style="imgStyle"
-				@error.capture.prevent.stop.once="onFail"
+				@error.capture.prevent.stop="onFail"
 				@load="onDoneLoading"
 				@wheel.stop.prevent="updateZoom"
 				@dblclick.prevent="onDblclick"
@@ -198,9 +198,18 @@ async function loadData() {
 		return
 	}
 
-	// Avoid svg xss attack vector
+	// Avoid svg xss attack vector. Above the fallback below on purpose: an
+	// svg is only ever shown through the sanitizer, never as raw bytes.
 	if (mime.value === 'image/svg+xml') {
 		data.value = await getBase64FromImage(signal)
+		return
+	}
+
+	// A failed load means the URL the browser was given is not one it can
+	// use: an E2EE file, or a preview the server cannot produce. Fetch the
+	// bytes by hand and show those instead.
+	if (fallback.value) {
+		data.value = await preloadMedia(props.file, signal)
 		return
 	}
 
@@ -212,18 +221,7 @@ async function loadData() {
 
 	// If there is no preview and we have a direct source, load it instead
 	if (props.file.source && !hasPreview.value && !previewUrl.value) {
-		// If loading the source failed once, let's try fetching it by hand
-		if (fallback.value) {
-			data.value = await preloadMedia(props.file, signal)
-		} else {
-			data.value = props.file.source
-		}
-		return
-	}
-
-	// If loading the preview failed once, let's load the original file
-	if (fallback.value) {
-		data.value = src.value
+		data.value = props.file.source
 		return
 	}
 
@@ -496,10 +494,17 @@ async function onFail() {
 		return
 	}
 
-	// Try to load E2EE file as a fallback
+	// Try to load E2EE file as a fallback. Reloading is what puts the
+	// fallback on screen: the element shows `data`, so handing the fetched
+	// bytes to anything else leaves it on the source that just failed.
 	logger.error(`Loading of file ${filename.value} failed, falling back to fetching it by hand`)
 	fallback.value = true
-	src.value = await preloadMedia(props.file)
+	try {
+		await loadData()
+	} catch (error) {
+		logger.error(`Fallback fetch of ${filename.value} failed`, { error })
+		emit('errored', new Error(t('Failed to load image.')))
+	}
 }
 
 /**
