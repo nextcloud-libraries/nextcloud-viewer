@@ -87,15 +87,17 @@ describe('Viewer.open()', () => {
 	})
 
 	it('shows an error when the explicit handlerId is not registered', async () => {
-		const { vm, wrapper, errorText, modalProps } = mountViewer([imageHandler()])
+		const { vm, wrapper, errorText, modalProps, renderedTags } = mountViewer([imageHandler()])
 		const f1 = makeFile({ mime: 'image/jpeg' })
 
 		await vm.open([f1], f1, undefined, 'does-not-exist')
 		await wrapper.vm.$nextTick()
 
 		expect(errorText()).toBe('There was no plugin available to open this file.')
-		// No file got opened.
-		expect(modalProps().show).toBe(false)
+		// No file got opened, but the modal is shown regardless: it is what
+		// carries the error, and it hides its content while `show` is false.
+		expect(renderedTags()).toEqual([])
+		expect(modalProps().show).toBe(true)
 	})
 
 	it.each([
