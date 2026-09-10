@@ -20,6 +20,7 @@ vi.mock('@nextcloud/image-editor', () => ({
 	}),
 }))
 
+import { showError } from '@nextcloud/dialogs'
 import { emit } from '@nextcloud/event-bus'
 import ImageEditor from '../../lib/components/ImageEditor.vue'
 
@@ -43,11 +44,40 @@ describe('ImageEditor wrapper', () => {
 		editor.vm.$emit('save', { blob, width: 1, height: 1, mimeType: 'image/jpeg' })
 		await flushPromises()
 
-		expect(axiosPut).toHaveBeenCalledWith(file.encodedSource, blob)
+		// No etag known for this one, so there is no version to write against
+		expect(axiosPut).toHaveBeenCalledWith(file.encodedSource, blob, { headers: undefined })
 		expect(file.attributes.etag).toBe('abc123')
 		expect(wrapper.emitted('saved')).toEqual([['blob:edited']])
 		expect(vi.mocked(emit)).toHaveBeenCalledWith('files:node:updated', file)
 		expect(wrapper.emitted('close')).toBeTruthy()
+	})
+
+	// The editor has the file on screen for as long as the user works on it,
+	// and a blind PUT at the end of that writes over whatever happened to it
+	// in the meantime
+	it('saves against the version it opened', async () => {
+		const file = makeFile({ basename: 'photo.jpg', mime: 'image/jpeg', attributes: { etag: 'abc123' } })
+		const wrapper = mount(ImageEditor, { props: { file } })
+		const blob = new Blob(['x'], { type: 'image/jpeg' })
+
+		wrapper.findComponent({ name: 'LibImageEditor' }).vm.$emit('save', { blob, width: 1, height: 1, mimeType: 'image/jpeg' })
+		await flushPromises()
+
+		expect(axiosPut).toHaveBeenCalledWith(file.encodedSource, blob, {
+			headers: { 'If-Match': '"abc123"' },
+		})
+	})
+
+	it('says what happened when the file changed under the editor', async () => {
+		axiosPut.mockRejectedValueOnce({ response: { status: 412 } })
+		const { wrapper, editor } = mountEditor()
+
+		editor.vm.$emit('save', { blob: new Blob(['x']), width: 1, height: 1, mimeType: 'image/jpeg' })
+		await flushPromises()
+
+		expect(vi.mocked(showError)).toHaveBeenCalledWith(expect.stringContaining('changed elsewhere'))
+		// Still open: the work is not lost along with the save
+		expect(wrapper.emitted('close')).toBeUndefined()
 	})
 
 	it('closes without saving on cancel', async () => {

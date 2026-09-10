@@ -75,6 +75,14 @@ describe('previewUtils.getPreviewIfAny', () => {
 		expect(getPreviewIfAny(file)).toContain('etag=abc123')
 	})
 
+	// A dav etag is quoted, and which of the two forms reaches the node
+	// depends on who wrote it: both have to come out as the same string, or
+	// the same file has two preview URLs and is fetched twice
+	it('strips real quotes from the etag param too', () => {
+		const file = makeFileWithAttributes({ hasPreview: true, etag: '"abc123"' })
+		expect(getPreviewIfAny(file)).toContain('etag=abc123')
+	})
+
 	it('builds a public preview URL when on a public share', () => {
 		vi.mocked(isPublicShare).mockReturnValue(true)
 		const file = makeFileWithAttributes({ hasPreview: true })
@@ -124,5 +132,27 @@ describe('livePhotoUtils.findLivePhotoPeerFromName', () => {
 		const video = makeFile({ id: 1, basename: 'clip.mov', mime: 'video/quicktime' })
 		const png = makeFile({ id: 2, basename: 'clip.png' })
 		expect(findLivePhotoPeerFromName(video, [video, png])).toBe(png)
+	})
+
+	// The names have to match, not merely start alike: a camera fills a
+	// folder with IMG_1234, IMG_1235, IMG_1239 and so on
+	it('does not pair a video with the photo of another shot', () => {
+		const video = makeFile({ id: 1, basename: 'IMG_1234.mov', mime: 'video/quicktime' })
+		const other = makeFile({ id: 2, basename: 'IMG_1239.jpg' })
+		expect(findLivePhotoPeerFromName(video, [video, other])).toBeUndefined()
+	})
+
+	it('pairs the still image back with its video', () => {
+		const photo = makeFile({ id: 1, basename: 'IMG_1234.jpg' })
+		const peer = makeFile({ id: 2, basename: 'IMG_1234.png' })
+		expect(findLivePhotoPeerFromName(photo, [photo, peer])).toBe(peer)
+	})
+
+	it('reads the whole name of a file that has no extension', () => {
+		const video = makeFile({ id: 1, basename: 'clip', mime: 'video/quicktime' })
+		const longer = makeFile({ id: 2, basename: 'clips.jpg' })
+		const exact = makeFile({ id: 3, basename: 'clip.jpg' })
+		expect(findLivePhotoPeerFromName(video, [video, longer])).toBeUndefined()
+		expect(findLivePhotoPeerFromName(video, [video, exact])).toBe(exact)
 	})
 })

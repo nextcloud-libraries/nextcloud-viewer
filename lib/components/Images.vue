@@ -36,6 +36,7 @@
 					}"
 					:style="imgStyle"
 					:playsinline="true"
+					muted
 					:poster="data ?? undefined"
 					:src="livePhotoSrc ?? undefined"
 					preload="metadata"
@@ -53,7 +54,7 @@
 					class="live-photo_play_button"
 					:style="{ left: `calc(50% - ${width / 2}px)` }"
 					:disabled="!livePhotoCanBePlayed"
-					:aria-description="t('Play the live photo')"
+					:aria-label="t('Play the live photo')"
 					@click="playLivePhoto"
 					@pointerenter="playLivePhoto"
 					@focus="playLivePhoto"
@@ -517,7 +518,11 @@ function playLivePhoto() {
 	if (!livePhotoCanBePlayed.value || !video.value) {
 		return
 	}
-	video.value.play()
+	// Hovering is not a user gesture, so a browser is entitled to refuse.
+	// Nothing to do about that beyond not leaving a rejection behind.
+	video.value.play().catch((error) => {
+		logger.debug('The browser refused to play the live photo', { error })
+	})
 }
 
 /**

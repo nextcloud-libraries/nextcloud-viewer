@@ -4,10 +4,33 @@
  */
 import type { IFile } from '@nextcloud/files'
 
+import { logger } from '../services/logger.ts'
+
 interface ShareAttribute {
 	value: unknown
 	key: string
 	scope: string
+}
+
+/**
+ * The share attributes of a file, or undefined when they cannot be read.
+ *
+ * The server sends them as a json string, and a string that does not parse
+ * is not an empty list: it is a restriction we cannot read.
+ *
+ * @param attributes - What the node carries, as a string or already parsed
+ */
+function parseShareAttributes(attributes?: string | ShareAttribute[]): ShareAttribute[] | undefined {
+	if (typeof attributes !== 'string') {
+		return attributes ?? []
+	}
+
+	try {
+		return JSON.parse(attributes || '[]') as ShareAttribute[]
+	} catch (error) {
+		logger.error('Could not read the share attributes of a file', { attributes, error })
+		return undefined
+	}
 }
 
 /**
@@ -29,9 +52,13 @@ export function canDownload(file: IFile): boolean {
 		return false
 	}
 
-	const shareAttributes: ShareAttribute[] = typeof attributes?.shareAttributes === 'string'
-		? JSON.parse(attributes.shareAttributes || '[]')
-		: attributes?.shareAttributes ?? []
+	const shareAttributes = parseShareAttributes(attributes?.shareAttributes)
+	if (shareAttributes === undefined) {
+		// A restriction that cannot be read is still a restriction: the
+		// answer this one guards is whether to leave the browser its own
+		// ways of saving the file, so it is the restrictive one.
+		return false
+	}
 
 	if (shareAttributes.length > 0) {
 		const download = shareAttributes
