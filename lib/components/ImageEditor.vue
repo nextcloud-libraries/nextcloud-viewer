@@ -58,7 +58,13 @@ const exportOptions = computed<ExportOptions>(() => {
 async function onSave(result: ExportResult) {
 	saving.value = true
 	try {
-		const response = await axios.put(props.file.encodedSource, result.blob)
+		// Against the version that was opened for editing: the editor has had
+		// the file on screen for as long as the user was working on it, and
+		// writing over a change made elsewhere in the meantime loses it.
+		const known = props.file.attributes.etag as string | undefined
+		const response = await axios.put(props.file.encodedSource, result.blob, {
+			headers: known ? { 'If-Match': `"${String(known).replace(/&quot;|"/g, '')}"` } : undefined,
+		})
 
 		// Bump the etag so the viewer's preview cache is busted and the edited
 		// image is shown once the handler re-renders (see getPreviewIfAny). The
@@ -77,6 +83,10 @@ async function onSave(result: ExportResult) {
 		emit('close')
 	} catch (error) {
 		logger.error('Failed to save the edited image', { error })
+		if ((error as { response?: { status?: number } }).response?.status === 412) {
+			showError(t('The file was changed elsewhere while you were editing it. Reload the page to edit the new version.'))
+			return
+		}
 		showError(t('Could not save the image'))
 	} finally {
 		saving.value = false

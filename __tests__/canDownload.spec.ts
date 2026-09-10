@@ -4,7 +4,8 @@
  */
 import type { IFile } from '@nextcloud/files'
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { logger } from '../lib/services/logger.ts'
 import { canDownload } from '../lib/utils/canDownload.ts'
 
 /**
@@ -30,6 +31,17 @@ describe('canDownload', () => {
 		expect(canDownload(file({
 			shareAttributes: [{ scope: 'permissions', key: 'download', value: false }],
 		}))).toBe(false)
+	})
+
+	// The string comes off the wire, and one that does not parse is not an
+	// empty list: it is a restriction that cannot be read, and this answer
+	// decides whether the browser keeps its own ways of saving the file
+	it('refuses a file whose share attributes cannot be read', () => {
+		const logged = vi.spyOn(logger, 'error').mockImplementation(() => {})
+
+		expect(canDownload(file({ shareAttributes: '[{"scope":"permi' }))).toBe(false)
+
+		expect(logged).toHaveBeenCalled()
 	})
 
 	it('reads share attributes that arrive as a string', () => {

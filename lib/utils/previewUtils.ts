@@ -22,7 +22,11 @@ export function getPreviewIfAny(file: IFile): string {
 		+ `&x=${Math.floor(screen.width * devicePixelRatio)}`
 		+ `&y=${Math.floor(screen.height * devicePixelRatio)}`
 		+ '&a=true'
-		+ (file.attributes.etag ? `&etag=${String(file.attributes.etag).replace(/&quot;/g, '')}` : '')
+		// A dav etag is quoted, and it reaches us either way round depending on
+		// who wrote it, so both forms go: what is left has to be the same
+		// string whichever it came from, or the URL is a different one for
+		// the same file and the preview is fetched again for nothing.
+		+ (file.attributes.etag ? `&etag=${String(file.attributes.etag).replace(/&quot;|"/g, '')}` : '')
 
 	if (file.attributes.hasPreview) {
 		// TODO: find a nicer standard way of doing this?

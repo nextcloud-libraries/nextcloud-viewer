@@ -75,6 +75,14 @@ describe('previewUtils.getPreviewIfAny', () => {
 		expect(getPreviewIfAny(file)).toContain('etag=abc123')
 	})
 
+	// A dav etag is quoted, and which of the two forms reaches the node
+	// depends on who wrote it: both have to come out as the same string, or
+	// the same file has two preview URLs and is fetched twice
+	it('strips real quotes from the etag param too', () => {
+		const file = makeFileWithAttributes({ hasPreview: true, etag: '"abc123"' })
+		expect(getPreviewIfAny(file)).toContain('etag=abc123')
+	})
+
 	it('builds a public preview URL when on a public share', () => {
 		vi.mocked(isPublicShare).mockReturnValue(true)
 		const file = makeFileWithAttributes({ hasPreview: true })
