@@ -683,6 +683,13 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 	preloadNeighbors()
 }
 
+/**
+ * The folder listing on its way, so it can be dropped when the viewer is
+ * asked for something else. A big folder is a long request, and nobody is
+ * waiting for the answer to one they have already navigated away from.
+ */
+let folderListing: AbortController | null = null
+
 const openFolder: ViewerAPI['openFolder'] = async (folder, file, options, handlerId) => {
 	logger.debug('Opening folder', { folder, file, options, handlerId })
 	loading.value = true
@@ -699,10 +706,18 @@ const openFolder: ViewerAPI['openFolder'] = async (folder, file, options, handle
 		return
 	}
 
+	folderListing?.abort()
+	folderListing = new AbortController()
+	const { signal } = folderListing
+
 	try {
-		const files = await fetchFolderContent(folder)
+		const files = await fetchFolderContent(folder, signal)
 		return open(files, file, options, handlerId)
 	} catch (error) {
+		if (signal.aborted) {
+			logger.debug('Folder listing dropped, the viewer moved on', { folder })
+			return
+		}
 		logger.error('Failed to fetch folder contents', { folder, error })
 		errorString.value = t('We were not able to open the file.')
 		return
@@ -880,6 +895,7 @@ function close() {
 	canSwipe.value = true
 	pendingLoads.value = 0
 	openedSubmenu.value = null
+	folderListing?.abort()
 	clearEditedSources()
 	// Restore the app header when closing (the sidebar may still be open).
 	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)

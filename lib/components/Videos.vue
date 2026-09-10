@@ -86,7 +86,7 @@ const livePhotoPath = computed(() => {
 	if (peerFile === undefined) {
 		return undefined
 	}
-	return getPreviewIfAny(peerFile)
+	return getPreviewIfAny(peerFile, { width: props.maxWidth, height: props.maxHeight })
 })
 
 /**

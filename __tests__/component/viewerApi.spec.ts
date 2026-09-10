@@ -196,7 +196,7 @@ describe('openFolder()', () => {
 		await vm.openFolder(folder, b, { canLoop: false })
 		await flushPromises()
 
-		expect(folderContent).toHaveBeenCalledWith(folder)
+		expect(folderContent).toHaveBeenCalledWith(folder, expect.any(AbortSignal))
 		expect(modalName()).toBe('b.jpg')
 		// a.jpg before it, notes.txt filtered out after it
 		expect(modalProps().hasPrevious).toBe(true)
@@ -233,6 +233,30 @@ describe('openFolder()', () => {
 
 		expect(errorText()).toBe(CANNOT_OPEN)
 		expect(folderContent).not.toHaveBeenCalled()
+	})
+
+	// A big folder is a long request, and the answer to one the user has
+	// already navigated away from is of no use to anyone
+	it('drops a listing the viewer has moved on from', async () => {
+		const { vm, wrapper, errorText, modalName } = mountViewer([imageHandler()])
+		const slow = makeFile({ basename: 'slow.jpg' })
+		const quick = makeFile({ basename: 'quick.jpg' })
+		let firstSignal: AbortSignal | undefined
+		folderContent.mockImplementationOnce(async (_folder, signal) => {
+			firstSignal = signal
+			// Never answers: the request is still out when the next one starts
+			return await new Promise(() => {})
+		})
+		folderContent.mockResolvedValueOnce([quick])
+
+		void vm.openFolder(makeFolder(), slow)
+		await wrapper.vm.$nextTick()
+		await vm.openFolder(makeFolder(), quick)
+		await flushPromises()
+
+		expect(firstSignal?.aborted).toBe(true)
+		expect(modalName()).toBe('quick.jpg')
+		expect(errorText()).toBeUndefined()
 	})
 
 	it('reports a listing that fails', async () => {
