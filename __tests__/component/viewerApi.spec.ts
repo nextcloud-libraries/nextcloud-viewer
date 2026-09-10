@@ -287,6 +287,23 @@ describe('compare() with bad input', () => {
 
 		expect(renderedTags()).toEqual(['oca-viewer-other', 'oca-viewer-other'])
 	})
+
+	it('drops the error of a failed open', async () => {
+		vi.spyOn(logger, 'error').mockImplementation(() => {})
+		const { vm, wrapper, errorText, renderedTags } = mountViewer([imageHandler()])
+
+		await vm.open([], undefined)
+		await wrapper.vm.$nextTick()
+		expect(errorText()).toBe('No files were provided to open.')
+
+		await vm.compare(makeFile(), makeFile())
+		await wrapper.vm.$nextTick()
+
+		// The error is what the modal shows instead of the files, so it has
+		// to go for the comparison to be visible at all.
+		expect(errorText()).toBeUndefined()
+		expect(renderedTags()).toEqual(['oca-viewer-image', 'oca-viewer-image'])
+	})
 })
 
 describe('the editing option', () => {
