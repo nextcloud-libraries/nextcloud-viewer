@@ -57,6 +57,22 @@ describe('handler groups', () => {
 	})
 })
 
+// Another copy of the library on the page, of a generation that keeps its
+// own registry, names the same elements. `define()` throws on a name it
+// already knows, and whichever mounts second would never finish mounting.
+describe('the custom elements', () => {
+	it.each([
+		['../lib/models/images.ts', 'registerImageCustomElement'],
+		['../lib/models/videos.ts', 'registerVideoCustomElement'],
+		['../lib/models/audios.ts', 'registerAudioCustomElement'],
+	])('defines %s once, whoever asks', async (module, register) => {
+		const model = await import(module) as Record<string, () => Promise<void>>
+		await model[register]!()
+		await expect(model[register]!()).resolves.toBeUndefined()
+		expect(window.customElements.get(model.tagname as unknown as string)).toBeDefined()
+	})
+})
+
 describe('videos model', () => {
 	it.each([
 		'video/mpeg',

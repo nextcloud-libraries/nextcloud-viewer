@@ -7,6 +7,7 @@ import { getCapabilities } from '@nextcloud/capabilities'
 import { defineCustomElement } from 'vue'
 import { registerHandler } from '../handlers.ts'
 import { logger } from '../services/logger.ts'
+import { defineCustomElementOnce } from '../utils/customElements.ts'
 import { t } from '../utils/l10n.ts'
 
 interface PreviewCapabilities {
@@ -78,7 +79,7 @@ export async function registerImageCustomElement(): Promise<void> {
 		shadowRoot: false,
 	})
 
-	window.customElements.define(tagname, ImageElement)
+	defineCustomElementOnce(tagname, ImageElement)
 }
 
 /**

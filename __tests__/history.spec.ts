@@ -7,10 +7,12 @@ import type { MockedObject } from 'vitest'
 import type * as HistoryModule from '../lib/utils/history.ts'
 import type { Viewer } from '../lib/viewer.ts'
 
+import { showError } from '@nextcloud/dialogs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeFile } from './factories.ts'
 
 vi.mock('../lib/viewer.ts')
+vi.mock('@nextcloud/dialogs', () => ({ showError: vi.fn() }))
 
 const view = { id: 'files' } as IView
 const folder = { path: '/photos' } as IFolder
@@ -74,6 +76,25 @@ describe('openWithHistory', () => {
 		openWithHistory([file], file, view, folder)
 		expect(viewer.open).toHaveBeenCalledWith([file], file, { view, folder }, undefined)
 		expect(addSpy).not.toHaveBeenCalledWith('popstate', expect.anything())
+	})
+
+	// Opening loads the viewer the first time, and nothing awaits the file
+	// action that led here, so a chunk that never arrives has to be said out
+	// loud rather than left as an unhandled rejection.
+	it('reports an open that fails', async () => {
+		const error = new Error('Failed to fetch dynamically imported module')
+		// The module under test was imported after `resetModules`, so it holds
+		// that registry's logger rather than the one imported up top
+		const { logger } = await import('../lib/services/logger.ts')
+		const logged = vi.spyOn(logger, 'error').mockImplementation(() => {})
+		viewer.open.mockRejectedValueOnce(error)
+		setRouter()
+		const file = makeFile({ id: 1 })
+
+		openWithHistory([file], file, view, folder)
+		await vi.waitFor(() => expect(showError).toHaveBeenCalled())
+
+		expect(logged).toHaveBeenCalledWith('Could not open the viewer', { error })
 	})
 
 	it('opens without history integration when view or folder is missing', () => {

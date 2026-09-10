@@ -176,6 +176,9 @@ msgstr ""
 msgid "The name must not contain \"/\"."
 msgstr ""
 
+msgid "The viewer could not be loaded."
+msgstr ""
+
 msgid "There was no plugin available to open this file."
 msgstr ""
 

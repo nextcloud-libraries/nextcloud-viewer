@@ -3,9 +3,11 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import type { IFile, IFolder, IView } from '@nextcloud/files'
+import type { ViewerOptions } from '../viewer.ts'
 
 import { logger } from '../services/logger.ts'
 import { getViewer } from '../viewer.ts'
+import { t } from './l10n.ts'
 
 /**
  * Links the viewer to the Files router history so that:
@@ -16,6 +18,29 @@ import { getViewer } from '../viewer.ts'
  * - closing the viewer unwinds those entries so pressing back returns to the
  *   page the viewer was opened from, not to a previously shown file.
  */
+
+/**
+ * Open the viewer, and say so when it cannot be opened at all.
+ *
+ * Opening loads the viewer itself the first time, which is a chunk that can
+ * fail to arrive. Nobody is awaiting the action that led here, so without
+ * this the file simply never opens and the only trace is an unhandled
+ * rejection in the console.
+ *
+ * @param contents - The files available to the viewer
+ * @param file - The file to open
+ * @param options - The viewer options
+ * @param handlerId - Optional handler to force
+ */
+function openViewer(contents: IFile[], file: IFile, options: ViewerOptions, handlerId?: string): void {
+	getViewer().open(contents, file, options, handlerId).catch(async (error) => {
+		logger.error('Could not open the viewer', { error })
+		// Loaded on demand: this is the one path that needs it, and the
+		// package is meant to cost nothing until a file is opened.
+		const { showError } = await import('@nextcloud/dialogs')
+		showError(t('The viewer could not be loaded.'))
+	})
+}
 
 /**
  * The Files router, or undefined in standalone mode (no Files app).
@@ -173,7 +198,7 @@ export function openWithHistory(
 	const router = getRouter()
 	if (!router || !view || !folder) {
 		// Standalone mode: no history integration, just open.
-		getViewer().open(contents, file, { view, folder }, handlerId)
+		openViewer(contents, file, { view, folder }, handlerId)
 		return
 	}
 
@@ -189,7 +214,7 @@ export function openWithHistory(
 		logger.debug('Viewer opened from an openfile URL, reusing the current history entry')
 	}
 
-	getViewer().open(contents, file, {
+	openViewer(contents, file, {
 		view,
 		folder,
 		// Open straight into editing only on a refresh/deeplink (openfile already

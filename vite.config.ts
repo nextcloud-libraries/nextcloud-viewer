@@ -42,11 +42,12 @@ const eagerMessages = new Set([
 	'Images',
 	'Video player',
 	'Audio player',
+	'The viewer could not be loaded.',
 ])
 
 // The full catalog is ~200 kB of the bundle, which is far too much to put
-// on every page of the server for six strings. The entry carries those six
-// in every locale, the rest is a chunk the viewer pulls in as it mounts.
+// on every page of the server for a handful of strings. The entry carries
+// those in every locale, the rest is a chunk the viewer pulls in as it mounts.
 const eagerTranslations = translations.map(({ locale, json }) => ({
 	locale,
 	// The gettext builder reads the messages of the empty context and takes
