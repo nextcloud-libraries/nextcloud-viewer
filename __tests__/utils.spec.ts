@@ -70,6 +70,32 @@ describe('previewUtils.getPreviewIfAny', () => {
 		expect(url).toContain('a=true')
 	})
 
+	// The server renders and caches one preview per size asked for, so a
+	// picture shown in a corner of a HiDPI display must not have it render
+	// the whole screen's worth of pixels
+	it('asks for the space the preview has to fill', () => {
+		const file = makeFileWithAttributes({ hasPreview: true })
+		const url = getPreviewIfAny(file, { width: 400, height: 300 })
+		// 400 and 300 CSS pixels at a ratio of 2, each rounded up to the
+		// next shared size
+		expect(url).toContain('x=1024')
+		expect(url).toContain('y=768')
+	})
+
+	it('never asks for more than the display can show', () => {
+		const file = makeFileWithAttributes({ hasPreview: true })
+		const url = getPreviewIfAny(file, { width: 4000, height: 4000 })
+		expect(url).toContain('x=2000')
+		expect(url).toContain('y=1600')
+	})
+
+	it('rounds up to a shared size, so a resize reuses what the server has', () => {
+		const file = makeFileWithAttributes({ hasPreview: true })
+		const before = getPreviewIfAny(file, { width: 400, height: 300 })
+		// A window a few pixels wider is the same request
+		expect(getPreviewIfAny(file, { width: 405, height: 302 })).toBe(before)
+	})
+
 	it('strips &quot; entities from the etag param', () => {
 		const file = makeFileWithAttributes({ hasPreview: true, etag: '&quot;abc123&quot;' })
 		expect(getPreviewIfAny(file)).toContain('etag=abc123')

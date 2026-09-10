@@ -75,8 +75,15 @@ vi.mock('@skjnldsv/vue-plyr', async () => {
 				}
 			},
 			render() {
-				// plyr wraps the media in a .plyr root, which the composable looks for
-				return h('div', { class: 'plyr vue-plyr-stub' }, this.$slots.default?.())
+				// plyr wraps the media in a .plyr root, which the composable
+				// looks for, and hangs its controls off it
+				return h('div', { class: 'plyr vue-plyr-stub' }, [
+					h('div', { class: 'plyr__controls' }, [
+						h('button', { class: 'plyr__controls__item', 'data-plyr': 'play' }),
+						h('button', { class: 'plyr__controls__item', 'data-plyr': 'fullscreen' }),
+					]),
+					this.$slots.default?.(),
+				])
 			},
 		}),
 	}
@@ -207,7 +214,8 @@ describe('Images.vue', () => {
 	it('never falls back to the raw bytes of an svg', async () => {
 		const file = makeFile({ basename: 'drawing.svg', mime: 'image/svg+xml' })
 		const wrapper = mountImages({ file, files: [file] })
-		await flushPromises()
+		// The sanitizer arrives by a lazy import, which outlasts one flush
+		await vi.waitFor(() => expect(wrapper.find('img').exists()).toBe(true))
 
 		await wrapper.find('img').trigger('error')
 		await flushPromises()
@@ -386,6 +394,42 @@ describe('a player torn down early', () => {
 		const wrapper = mount(Host)
 
 		expect(() => wrapper.unmount()).not.toThrow()
+	})
+})
+
+describe('the listeners on the plyr controls', () => {
+	// Every prop the viewer hands over runs the update hook, and a resize
+	// runs it a great many times over. The controls are the same elements.
+	it('go on once, not on every update', async () => {
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+
+		// The viewer resizes the handler by handing it new bounds, and the
+		// first of those is what the controls are bound on
+		await wrapper.setProps({ maxWidth: 900 })
+		const controls = wrapper.findAll('.plyr__controls__item').map((control) => control.element)
+		const bind = controls.map((control) => vi.spyOn(control, 'addEventListener'))
+
+		await wrapper.setProps({ maxWidth: 800 })
+		await wrapper.setProps({ maxWidth: 700 })
+
+		expect(controls).toHaveLength(2)
+		expect(bind.map((spy) => spy.mock.calls.length)).toEqual([0, 0])
+	})
+
+	it('come off when the player goes away', async () => {
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+		await wrapper.setProps({ maxWidth: 900 })
+
+		const controls = wrapper.findAll('.plyr__controls__item').map((control) => control.element)
+		const unbind = controls.map((control) => vi.spyOn(control, 'removeEventListener'))
+
+		wrapper.unmount()
+
+		expect(unbind.every((spy) => spy.mock.calls.length > 0)).toBe(true)
 	})
 })
 

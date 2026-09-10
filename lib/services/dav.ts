@@ -20,12 +20,14 @@ export const client = getClient()
  * files in whatever order the server happened to reply.
  *
  * @param folder - The folder whose file contents should be fetched
+ * @param signal - Drops the listing when the viewer has moved on
  */
-export async function fetchFolderContent(folder: IFolder): Promise<IFile[]> {
+export async function fetchFolderContent(folder: IFolder, signal?: AbortSignal): Promise<IFile[]> {
 	const propfindPayload = getDefaultPropfind()
 	const result = (await client.getDirectoryContents(`${folder.root}${folder.path}`, {
 		details: true,
 		data: propfindPayload,
+		signal,
 	})) as ResponseDataDetailed<Array<FileStat>>
 
 	const files = result.data

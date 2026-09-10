@@ -160,6 +160,20 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		return Array.from(plyr.value.$el.querySelectorAll('.plyr__controls__item'))
 	}
 
+	/** The controls the listeners are on, so they go on once. */
+	let boundControls: Element[] = []
+
+	/**
+	 * Take the listeners off whatever they were bound to.
+	 */
+	function unbindControls() {
+		boundControls.forEach((control) => {
+			control.removeEventListener('mouseenter', disableSwipe)
+			control.removeEventListener('mouseleave', enableSwipe)
+		})
+		boundControls = []
+	}
+
 	// For some reason the video controls don't get mounted to
 	// the dom until after the component (Videos) is mounted,
 	// using the mounted() hook will leave us with an empty array
@@ -170,22 +184,25 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 			return
 		}
 
+		// Every prop the viewer hands over runs this, a resize a great many
+		// times over, and the controls are the same elements throughout:
+		// leave them alone unless plyr has actually rebuilt them.
+		if (plyrControls.length === boundControls.length && plyrControls.every((control, index) => control === boundControls[index])) {
+			return
+		}
+		unbindControls()
+
 		// Prevent swiping to the next/previous item when scrubbing the timeline or changing volume.
-		// Remove before adding so repeated onUpdated calls never stack duplicate listeners.
 		plyrControls.forEach((control) => {
-			control.removeEventListener('mouseenter', disableSwipe)
 			control.addEventListener('mouseenter', disableSwipe)
-			control.removeEventListener('mouseleave', enableSwipe)
 			control.addEventListener('mouseleave', enableSwipe)
 		})
+		boundControls = plyrControls
 	})
 
 	onBeforeUnmount(() => {
 		// Remove control listeners to avoid leaks
-		getPlyrControls().forEach((control) => {
-			control.removeEventListener('mouseenter', disableSwipe)
-			control.removeEventListener('mouseleave', enableSwipe)
-		})
+		unbindControls()
 
 		// Whatever the player was showing, the page it hid is still there
 		setPageHidden(false)

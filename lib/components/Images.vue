@@ -74,9 +74,8 @@
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
 import axios from '@nextcloud/axios'
-import { NcLoadingIcon } from '@nextcloud/vue'
-import DOMPurify from 'dompurify'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import { useViewerProps } from '../composables/useViewerProps.ts'
 import { logger } from '../services/logger.ts'
@@ -128,7 +127,8 @@ const mime = computed(() => props.file.mime)
 const hasPreview = computed(() => props.file.attributes?.hasPreview ?? false)
 const previewUrl = computed(() => props.file.attributes?.previewUrl)
 const metadataFilesLivePhoto = computed(() => props.file.attributes?.['metadata-files-live-photo'])
-const previewPath = computed(() => getPreviewIfAny(props.file))
+// Asked for the space it will be shown in, rather than for the whole display
+const previewPath = computed(() => getPreviewIfAny(props.file, { width: props.maxWidth, height: props.maxHeight }))
 
 const zoomHeight = computed(() => Math.round(height.value * zoomRatio.value))
 const zoomWidth = computed(() => Math.round(width.value * zoomRatio.value))
@@ -297,6 +297,9 @@ onUnmounted(() => {
  */
 async function getBase64FromImage(signal?: AbortSignal): Promise<string> {
 	const file = await axios.get(src.value, { signal })
+	// Loaded here rather than with the component: the sanitizer is for svg
+	// alone, and an svg is a small share of the images anyone opens.
+	const { default: DOMPurify } = await import('dompurify')
 	const sanitized = DOMPurify.sanitize(file.data)
 	return `data:${mime.value};base64,${btoa(unescape(encodeURIComponent(sanitized)))}`
 }
