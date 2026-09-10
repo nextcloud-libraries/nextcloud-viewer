@@ -7,13 +7,16 @@ import type Plyr from 'plyr'
 import type { EmitFn } from 'vue'
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
-import { computed, onBeforeUnmount, onUpdated, ref, useTemplateRef } from 'vue'
+import { computed, onBeforeUnmount, onUpdated, ref, useTemplateRef, watch } from 'vue'
 import blankVideo from '../img/blank.mp4'
 import { logger } from '../services/logger.ts'
 import { preloadMedia } from '../services/mediaPreloader.ts'
 import { t } from '../utils/l10n.ts'
 import { localizeSpeedLabels, plyrTranslations } from '../utils/plyrTranslations.ts'
 import { useViewerProps } from './useViewerProps.ts'
+
+/** Marks the page furniture the viewer hides around a full screen player */
+const HIDDEN_FULLSCREEN_CLASS = 'viewer__hidden-fullscreen'
 
 /**
  * Composable to setup a Plyr player instance.
@@ -26,13 +29,11 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	const { filename, src } = useViewerProps(props)
 
 	const plyr = useTemplateRef<{ player: Plyr, $el: HTMLElement }>('plyr')
-	const player = computed<Plyr>(() => plyr.value?.player as Plyr)
+	const player = computed<Plyr | undefined>(() => plyr.value?.player as Plyr | undefined)
 	const video = useTemplateRef<HTMLVideoElement>('video')
 	const audio = useTemplateRef<HTMLAudioElement>('audio')
 
 	const fallback = ref(false)
-
-	const isFullscreenButtonVisible = ref(false)
 
 	const options = computed(() => {
 		return {
@@ -116,21 +117,33 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	}
 
 	/**
-	 * Work around to get the state of the fullscreen button,
-	 * aria-selected attribute is not reliable.
+	 * Hide, or bring back, the page around a full screen player.
+	 *
+	 * The elements are the server's, not ours, and a page that has neither
+	 * (a public share, an app hosting the viewer itself) is not a reason to
+	 * throw from a click handler.
+	 *
+	 * @param hidden - Whether the page around the player should be hidden
 	 */
-	function hideHeaderAndFooter() {
-		isFullscreenButtonVisible.value = !isFullscreenButtonVisible.value
-		const main = document.body.querySelector('main')!
-		const footer = document.body.querySelector('footer')!
-		if (isFullscreenButtonVisible.value) {
-			main.classList.add('viewer__hidden-fullscreen')
-			footer.classList.add('viewer__hidden-fullscreen')
-		} else {
-			main.classList.remove('viewer__hidden-fullscreen')
-			footer.classList.remove('viewer__hidden-fullscreen')
+	function setPageHidden(hidden: boolean): void {
+		for (const element of [document.body.querySelector('main'), document.body.querySelector('footer')]) {
+			element?.classList.toggle(HIDDEN_FULLSCREEN_CLASS, hidden)
 		}
 	}
+
+	const onEnterFullscreen = () => setPageHidden(true)
+	const onExitFullscreen = () => setPageHidden(false)
+
+	// What plyr says about its own full screen, rather than a count of clicks
+	// on the button: the user also leaves full screen with Escape or the
+	// browser's own control, and a count is then one behind for good, leaving
+	// the header hidden on a page that is not full screen any more.
+	watch(player, (instance, previous) => {
+		previous?.off('enterfullscreen', onEnterFullscreen)
+		previous?.off('exitfullscreen', onExitFullscreen)
+		instance?.on('enterfullscreen', onEnterFullscreen)
+		instance?.on('exitfullscreen', onExitFullscreen)
+	}, { immediate: true })
 
 	// Stable handler references so listeners can be removed again and are never
 	// bound more than once, even though onUpdated may run many times.
@@ -160,10 +173,6 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		// Prevent swiping to the next/previous item when scrubbing the timeline or changing volume.
 		// Remove before adding so repeated onUpdated calls never stack duplicate listeners.
 		plyrControls.forEach((control) => {
-			if (control.getAttribute('data-plyr') === 'fullscreen') {
-				control.removeEventListener('click', hideHeaderAndFooter)
-				control.addEventListener('click', hideHeaderAndFooter)
-			}
 			control.removeEventListener('mouseenter', disableSwipe)
 			control.addEventListener('mouseenter', disableSwipe)
 			control.removeEventListener('mouseleave', enableSwipe)
@@ -174,16 +183,20 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	onBeforeUnmount(() => {
 		// Remove control listeners to avoid leaks
 		getPlyrControls().forEach((control) => {
-			control.removeEventListener('click', hideHeaderAndFooter)
 			control.removeEventListener('mouseenter', disableSwipe)
 			control.removeEventListener('mouseleave', enableSwipe)
 		})
 
+		// Whatever the player was showing, the page it hid is still there
+		setPageHidden(false)
+
 		// Force stop any ongoing request
 		logger.debug('Closing media stream', { filename: props.file.basename })
 		video?.value?.pause?.()
-		player.value.stop()
-		player.value.destroy()
+		// Guarded: a component torn down before plyr got as far as a player,
+		// which a quick close is enough for, has nothing to stop
+		player.value?.stop()
+		player.value?.destroy()
 	})
 
 	return {
