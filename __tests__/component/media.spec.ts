@@ -7,7 +7,7 @@ import type { ViewerProps } from '../../lib/viewer.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h } from 'vue'
+import { defineComponent, h, nextTick } from 'vue'
 import { makeFile } from '../factories.ts'
 
 // Resolve/keep the real network-free path: preloadMedia is the only fetch the
@@ -18,9 +18,8 @@ vi.mock('../../lib/services/mediaPreloader.ts', () => ({
 
 // An svg is read and sanitized rather than handed to the element, so the
 // only request Images makes by itself is that one.
-vi.mock('@nextcloud/axios', () => ({
-	default: { get: vi.fn(async () => ({ data: '<svg/>' })) },
-}))
+const axiosGet = vi.hoisted(() => vi.fn(async () => ({ data: '<svg/>' })))
+vi.mock('@nextcloud/axios', () => ({ default: { get: axiosGet } }))
 
 // imagePath is evaluated at module load of usePlyrPlayer (blank.mp4). Keep the
 // rest of the router real; only pin the two URL helpers so tests never depend on
@@ -314,6 +313,86 @@ describe('moving to another file of the same name', () => {
 		await flushPromises()
 
 		expect(wrapper.find('video').attributes('src')).toBe(second.encodedSource)
+	})
+})
+
+describe('an image that cannot be read at all', () => {
+	// An svg is fetched to be sanitized, and an E2EE file is fetched by
+	// hand: a request that rejects there left the element with nothing and
+	// the viewer waiting on a `loaded` event that could never come
+	it('reports a request that rejects on the first load', async () => {
+		axiosGet.mockRejectedValueOnce(new Error('503'))
+		const logged = vi.spyOn(logger, 'error').mockImplementation(() => {})
+		const file = makeFile({ basename: 'drawing.svg', mime: 'image/svg+xml' })
+
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		expect(wrapper.emitted('errored')).toHaveLength(1)
+		expect(logged).toHaveBeenCalled()
+	})
+})
+
+describe('the pointers on an image', () => {
+	/**
+	 * A pointer event jsdom will accept: it has no PointerEvent, and the
+	 * coordinates of a MouseEvent cannot be set after the fact.
+	 *
+	 * @param type - The event name
+	 * @param pointerId - Which pointer it is
+	 * @param at - Where it is, in both axes
+	 */
+	function pointer(type: string, pointerId: number, at = 0): Event {
+		const event = new MouseEvent(type, { clientX: at, clientY: at, bubbles: true, cancelable: true })
+		Object.defineProperty(event, 'pointerId', { value: pointerId })
+		return event
+	}
+
+	/**
+	 * Mount an image and return a way to put pointers on it.
+	 */
+	async function mountWithPointers() {
+		const wrapper = mountImages()
+		await flushPromises()
+		const image = wrapper.find('img').element
+		const send = async (type: string, pointerId: number, at?: number) => {
+			image.dispatchEvent(pointer(type, pointerId, at))
+			await nextTick()
+		}
+		const zoomed = () => wrapper.find('img').attributes('class')?.includes('zoomed') ?? false
+		return { wrapper, send, zoomed }
+	}
+
+	it('takes back only the pointer that was lifted', async () => {
+		const { send, zoomed } = await mountWithPointers()
+		await send('pointerdown', 1, 0)
+		await send('pointerdown', 2, 40)
+
+		// A pointer that went down somewhere else, so this element never
+		// cached it: splice reads its index of -1 as the last entry and
+		// drops a finger that is still on the screen
+		await send('pointerup', 99)
+		// Both fingers are still down, so this is still a pinch, and moving
+		// one of them apart zooms
+		await send('pointermove', 2, 200)
+
+		expect(zoomed()).toBe(true)
+	})
+
+	// The browser takes a pointer back when it turns the gesture into one of
+	// its own, and the `up` that would have ended it never arrives
+	it('lets go of a pointer the browser cancels', async () => {
+		const { wrapper, send, zoomed } = await mountWithPointers()
+		await send('pointerdown', 1, 0)
+		expect(wrapper.emitted('update:canSwipe')).toBeUndefined()
+
+		await send('pointercancel', 1)
+		// One finger again, so nothing here is a pinch
+		await send('pointerdown', 2, 0)
+		await send('pointermove', 2, 200)
+
+		expect(zoomed()).toBe(false)
+		expect(wrapper.emitted('update:canSwipe')).toEqual([[true]])
 	})
 })
 

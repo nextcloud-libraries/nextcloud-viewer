@@ -23,6 +23,7 @@
 				@dblclick.prevent="onDblclick"
 				@pointerdown.prevent="pointerDown"
 				@pointerup.prevent="pointerUp"
+				@pointercancel.prevent="pointerCancel"
 				@pointermove.prevent="pointerMove">
 
 			<template v-if="livePhoto">
@@ -47,6 +48,7 @@
 					@dblclick.prevent="onDblclick"
 					@pointerdown.prevent="pointerDown"
 					@pointerup.prevent="pointerUp"
+					@pointercancel.prevent="pointerCancel"
 					@pointermove.prevent="pointerMove"
 					@ended="stopLivePhoto" />
 				<button
@@ -168,8 +170,8 @@ let inFlight: { controller: AbortController, source: string } | null = null
 // Load data when component mounts or file changes. Keyed on the source, as
 // two files can be shown under one name and it is the source that says
 // which bytes to fetch.
-watch(() => props.file.source, async () => {
-	await loadData()
+watch(() => props.file.source, () => {
+	load()
 })
 watch(data, () => {
 	loaded.value = false
@@ -181,7 +183,22 @@ watch(() => props.localSource, (source) => {
 		data.value = source
 	}
 })
-loadData()
+load()
+
+/**
+ * Load the image, and report a load that cannot even be attempted.
+ *
+ * `loadData` reads the file over the network for an svg or an E2EE file,
+ * and a request that rejects there reached nobody: the element was left
+ * with nothing to show, and the viewer waited on its spinner for a
+ * `loaded` event that could never come.
+ */
+function load() {
+	loadData().catch((error) => {
+		logger.error(`Loading of file ${filename.value} failed`, { error })
+		emit('errored', new Error(t('Failed to load image.')))
+	})
+}
 
 /**
  * Load the image data to be displayed
@@ -421,11 +438,35 @@ function pointerDown(event: PointerEvent) {
  * @param event The pointer up event
  */
 function pointerUp(event: PointerEvent) {
-	// Remove pointer from the pointer cache
+	// A pointer the cache never had, one that went down beside the image
+	// say, is not the end of anything: its index of -1 was read by splice
+	// as the last entry, dropping a finger that is still on the screen and
+	// ending the gesture it was part of.
 	const index = pointerCache.value.findIndex((cachedEv) => cachedEv.pointerId === event.pointerId)
+	if (index === -1) {
+		return
+	}
+
 	pointerCache.value.splice(index, 1)
 	dragging.value = false
 	zooming.value = false
+}
+
+/**
+ * A pointer the browser has taken back, because it turned the gesture into
+ * one of its own: a page scroll, or the swipe that pages to the next file.
+ *
+ * The `up` that would normally end it never comes, so without this the
+ * finger stays in the cache and the image is left mid-drag, mid-pinch, or
+ * refusing to swipe.
+ *
+ * @param event The pointer cancel event
+ */
+function pointerCancel(event: PointerEvent) {
+	pointerUp(event)
+	if (pointerCache.value.length === 0 && zoomRatio.value === 1) {
+		emit('update:canSwipe', true)
+	}
 }
 
 /**
