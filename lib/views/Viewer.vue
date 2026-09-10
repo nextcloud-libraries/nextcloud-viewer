@@ -225,7 +225,7 @@ import FullscreenIcon from 'vue-material-design-icons/Fullscreen.vue'
 import FullscreenExitIcon from 'vue-material-design-icons/FullscreenExit.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import { useViewerActions } from '../composables/useViewerActions.ts'
-import { getHandlers } from '../handlers.ts'
+import { getHandlers, isHandlerEnabled } from '../handlers.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
 import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
@@ -275,6 +275,28 @@ const SIDEBAR_FULLSCREEN_CLASS = 'viewer--sidebar-fullscreen'
 const currentFile = ref<IFile>()
 const currentFileList = ref<IFile[]>([])
 const currentHandler = ref<IHandler>()
+
+/**
+ * The handler the opener asked for by id, if it did.
+ *
+ * Kept for as long as the viewer stays on that list, because
+ * `getHandlerForFile` answers with the first handler that takes a file,
+ * which is not the one that was asked for.
+ */
+const forcedHandler = ref<IHandler>()
+
+/**
+ * The handler a file is shown with: the forced one for as long as it takes
+ * the file, and otherwise the first handler that does.
+ *
+ * @param file - The file to be shown
+ */
+function handlerFor(file: IFile): IHandler | undefined {
+	if (forcedHandler.value !== undefined && isHandlerEnabled(forcedHandler.value, [file])) {
+		return forcedHandler.value
+	}
+	return getHandlerForFile(file)
+}
 
 /**
  * Whether the viewer offers to edit the current file.
@@ -431,7 +453,7 @@ function onNodeDeleted(node: INode) {
 	// Same index now points to the former next file; clamp to the last one when
 	// the deleted file was at the end (i.e. fall back to the previous file).
 	const newFile = currentFileList.value[Math.min(index, currentFileList.value.length - 1)] as IFile
-	currentHandler.value = getHandlerForFile(newFile)
+	currentHandler.value = handlerFor(newFile)
 	currentFile.value = newFile
 	preloadNeighbors()
 }
@@ -610,13 +632,15 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 		return
 	}
 
+	forcedHandler.value = handlerId ? handler : undefined
+
 	/**
 	 * Let's compute the current file list based on the current handler
 	 * and its group. We only want to show files that can be handled
 	 * by the same handler or handlers from the same group.
 	 */
 	currentFileList.value = files.filter((f) => {
-		const h = getHandlerForFile(f)
+		const h = handlerFor(f)
 		if (h === undefined) {
 			return false
 		}
@@ -715,6 +739,7 @@ const compare: ViewerAPI['compare'] = async (file1, file2, handlerId) => {
 
 	// Comparison mode has no navigation, so we reset the slideshow context
 	currentFileList.value = []
+	forcedHandler.value = undefined
 	currentOptions.value = {} as ViewerOptions
 	currentHandler.value = handler1
 	currentFile.value = file1
@@ -753,7 +778,7 @@ function preloadNeighbors() {
 	].filter((f): f is IFile => Boolean(f))
 
 	for (const node of neighbors) {
-		const handler = getHandlerForFile(node)
+		const handler = handlerFor(node)
 		if (!handler?.preload) {
 			continue
 		}
@@ -846,6 +871,7 @@ function close() {
 	currentFile.value = undefined
 	currentFileList.value = []
 	currentHandler.value = undefined
+	forcedHandler.value = undefined
 	comparisonFile.value = undefined
 	comparisonHandler.value = undefined
 	currentOptions.value = {} as ViewerOptions
@@ -891,7 +917,7 @@ async function next() {
 		return
 	}
 
-	currentHandler.value = getHandlerForFile(newFile)
+	currentHandler.value = handlerFor(newFile)
 	currentFile.value = newFile
 	currentOptions.value.onNext?.(newFile)
 
@@ -941,7 +967,7 @@ function previous() {
 		return
 	}
 
-	currentHandler.value = getHandlerForFile(newFile)
+	currentHandler.value = handlerFor(newFile)
 	currentFile.value = newFile
 	currentOptions.value.onPrev?.(newFile)
 
@@ -965,7 +991,7 @@ function goTo(fileid: number) {
 		return
 	}
 
-	currentHandler.value = getHandlerForFile(newFile)
+	currentHandler.value = handlerFor(newFile)
 	currentFile.value = newFile
 	preloadNeighbors()
 }
