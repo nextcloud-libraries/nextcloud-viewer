@@ -116,6 +116,71 @@ describe('open() with bad input', () => {
 	})
 })
 
+describe('open() with a forced handler', () => {
+	// Both take every image, so the first one registered is what
+	// getHandlerForFile answers with, whatever the opener asked for.
+	const editor = () => imageHandler({ id: 'editor', tagname: 'oca-viewer-editor' })
+
+	it('keeps the file list of the handler that was asked for', async () => {
+		const { vm, wrapper, modalProps, renderedTags } = mountViewer([imageHandler(), editor()])
+		const files = [makeFile({ basename: 'a.jpg' }), makeFile({ basename: 'b.jpg' })]
+
+		await vm.open(files, files[0], undefined, 'editor')
+		await wrapper.vm.$nextTick()
+
+		expect(renderedTags()).toEqual(['oca-viewer-editor'])
+		// The list belongs to the handler that shows it, so both files are in
+		// it and there is somewhere to page to.
+		expect(modalProps().hasNext).toBe(true)
+	})
+
+	it('stays on that handler while navigating', async () => {
+		const { vm, wrapper, emitModal, modalName, renderedTags } = mountViewer([imageHandler(), editor()])
+		const files = [makeFile({ basename: 'a.jpg' }), makeFile({ basename: 'b.jpg' })]
+
+		await vm.open(files, files[0], undefined, 'editor')
+		await wrapper.vm.$nextTick()
+		await emitModal('next')
+
+		expect(modalName()).toBe('b.jpg')
+		expect(renderedTags()).toEqual(['oca-viewer-editor'])
+	})
+
+	it('hands a file it does not take to its group', async () => {
+		const images = imageHandler({ group: 'media' })
+		const videos = makeHandler({
+			id: 'videos',
+			tagname: 'oca-viewer-videos',
+			group: 'media',
+			enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('video/')),
+		})
+		const { vm, wrapper, emitModal, renderedTags } = mountViewer([images, videos])
+		const clip = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const photo = makeFile({ basename: 'photo.jpg' })
+
+		await vm.open([clip, photo], clip, undefined, 'videos')
+		await wrapper.vm.$nextTick()
+		expect(renderedTags()).toEqual(['oca-viewer-videos'])
+
+		await emitModal('next')
+		expect(renderedTags()).toEqual(['oca-viewer-image'])
+	})
+
+	it('forgets the forced handler once closed', async () => {
+		const { vm, wrapper, emitModal, renderedTags } = mountViewer([imageHandler(), editor()])
+		const file = makeFile({ basename: 'a.jpg' })
+
+		await vm.open([file], file, undefined, 'editor')
+		await wrapper.vm.$nextTick()
+		await emitModal('close')
+
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		expect(renderedTags()).toEqual(['oca-viewer-image'])
+	})
+})
+
 describe('openFolder()', () => {
 	const folderContent = vi.mocked(fetchFolderContent)
 
