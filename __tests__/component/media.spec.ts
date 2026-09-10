@@ -148,6 +148,25 @@ describe('Images.vue', () => {
 		expect(preloadMediaMock).not.toHaveBeenCalled()
 	})
 
+	// The element's `src` is a URL: a name holding a `#` or a `?` cuts it
+	// short unless it is encoded, and the image then fails to load.
+	it('renders the encoded source of a file whose name needs it', async () => {
+		const file = makeFile({ basename: 'a#b c?.jpg', mime: 'image/jpeg' })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		expect(wrapper.find('img').attributes('src')).toBe(file.encodedSource)
+	})
+
+	it('renders the encoded source of a live photo', async () => {
+		const photo = makeFile({ id: 1, basename: 'a#b.jpg', attributes: { 'metadata-files-live-photo': 2 } })
+		const movie = makeFile({ id: 2, basename: 'a#b.mov', mime: 'video/quicktime' })
+		const wrapper = mountImages({ file: photo, files: [photo, movie] })
+		await flushPromises()
+
+		expect(wrapper.find('video').attributes('src')).toBe(movie.encodedSource)
+	})
+
 	it('shows the hand-fetched bytes when the source fails to load', async () => {
 		const file = makeFile({ basename: 'broken.jpg' })
 		const wrapper = mountImages({ file, files: [file] })

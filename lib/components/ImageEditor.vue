@@ -4,7 +4,7 @@
 -->
 <template>
 	<NcImageEditor
-		:src="file.source"
+		:src="file.encodedSource"
 		:label="file.displayname"
 		:exportOptions="exportOptions"
 		:saving="saving"

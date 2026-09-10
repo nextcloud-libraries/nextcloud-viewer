@@ -82,5 +82,7 @@ export function getPreviewIfAny(file: IFile, available?: AvailableSpace): string
 		return generateUrl(`/core/preview?${searchParams}`)
 	}
 
-	return file.source
+	// Encoded: this is handed to a media element as its `src`, and a name
+	// holding a `#` or a `?` would otherwise cut the URL short.
+	return file.encodedSource
 }
