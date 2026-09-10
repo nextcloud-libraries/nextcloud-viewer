@@ -12,6 +12,7 @@ vi.mock('@nextcloud/event-bus')
 vi.mock('../../lib/services/dav.ts', () => ({ fetchFolderContent: vi.fn(async () => []) }))
 // Editing renders the image editor, which drags in canvas, webgl and a
 // stylesheet node cannot parse. None of that is what these tests are about.
+vi.mock('@nextcloud/image-editor/style', () => ({}))
 vi.mock('@nextcloud/image-editor', () => ({
 	ImageEditor: defineComponent({
 		name: 'LibImageEditor',
@@ -20,6 +21,7 @@ vi.mock('@nextcloud/image-editor', () => ({
 	}),
 }))
 
+import { subscribe } from '@nextcloud/event-bus'
 import { Folder, Permission, registerFileAction } from '@nextcloud/files'
 import { fetchFolderContent } from '../../lib/services/dav.ts'
 import { logger } from '../../lib/services/logger.ts'
@@ -252,6 +254,62 @@ describe('the editing option', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(modalProps().slideshowPaused).toBe(false)
+	})
+
+	/**
+	 * Get the handler the viewer subscribed for one of the files events.
+	 *
+	 * @param event - The event name
+	 */
+	function busHandler(event: string) {
+		const call = vi.mocked(subscribe).mock.calls.find(([name]) => name === event)
+		return call![1] as (node: unknown) => void
+	}
+
+	/**
+	 * Open a writable image, edit it, and save. What comes back is the local
+	 * source the viewer shows without going to the server for it.
+	 */
+	async function saveAnEdit() {
+		const ctx = mountViewer([imageHandler({ canEdit: true })])
+		const file = makeFile()
+
+		await ctx.vm.open([file], file, { editing: true })
+		// The editor is loaded on demand, so it is not there on the first tick
+		const editor = () => ctx.wrapper.findComponent({ name: 'ImageEditor' })
+		await vi.waitFor(() => expect(editor().exists()).toBe(true))
+		editor().vm.$emit('saved', 'blob:edited')
+		await flushPromises()
+
+		const localSource = () => ctx.wrapper.find('oca-viewer-image').attributes('local-source')
+		expect(localSource()).toBe('blob:edited')
+		return { ...ctx, file, localSource }
+	}
+
+	it('shows a save of its own from the bytes it was handed', async () => {
+		const { file, localSource, wrapper } = await saveAnEdit()
+
+		// The editor announces the save it just made; the viewer is already
+		// showing those bytes and refetching them is a request for nothing
+		busHandler('files:node:updated')(file)
+		await flushPromises()
+
+		expect(localSource()).toBe('blob:edited')
+		expect(wrapper.find('oca-viewer-image').exists()).toBe(true)
+	})
+
+	// The local bytes were only ever a shortcut around the viewer's own save.
+	// A change from anywhere else is a different file to show, and waiting
+	// for one that never comes is how an edited file stayed frozen.
+	it('drops them when the file changes elsewhere', async () => {
+		const { file, localSource } = await saveAnEdit()
+		busHandler('files:node:updated')(file)
+		await flushPromises()
+
+		busHandler('files:node:updated')(file)
+		await flushPromises()
+
+		expect(localSource()).toBeUndefined()
 	})
 
 	it('tells the opener whenever editing changes, and once more on close', async () => {

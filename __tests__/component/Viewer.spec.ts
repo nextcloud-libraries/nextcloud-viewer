@@ -12,6 +12,7 @@ vi.mock('../../lib/services/dav.ts', () => ({ fetchFolderContent: vi.fn(async ()
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { registerFileAction } from '@nextcloud/files'
+import { restoreTitle } from '../../lib/utils/documentTitle.ts'
 import { makeFile, makeHandler } from '../factories.ts'
 import { mountViewer } from './mountViewer.ts'
 
@@ -27,6 +28,9 @@ function imageHandler() {
 afterEach(() => {
 	document.body.innerHTML = ''
 	document.body.className = ''
+	// The title the viewer borrows is module state: give it back so it is
+	// not still on loan in the next test
+	restoreTitle()
 })
 
 describe('Viewer.open()', () => {
@@ -499,6 +503,83 @@ describe('Viewer sidebar', () => {
 
 		expect(unsubscribe).toHaveBeenCalledWith('files:sidebar:opened', expect.any(Function))
 		expect(unsubscribe).toHaveBeenCalledWith('files:sidebar:closed', expect.any(Function))
+	})
+
+	/**
+	 * Put a sidebar in the page, at the given distance from the left.
+	 *
+	 * @param left - Where the sidebar begins
+	 */
+	function addSidebar(left: number): HTMLElement {
+		const sidebar = document.createElement('aside')
+		sidebar.className = 'app-sidebar'
+		sidebar.getBoundingClientRect = () => ({ left } as DOMRect)
+		document.body.appendChild(sidebar)
+		return sidebar
+	}
+
+	it('ends the viewer where the sidebar begins', async () => {
+		addSidebar(700)
+		const { vm, wrapper, modalStyle } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		sidebarHandler('files:sidebar:opened')()
+		await wrapper.vm.$nextTick()
+
+		expect(modalStyle()).toBe('width: 700px;')
+	})
+
+	// The sidebar is resizable by hand, and the measurement it was opened
+	// with is only right until someone drags it
+	it('follows a sidebar that is resized', async () => {
+		const sidebar = addSidebar(700)
+		const { vm, wrapper, modalStyle, resized, observed } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		sidebarHandler('files:sidebar:opened')()
+		await wrapper.vm.$nextTick()
+
+		// Dragged wider: it now begins further left
+		sidebar.getBoundingClientRect = () => ({ left: 500 } as DOMRect)
+		await resized()
+
+		expect(modalStyle()).toBe('width: 500px;')
+		expect(observed()).toContain(sidebar)
+	})
+
+	it('stops watching the sidebar once it is closed', async () => {
+		const sidebar = addSidebar(700)
+		const { vm, wrapper, modalStyle, unobserved } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		sidebarHandler('files:sidebar:opened')()
+		sidebarHandler('files:sidebar:closed')()
+		await wrapper.vm.$nextTick()
+
+		expect(unobserved()).toContain(sidebar)
+		expect(modalStyle()).toBeUndefined()
+	})
+})
+
+describe('the page title', () => {
+	it('is given back when the viewer is torn down while open', async () => {
+		document.title = 'Files - Nextcloud'
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ basename: 'a.jpg', mime: 'image/jpeg' })
+
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		expect(document.title).toContain('a.jpg')
+
+		// Closing is not the only way to stop showing a file: the app hosting
+		// the viewer can be torn down with one still open
+		wrapper.unmount()
+
+		expect(document.title).toBe('Files - Nextcloud')
 	})
 })
 

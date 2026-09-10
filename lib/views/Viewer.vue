@@ -256,6 +256,8 @@ const pendingLoads = ref(0)
 const reloadKey = ref(0)
 // Object URLs of freshly edited images, by file id, shown without refetching.
 const editedSources = ref<Record<number, string>>({})
+// Files this viewer has just saved, whose next update event is its own.
+const ownSaves = new Set<number>()
 
 const canSwipe = ref(true)
 const isFullscreen = ref(false)
@@ -441,11 +443,15 @@ function onNodeDeleted(node: INode) {
  * @param node - The updated node
  */
 function onNodeUpdated(node: INode) {
-	// A freshly edited file is already shown from its local blob; do not refetch.
-	if (node.fileid !== undefined && editedSources.value[node.fileid]) {
+	// The save the viewer did itself is already on screen, from the blob the
+	// editor handed over, so that one update is not worth a refetch. Only
+	// that one: a change from anywhere else supersedes what is shown, and
+	// waiting for it here is how an edited file stayed frozen until close.
+	if (node.fileid !== undefined && ownSaves.delete(node.fileid)) {
 		return
 	}
 	if (node.fileid === currentFile.value?.fileid) {
+		releaseEditedSource(node.fileid)
 		reloadKey.value++
 	}
 }
@@ -461,11 +467,24 @@ function onEditSaved(source: string) {
 		return
 	}
 	// Release a previous edit of the same file before replacing it.
-	const previous = editedSources.value[fileid]
-	if (previous) {
-		URL.revokeObjectURL(previous)
-	}
+	releaseEditedSource(fileid)
+	ownSaves.add(fileid)
 	editedSources.value = { ...editedSources.value, [fileid]: source }
+}
+
+/**
+ * Release the edited image of one file, if it has one.
+ *
+ * @param fileid - The file to forget the local edit of
+ */
+function releaseEditedSource(fileid?: number) {
+	if (fileid === undefined || !editedSources.value[fileid]) {
+		return
+	}
+	URL.revokeObjectURL(editedSources.value[fileid]!)
+	const remaining = { ...editedSources.value }
+	delete remaining[fileid]
+	editedSources.value = remaining
 }
 
 /**
@@ -476,6 +495,7 @@ function clearEditedSources() {
 		URL.revokeObjectURL(url)
 	}
 	editedSources.value = {}
+	ownSaves.clear()
 }
 
 /**
@@ -963,14 +983,30 @@ function showSidebar() {
 	emit('viewer:sidebar:open', { source: currentFile.value.source })
 }
 
+/** The sidebar the viewer is making room for, while it is open. */
+let sidebarElement: Element | null = null
+
+/**
+ * Measure where the sidebar begins, which is where the viewer has to end.
+ */
+function measureSidebar() {
+	if (sidebarElement === null) {
+		return
+	}
+	sidebarPosition.value = sidebarElement.getBoundingClientRect().left
+}
+
 /**
  * Handle app sidebar opening to adjust viewer size
  */
 function onAppSidebarOpen() {
-	const sidebar = document.querySelector('aside.app-sidebar')
-	if (sidebar) {
-		sidebarPosition.value = sidebar.getBoundingClientRect().left
-		trapElements.value = [sidebar as HTMLElement]
+	sidebarElement = document.querySelector('aside.app-sidebar')
+	if (sidebarElement) {
+		trapElements.value = [sidebarElement as HTMLElement]
+		measureSidebar()
+		// The sidebar is resizable by hand, and the viewer has to follow it
+		// there too, not only when the window itself changes
+		resizeObserver?.observe(sidebarElement)
 	}
 	// Only expand the sidebar to full height when the viewer is actually open;
 	// the sidebar is also opened from the plain files list, where the app header
@@ -984,6 +1020,10 @@ function onAppSidebarOpen() {
  * Reset viewer size to default when app sidebar is closed
  */
 function onAppSidebarClose() {
+	if (sidebarElement) {
+		resizeObserver?.unobserve(sidebarElement)
+		sidebarElement = null
+	}
 	sidebarPosition.value = 0
 	trapElements.value = []
 	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
@@ -1032,6 +1072,9 @@ function onViewerResize() {
 	const modalContainer = modalElement()?.querySelector('.modal-container')
 	height.value = modalContainer?.clientHeight || 0
 	width.value = modalContainer?.clientWidth || 0
+	// Measured once when it opened, it would stay where it was then, and the
+	// viewer would end short of, or under, a sidebar that has since moved
+	measureSidebar()
 	logger.debug('Screen resized, updating viewer dimensions', { height: height.value, width: width.value })
 }
 
@@ -1157,6 +1200,9 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+	// The title is borrowed, and close() is not the only way to stop showing
+	// a file: the app hosting the viewer can be torn down while it is open
+	restoreTitle()
 	detachModal()
 	document.removeEventListener('fullscreenchange', onFullscreenChange)
 	unsubscribe('files:sidebar:opened', onAppSidebarOpen)
