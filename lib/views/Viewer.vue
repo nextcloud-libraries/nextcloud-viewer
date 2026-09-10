@@ -701,6 +701,9 @@ const compare: ViewerAPI['compare'] = async (file1, file2, handlerId) => {
 	comparisonHandler.value = handler2
 	comparisonFile.value = file2
 	pendingLoads.value = 2
+	// A failure to open something else earlier is not this comparison's
+	// problem, and the error is what the modal shows instead of the files.
+	errorString.value = null
 
 	onOpen()
 }
