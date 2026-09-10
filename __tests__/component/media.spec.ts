@@ -16,6 +16,12 @@ vi.mock('../../lib/services/mediaPreloader.ts', () => ({
 	preloadMedia: vi.fn(async () => 'blob:mock-preloaded-media'),
 }))
 
+// An svg is read and sanitized rather than handed to the element, so the
+// only request Images makes by itself is that one.
+vi.mock('@nextcloud/axios', () => ({
+	default: { get: vi.fn(async () => ({ data: '<svg/>' })) },
+}))
+
 // imagePath is evaluated at module load of usePlyrPlayer (blank.mp4). Keep the
 // rest of the router real; only pin the two URL helpers so tests never depend on
 // the OC bootstrap globals.
@@ -136,7 +142,7 @@ describe('Images.vue', () => {
 		expect(preloadMediaMock).not.toHaveBeenCalled()
 	})
 
-	it('falls back to preloadMedia on the first load error without emitting errored', async () => {
+	it('shows the hand-fetched bytes when the source fails to load', async () => {
 		const file = makeFile({ basename: 'broken.jpg' })
 		const wrapper = mountImages({ file, files: [file] })
 		await flushPromises()
@@ -144,15 +150,74 @@ describe('Images.vue', () => {
 		await wrapper.find('img').trigger('error')
 		await flushPromises()
 
-		// First failure: fetch the file by hand, do not surface an error yet.
+		// First failure: fetch the file by hand, show that, and do not
+		// surface an error yet. What is fetched has to reach the element:
+		// the viewer is waiting for its `loaded` event to stop spinning.
 		expect(preloadMediaMock).toHaveBeenCalledTimes(1)
-		expect(preloadMediaMock).toHaveBeenCalledWith(file)
+		expect(preloadMediaMock).toHaveBeenCalledWith(file, expect.any(AbortSignal))
+		expect(wrapper.find('img').attributes('src')).toBe('blob:mock-preloaded-media')
 		expect(wrapper.emitted('errored')).toBeUndefined()
 	})
 
-	// The double-failure path (the hand-fetched fallback also fails → `errored`)
-	// needs a real <img> remount to re-arm the `.once` @error handler, which the
-	// viewer no longer drives from Images, so it is not unit-testable here.
+	it('falls back for a file whose preview fails to load', async () => {
+		const file = makeFile({ basename: 'previewed.jpg', attributes: { hasPreview: true } })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		expect(wrapper.find('img').attributes('src')).toContain('/core/preview')
+
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		expect(wrapper.find('img').attributes('src')).toBe('blob:mock-preloaded-media')
+		expect(wrapper.emitted('errored')).toBeUndefined()
+	})
+
+	it('reports a failure of the fallback itself', async () => {
+		const file = makeFile({ basename: 'broken.jpg' })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		// The hand-fetched bytes fail too: nothing is left to show, so the
+		// viewer has to hear about it rather than spin forever.
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		expect(preloadMediaMock).toHaveBeenCalledTimes(1)
+		expect(wrapper.emitted('errored')).toHaveLength(1)
+	})
+
+	it('reports a hand fetch that throws', async () => {
+		preloadMediaMock.mockRejectedValueOnce(new Error('403'))
+		const file = makeFile({ basename: 'forbidden.jpg' })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		expect(wrapper.emitted('errored')).toHaveLength(1)
+	})
+
+	// An svg is only ever shown through the sanitizer: a raw blob of the
+	// original bytes in the element's src would put the script back.
+	it('never falls back to the raw bytes of an svg', async () => {
+		const file = makeFile({ basename: 'drawing.svg', mime: 'image/svg+xml' })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		expect(preloadMediaMock).not.toHaveBeenCalled()
+		expect(wrapper.find('img').attributes('src')).toBe(`data:image/svg+xml;base64,${btoa('<svg></svg>')}`)
+		expect(wrapper.emitted('errored')).toHaveLength(1)
+	})
 })
 
 describe('a live photo', () => {
