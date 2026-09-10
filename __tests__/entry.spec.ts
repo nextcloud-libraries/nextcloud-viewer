@@ -29,8 +29,14 @@ describe('importing @nextcloud/viewer', () => {
 		expect(getViewer()).toBe(scope.service)
 	})
 
-	it('registers the image, video and audio handlers', async () => {
-		const { getHandlers } = await importEntry()
+	it('registers no handler until asked, then the image, video and audio ones', async () => {
+		const { getHandlers, registerDefaultHandlers } = await importEntry()
+
+		// The server asks from an init script; a second copy on the page
+		// registering on import would only warn about the first
+		expect(getHandlers().size).toBe(0)
+
+		registerDefaultHandlers()
 
 		expect([...getHandlers().keys()].sort()).toEqual(['audios', 'images', 'videos'])
 	})
@@ -59,7 +65,8 @@ describe('importing @nextcloud/viewer', () => {
 
 describe('the offered implementation', () => {
 	it('mounts the viewer into the page and hands it to the service', async () => {
-		const { getViewer } = await importEntry()
+		const { getViewer, registerDefaultHandlers } = await importEntry()
+		registerDefaultHandlers()
 
 		await scope.candidates[0]!.load()
 

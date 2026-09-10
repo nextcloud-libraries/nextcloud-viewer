@@ -26,13 +26,15 @@ describe('default handlers', () => {
 		expect(scope.handlers!.has('images')).toBe(true)
 	})
 
-	it('do not complain about themselves when asked for explicitly', async () => {
+	it('register once, however often they are asked for', async () => {
 		const { registerDefaultHandlers } = await importPackage()
 		const { logger } = await import('../lib/services/logger.ts')
 		const warn = vi.spyOn(logger, 'warn')
 
 		registerDefaultHandlers()
+		registerDefaultHandlers()
 
+		expect(scope.handlers!.size).toBe(3)
 		expect(warn).not.toHaveBeenCalled()
 	})
 })

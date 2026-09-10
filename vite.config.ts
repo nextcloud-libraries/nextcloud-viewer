@@ -28,8 +28,8 @@ const translations = readdirSync('./l10n')
 
 /**
  * The strings the package can show before the viewer is loaded: the file
- * actions it registers on import, and the handler names listed under
- * "Open with …". Every other string belongs to the viewer itself and
+ * actions it registers along with the handlers, and the handler names listed
+ * under "Open with …". Every other string belongs to the viewer itself and
  * arrives with it.
  *
  * A string used by the entry but missing here is not an error, it just

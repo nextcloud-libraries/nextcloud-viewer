@@ -2,7 +2,6 @@
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { registerDefaultHandlers } from './defaults.ts'
 import { registerImplementation } from './scope.ts'
 import { loadTranslations } from './utils/l10n.ts'
 import { getViewer } from './viewer.ts'
@@ -26,12 +25,6 @@ registerImplementation({
 // a reference holds the same one whether or not a file has been opened yet.
 // It is an empty shell until the viewer is mounted.
 getViewer()
-
-// Images, video and audio are what the viewer is for, so an app gets them by
-// importing the package rather than by remembering to ask. It has to happen
-// here, at import: the Files list reads the available actions when it first
-// renders, and a handler registered after that is a file that does not open.
-registerDefaultHandlers()
 
 export { canView, getHandlers, registerHandler } from './handlers.ts'
 export type { IHandler } from './handlers.ts'

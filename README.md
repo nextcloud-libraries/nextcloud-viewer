@@ -203,7 +203,17 @@ for what happens between those two sentences.
 
 If you are not registering a handler, no server-side setup is needed. A plain
 `import { getViewer } from '@nextcloud/viewer'` in your regular bundle is enough —
-no `\OCP\Util::addInitScript` required, the server always ships a copy of its own.
+no `\OCP\Util::addInitScript` required, the server always ships a copy of its own
+and registers the handlers for images, video and audio on every page.
+
+Importing the package registers nothing by itself. Only a page the server does
+not set up, such as a standalone playground, needs to ask for those handlers:
+
+```ts
+import { registerDefaultHandlers } from '@nextcloud/viewer'
+
+registerDefaultHandlers()
+```
 
 Only call `open()` in response to an actual user interaction, not eagerly at
 import or mount time — see [how a page ends up with one
