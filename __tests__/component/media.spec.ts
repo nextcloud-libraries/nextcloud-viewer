@@ -1,3 +1,4 @@
+import type { Mock } from 'vitest'
 /**
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -5,7 +6,8 @@
 import type { ViewerProps } from '../../lib/viewer.ts'
 
 import { flushPromises, mount } from '@vue/test-utils'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
 import { makeFile } from '../factories.ts'
 
 // Resolve/keep the real network-free path: preloadMedia is the only fetch the
@@ -58,6 +60,7 @@ vi.mock('@skjnldsv/vue-plyr', async () => {
 				return {
 					player: {
 						on: vi.fn(),
+						off: vi.fn(),
 						once: vi.fn(),
 						stop: vi.fn(),
 						destroy: vi.fn(),
@@ -76,6 +79,7 @@ vi.mock('@skjnldsv/vue-plyr', async () => {
 import Audios from '../../lib/components/Audios.vue'
 import Images from '../../lib/components/Images.vue'
 import Videos from '../../lib/components/Videos.vue'
+import { usePlyrPlayer } from '../../lib/composables/usePlyrPlayer.ts'
 import { preloadMedia } from '../../lib/services/mediaPreloader.ts'
 
 const preloadMediaMock = vi.mocked(preloadMedia)
@@ -175,6 +179,89 @@ describe('Videos.vue (smoke)', () => {
 		const options = wrapper.findComponent({ name: 'VuePlyrStub' }).props('options') as { i18n?: Record<string, string> }
 		expect(options.i18n).toBeDefined()
 		expect(options.i18n).toHaveProperty('play')
+	})
+})
+
+describe('the page around a full screen player', () => {
+	/**
+	 * Mount Videos with the page furniture the server renders around it.
+	 *
+	 * @param withPage - Whether to give the page a main and a footer at all
+	 */
+	async function mountPlayer(withPage = true) {
+		if (withPage) {
+			document.body.innerHTML = '<main></main><footer></footer>'
+		}
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }), attachTo: document.body })
+		await flushPromises()
+		const player = wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player as { on: Mock }
+		/** Run whatever the composable registered for one of plyr's own events */
+		const fire = (event: string) => {
+			const call = player.on.mock.calls.find(([name]) => name === event)
+			expect(call, `nothing listens for ${event}`).toBeDefined()
+			;(call![1] as () => void)()
+		}
+		return { wrapper, fire }
+	}
+
+	const hidden = () => Array.from(document.querySelectorAll('.viewer__hidden-fullscreen')).map((el) => el.tagName.toLowerCase())
+
+	afterEach(() => {
+		document.body.innerHTML = ''
+	})
+
+	it('hides it while the player is full screen', async () => {
+		const { fire } = await mountPlayer()
+
+		fire('enterfullscreen')
+
+		expect(hidden()).toEqual(['main', 'footer'])
+	})
+
+	// The button is not the only way out: Escape and the browser's own
+	// control leave full screen too, and the page has to come back for those
+	it('brings it back however full screen is left', async () => {
+		const { fire } = await mountPlayer()
+		fire('enterfullscreen')
+
+		fire('exitfullscreen')
+
+		expect(hidden()).toEqual([])
+	})
+
+	it('brings it back when the player goes away', async () => {
+		const { wrapper, fire } = await mountPlayer()
+		fire('enterfullscreen')
+
+		wrapper.unmount()
+
+		expect(hidden()).toEqual([])
+	})
+
+	// A public share, or an app hosting the viewer, renders neither
+	it('is not a reason to throw when the page has none', async () => {
+		const { fire } = await mountPlayer(false)
+
+		expect(() => fire('enterfullscreen')).not.toThrow()
+	})
+})
+
+describe('a player torn down early', () => {
+	// Closing the viewer straight after opening it unmounts the component
+	// before plyr has a player to stop
+	it('unmounts without a player to stop', () => {
+		const Host = defineComponent({
+			setup() {
+				const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+				usePlyrPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never)
+				// No `plyr` ref in the template, so the player never arrives
+				return () => h('div')
+			},
+		})
+		const wrapper = mount(Host)
+
+		expect(() => wrapper.unmount()).not.toThrow()
 	})
 })
 
