@@ -8,6 +8,7 @@ import type { IHandler } from '../../lib/index.ts'
 import type { ViewerOptions } from '../../lib/viewer.ts'
 
 import { mount } from '@vue/test-utils'
+import { vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import Viewer from '../../lib/views/Viewer.vue'
 import { registerTestHandlers } from '../factories.ts'
@@ -16,7 +17,9 @@ import { registerTestHandlers } from '../factories.ts'
  * Minimal NcModal stub.
  *
  * It renders the default slot and the `#actions` slot so we can assert on the
- * handler custom-element markup and drive the header actions. Navigation is
+ * handler custom-element markup and drive the header actions. The style is
+ * kept, as the real modal applies it: that is how the viewer makes room for
+ * the sidebar. Navigation is
  * driven from tests through `findComponent(NcModalStub).vm.$emit('next'|'previous'|'close')`.
  * The relevant props (`name`, `show`, `hasNext`, `hasPrevious`, `isComparing`
  * related flags) are declared so they can be read back via `.props()`.
@@ -38,6 +41,7 @@ export const NcModalStub = defineComponent({
 	template: `
 		<div
 			class="nc-modal-stub"
+			:style="$attrs.style"
 			:data-handler="$attrs['data-handler']"
 			:data-name="name"
 			:data-show="String(show)"
@@ -80,6 +84,44 @@ const IconStub = defineComponent({
 	},
 })
 
+/**
+ * Stand in for the ResizeObserver, which jsdom does not implement, keeping
+ * what the viewer observes and letting a test say that something resized.
+ */
+function stubResizeObserver() {
+	const observed: Element[] = []
+	const unobserved: Element[] = []
+	let notify: (() => void) | undefined
+
+	vi.stubGlobal('ResizeObserver', class {
+		constructor(callback: () => void) {
+			notify = callback
+		}
+
+		observe(element: Element) {
+			observed.push(element)
+		}
+
+		unobserve(element: Element) {
+			unobserved.push(element)
+		}
+
+		disconnect() {}
+	})
+
+	return {
+		observed: () => observed,
+		unobserved: () => unobserved,
+		/** Report a resize, and wait out the viewer's debounce of it */
+		resized: async () => {
+			notify?.()
+			await new Promise((resolve) => {
+				setTimeout(resolve, 150)
+			})
+		},
+	}
+}
+
 export interface MountViewerResult {
 	wrapper: VueWrapper
 	/** The Viewer instance's exposed API + internal component vm. */
@@ -98,6 +140,14 @@ export interface MountViewerResult {
 	renderedTags: () => string[]
 	/** Whether the error empty-content is shown, and its message. */
 	errorText: () => string | undefined
+	/** The inline style the viewer gives the modal, e.g. to fit beside the sidebar. */
+	modalStyle: () => string | undefined
+	/** The elements the viewer watches for resizes. */
+	observed: () => Element[]
+	/** The elements it has stopped watching. */
+	unobserved: () => Element[]
+	/** Report a resize of what is observed, debounce included. */
+	resized: () => Promise<void>
 }
 
 /**
@@ -110,6 +160,8 @@ export function mountViewer(handlers: IHandler[] = []): MountViewerResult {
 	if (handlers.length > 0) {
 		registerTestHandlers(...handlers)
 	}
+
+	const observer = stubResizeObserver()
 
 	const wrapper = mount(Viewer, {
 		attachTo: document.body,
@@ -140,9 +192,11 @@ export function mountViewer(handlers: IHandler[] = []): MountViewerResult {
 	}
 
 	return {
+		...observer,
 		wrapper,
 		vm: wrapper.vm as any,
 		emitModal,
+		modalStyle: () => findModal().attributes('style'),
 		modalHandlerId: () => findModal().attributes('data-handler'),
 		modalName: () => findModal().attributes('data-name'),
 		modalProps: () => findModal().props(),
