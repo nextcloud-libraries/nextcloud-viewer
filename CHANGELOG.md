@@ -6,6 +6,62 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.8
+
+### Changed
+
+- **Breaking**: importing the package no longer registers the image, video
+  and audio handlers. The page that provides the viewer calls
+  `registerDefaultHandlers()` once, as the server does; an app bundling the
+  package gets the page's handlers and registers only its own. (#36)
+- **Breaking**: `registerImplementation` and the `ViewerCandidate` type are no
+  longer exported. The entry calls it on itself; nothing outside the package
+  had a reason to. (#35)
+- Previews are requested at the size they are shown, capped at the display and
+  rounded up to a multiple of 256, instead of the whole display in device
+  pixels for every image. (#31)
+- `@nextcloud/image-editor` 1.0.0-beta.3.
+
+### Fixed
+
+- A failed load of the implementation chunk no longer leaves every later
+  `open()` rejecting with it; the next open tries again. The rejection of an
+  open started from a file action is shown rather than lost to the console,
+  and a second copy of the library on the page no longer throws on custom
+  elements the first one defined. (#27)
+- An `open()` that fails before it has a file (a listing that fails, an
+  unknown handler id, `openFolder` on a non-folder) shows its error instead of
+  a click that does nothing. (#23)
+- `compare()` clears the error of an earlier failed `open()`. (#24)
+- "Open with …" keeps the file list: the forced handler filters and navigates
+  the slideshow, instead of the first handler that takes each file. (#25)
+- Images the server has no preview for, every E2EE image included, show the
+  bytes the fallback fetched instead of spinning forever; a second failure
+  reports `errored`. (#22)
+- A file name holding a `#` loads in the image fallback, the live photo video
+  and the editor. (#26)
+- Live photos pair on the whole name (`IMG_1234.mov` no longer plays beside
+  `IMG_12345.jpg`), play muted so the autoplay policy allows it, and label the
+  button with `aria-label`. (#29)
+- A pointer that went down beside the image, or that the browser took back
+  for a scroll or a swipe, no longer ends a pinch or leaves the image
+  mid-drag. (#33)
+- Full screen video follows plyr's own `enterfullscreen`/`exitfullscreen`
+  rather than counting clicks, so Escape puts the page back; a page without
+  the server's header and footer no longer throws. (#28)
+- The viewer follows a sidebar resized by hand, hands the page title back
+  when torn down with a file open, and an edited file is not frozen on the
+  saved bytes: only the save's own update event is skipped. (#30)
+- A share whose attributes do not parse is read as forbidding download,
+  rather than throwing from the context menu and offering the file. The
+  editor saves with `If-Match` and keeps the work open on a 412. An etag
+  carrying a literal quote gives one preview URL, not two. (#32)
+
+### Internal
+
+- One shims file, one source of option defaults, and the media components
+  reload on the source rather than the display name. (#34)
+
 ## 2.0.0-beta.7
 
 ### Fixed
