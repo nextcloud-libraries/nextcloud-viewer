@@ -171,9 +171,6 @@ Gotchas:
   error either — the handler just never appears in the "Open with …" menu.
   See [step 3](#3-load-your-registration-before-the-viewer) below for why
   that means an init script.
-- `registerImplementation` is exported alongside `registerHandler` but is not
-  part of this API — it is what this package calls on itself to offer as the
-  page's viewer. Apps register handlers, they don't call this.
 
 #### 3. Load your registration before the viewer
 

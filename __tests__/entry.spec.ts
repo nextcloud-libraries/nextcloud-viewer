@@ -52,7 +52,6 @@ describe('importing @nextcloud/viewer', () => {
 			'getViewer',
 			'registerDefaultHandlers',
 			'registerHandler',
-			'registerImplementation',
 		])
 	})
 })
