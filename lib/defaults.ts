@@ -12,9 +12,11 @@ let registered = false
  * Register the handlers for the file types the viewer shows out of the box:
  * images, video and audio.
  *
- * Importing the package does this, so there is normally nothing to call.
- * It stays exported for a consumer that wants them registered at a point
- * of its own choosing, and does nothing on any call after the first.
+ * The server calls this from an init script on every page, so an app only
+ * needs to when it hosts the viewer on a page of its own. Importing the
+ * package deliberately does not: with several copies on a page, each one
+ * registering would only warn about the others. Any call after the first
+ * does nothing.
  */
 export function registerDefaultHandlers(): void {
 	if (registered) {
