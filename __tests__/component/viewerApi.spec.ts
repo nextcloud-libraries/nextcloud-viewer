@@ -330,6 +330,66 @@ describe('compare() with bad input', () => {
 	})
 })
 
+describe('the startSlideshow option', () => {
+	it('starts the slideshow on open', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([imageHandler()])
+		const files = [makeFile(), makeFile()]
+
+		await vm.open(files, files[0], { startSlideshow: true })
+		await wrapper.vm.$nextTick()
+
+		expect(modalProps().slideshowRunning).toBe(true)
+	})
+
+	it('does not start it unasked', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([imageHandler()])
+		const files = [makeFile(), makeFile()]
+
+		await vm.open(files, files[0])
+		await wrapper.vm.$nextTick()
+
+		expect(modalProps().slideshowRunning).toBe(false)
+	})
+
+	it('is ignored for a single file', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([imageHandler()])
+		const file = makeFile()
+
+		await vm.open([file], file, { startSlideshow: true })
+		await wrapper.vm.$nextTick()
+
+		expect(modalProps().slideshowRunning).toBe(false)
+	})
+
+	it('follows the play / pause button', async () => {
+		const { vm, wrapper, modalProps, reportSlideshow } = mountViewer([imageHandler()])
+		const files = [makeFile(), makeFile()]
+
+		await vm.open(files, files[0], { startSlideshow: true })
+		await wrapper.vm.$nextTick()
+
+		await reportSlideshow(false)
+		expect(modalProps().slideshowRunning).toBe(false)
+
+		await reportSlideshow(true)
+		expect(modalProps().slideshowRunning).toBe(true)
+	})
+
+	it('does not carry over to the next open', async () => {
+		const { vm, wrapper, modalProps, emitModal } = mountViewer([imageHandler()])
+		const files = [makeFile(), makeFile()]
+
+		await vm.open(files, files[0], { startSlideshow: true })
+		await wrapper.vm.$nextTick()
+		await emitModal('close')
+
+		await vm.open(files, files[0])
+		await wrapper.vm.$nextTick()
+
+		expect(modalProps().slideshowRunning).toBe(false)
+	})
+})
+
 describe('the editing option', () => {
 	it('opens straight into editing for a handler that can edit a writable file', async () => {
 		const { vm, modalProps } = mountViewer([imageHandler({ canEdit: true })])

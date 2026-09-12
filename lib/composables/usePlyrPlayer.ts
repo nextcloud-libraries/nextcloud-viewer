@@ -150,6 +150,10 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	const disableSwipe = () => emit('update:canSwipe', false)
 	const enableSwipe = () => emit('update:canSwipe', true)
 
+	// So the viewer's slideshow waits for the media instead of moving on mid-play
+	const onPlay = () => emit('update:playing', true)
+	const onPause = () => emit('update:playing', false)
+
 	/**
 	 * Get the current plyr control items, or an empty array if not ready.
 	 */
@@ -220,6 +224,8 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		doneLoading,
 		donePlaying,
 		onFail,
+		onPause,
+		onPlay,
 		options,
 		video,
 	}
