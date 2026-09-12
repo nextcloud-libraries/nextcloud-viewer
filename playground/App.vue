@@ -30,7 +30,10 @@ interface Fixture {
 // The previewed file needs a previews endpoint to stand behind it, so it is
 // only listed when asked for: it would otherwise sit in every other test's
 // list with nothing to serve it
-const withPreviews = new URLSearchParams(window.location.search).has('previews')
+const flags = new URLSearchParams(window.location.search)
+const withPreviews = flags.has('previews')
+// Open straight into the slideshow, the way Photos does
+const startSlideshow = flags.has('slideshow')
 
 const fixtures: Fixture[] = [
 	{ name: 'photo.jpg', mime: 'image/jpeg', editable: true },
@@ -81,7 +84,7 @@ const nodes: IFile[] = fixtures.map((fixture, index) => new File({
  * @param node the file to show
  */
 function open(node: IFile) {
-	getViewer().open(nodes, node)
+	getViewer().open(nodes, node, { startSlideshow })
 }
 </script>
 
