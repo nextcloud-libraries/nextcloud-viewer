@@ -90,6 +90,7 @@ const src = computed(() => props.file.encodedSource)
 | `errored`          | `[Error]` | Notify the viewer an error occurred (custom message shown)    |
 | `update:canSwipe`  | `[boolean]` | Enable/disable the swipe gesture (e.g. for custom controls) |
 | `update:editing`   | `[boolean]` | Notify the viewer the editing mode changed                  |
+| `update:playing`   | `[boolean]` | Notify the viewer media plays, so the slideshow waits for it |
 
 #### 2. Define the custom element and register the handler
 
@@ -264,6 +265,7 @@ neither does a request that fails: both fall back to names ascending.
 | `onNext`   | `() => void`              | Called when navigating to the next item                         |
 | `onClose`  | `() => void`              | Called when the viewer is closed                                |
 | `canLoop`  | `boolean`                 | Whether navigation loops from last to first item and vice versa |
+| `startSlideshow` | `boolean`           | Whether to start the slideshow on open, given more than one file |
 
 ### 🧭 Migrating from `OCA.Viewer`
 
@@ -278,6 +280,7 @@ instead, and the viewer works with `@nextcloud/files` nodes rather than the
 | `OCA.Viewer.open({ path, list })`                 | `getViewer().open(nodes, file)`                                |
 | `OCA.Viewer.open({ fileInfo, list })`             | `getViewer().open(nodes, file)`                                |
 | `OCA.Viewer.openWith(id, { … })`                  | `getViewer().open(nodes, file, options, id)`                   |
+| `OCA.Viewer.open({ …, startSlideshow: true })`    | `getViewer().open(nodes, file, { startSlideshow: true })`      |
 | `OCA.Viewer.compare(fileInfo1, fileInfo2)`        | `getViewer().compare(node1, node2)`                            |
 | `OCA.Viewer.close()`                              | `getViewer().close()`                                          |
 | `OCA.Viewer.mimetypes.includes(node.mime)`        | `canView(node)`                                                |

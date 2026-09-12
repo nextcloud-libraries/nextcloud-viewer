@@ -28,6 +28,8 @@
 				preload="metadata"
 				@error.capture.prevent.stop.once="onFail"
 				@ended="donePlaying"
+				@pause="onPause"
+				@play="onPlay"
 				@canplay="doneLoading"
 				@loadedmetadata="onLoadedMetadata">
 
@@ -67,6 +69,8 @@ const {
 	onFail,
 	donePlaying,
 	doneLoading,
+	onPause,
+	onPlay,
 	options,
 } = usePlyrPlayer(false, props, emit)
 
