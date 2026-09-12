@@ -90,6 +90,7 @@ export function registerImageHandler() {
 		id: 'images',
 		displayName: t('Images'),
 		tagname,
+		supportsEndToEndEncryption: true,
 		canEdit: true,
 
 		enabled: (nodes) => {

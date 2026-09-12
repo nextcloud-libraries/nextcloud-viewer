@@ -46,6 +46,7 @@ export function registerVideoHandler() {
 		id: 'videos',
 		displayName: t('Video player'),
 		tagname,
+		supportsEndToEndEncryption: true,
 
 		iconSvgInline: MovieOutlineSvg,
 
