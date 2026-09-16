@@ -73,7 +73,20 @@ export interface IHandler {
 	 * `editing` prop (e.g. the image editor).
 	 */
 	canEdit?: boolean
+
+	/**
+	 * Whether this handler works with end-to-end encrypted files.
+	 *
+	 * End-to-end encrypted files are decrypted when fetched from their
+	 * WebDAV endpoint. A handler that fetches the file from a different
+	 * endpoint gets ciphertext. Set the property to true if the handler
+	 * reads the file from its dav source.
+	 */
+	supportsEndToEndEncryption?: boolean
 }
+
+/** The dav attribute used to flag end-to-end encrypted files */
+const ENCRYPTED_ATTRIBUTE = 'e2ee-is-encrypted'
 
 /**
  * Whether the viewer can open the given nodes.
@@ -93,6 +106,9 @@ export function canView(nodes: INode | INode[]): boolean {
 /**
  * Whether a handler accepts the given files.
  *
+ * An end-to-end encrypted file goes only to a handler that says it can
+ * read one; the others are never asked.
+ *
  * A handler is third-party code: one that throws from `enabled()` is
  * reported and treated as not matching, so it cannot break the Files
  * actions or the viewer for every other handler on the page.
@@ -101,6 +117,9 @@ export function canView(nodes: INode | INode[]): boolean {
  * @param nodes - The files to test it against
  */
 export function isHandlerEnabled(handler: IHandler, nodes: IFile[]): boolean {
+	if (!handler.supportsEndToEndEncryption && nodes.some((node) => Boolean(node.attributes?.[ENCRYPTED_ATTRIBUTE]))) {
+		return false
+	}
 	try {
 		return Boolean(handler.enabled(nodes))
 	} catch (error) {

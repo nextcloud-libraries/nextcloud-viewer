@@ -143,6 +143,12 @@ registerHandler({
 
 	// Optional viewer modal theme: 'dark', 'light' or 'default'.
 	theme: 'default',
+
+	// Optional: whether the handler works with end-to-end encrypted files.
+	// They are decrypted when fetched from their WebDAV endpoint, a handler
+	// fetching from a different endpoint gets ciphertext. True when the
+	// component reads the file from `node.encodedSource`.
+	supportsEndToEndEncryption: true,
 })
 ```
 
@@ -158,6 +164,7 @@ The full handler shape (see the `IHandler` interface):
 | `group`         | `string`                              | no       | Group used to combine handlers when opening a folder               |
 | `preload`       | `(node: File) => Promise<void>`       | no       | Preload data for neighbouring files                                |
 | `theme`         | `'dark' \| 'light' \| 'default'`      | no       | Viewer modal theme                                                 |
+| `supportsEndToEndEncryption` | `boolean`                | no       | Whether the handler supports end-to-end encrypted files            |
 
 Gotchas:
 

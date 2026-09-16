@@ -44,6 +44,7 @@ export function registerAudioHandler() {
 		id: 'audios',
 		displayName: t('Audio player'),
 		tagname,
+		supportsEndToEndEncryption: true,
 
 		iconSvgInline: AudioOutlineSvg,
 
