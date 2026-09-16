@@ -35,7 +35,7 @@
 	"scripts": {
 		"build": "vite --mode production build",
 		"build:demo": "vite build --config playground/vite.config.ts",
-		"build:doc": "typedoc && touch dist/doc/.nojekyll",
+		"build:doc": "npm run build && typedoc && touch dist/doc/.nojekyll",
 		"check:size": "node build/check-bundle-size.mjs",
 		"dev": "vite --mode development build",
 		"l10n:extract": "node build/extract-l10n.js",
