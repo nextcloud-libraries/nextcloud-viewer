@@ -75,17 +75,17 @@ export interface IHandler {
 	canEdit?: boolean
 
 	/**
-	 * Whether this handler can show an end-to-end encrypted file.
+	 * Whether this handler works with end-to-end encrypted files.
 	 *
-	 * The server decrypts such a file only on its WebDAV endpoint, so a
-	 * handler that fetches the bytes from an endpoint of its own gets
-	 * ciphertext. Set it when the handler reads the file from its dav
-	 * source, or from a preview.
+	 * End-to-end encrypted files are decrypted when fetched from their
+	 * WebDAV endpoint. A handler that fetches the file from a different
+	 * endpoint gets ciphertext. Set the property to true if the handler
+	 * reads the file from its dav source.
 	 */
 	supportsEndToEndEncryption?: boolean
 }
 
-/** The dav attribute the end-to-end encryption app marks encrypted files with */
+/** The dav attribute used to flag end-to-end encrypted files */
 const ENCRYPTED_ATTRIBUTE = 'e2ee-is-encrypted'
 
 /**

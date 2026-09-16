@@ -9,7 +9,7 @@ import { getHandlerForFile } from '../lib/helpers/handlerHelper.ts'
 import { makeFile, makeHandler } from './factories.ts'
 
 /**
- * The server decrypts an end-to-end encrypted file only on its WebDAV
+ * An end-to-end encrypted file is decrypted when fetched from its WebDAV
  * endpoint. A handler fetching through an endpoint of its own would show
  * ciphertext, so it is never offered such a file.
  */
@@ -74,7 +74,7 @@ describe('an end-to-end encrypted file', () => {
 })
 
 describe('the default handlers', () => {
-	it('all read the file over dav or from a preview, so they take encrypted files', async () => {
+	it('all read the file over dav, so they take encrypted files', async () => {
 		const { registerDefaultHandlers } = await import('../lib/defaults.ts')
 		const { getHandlers } = await import('../lib/handlers.ts')
 		registerDefaultHandlers()
