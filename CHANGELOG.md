@@ -6,6 +6,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.9
+
+### Added
+
+- `open(nodes, file, { startSlideshow: true })` starts the slideshow, ignored
+  for a single file and reset on close. Handlers gain a fourth emit,
+  `update:playing`, and the slideshow pauses while it is true, so a playing
+  clip finishes before it moves on; the video and audio players emit it from
+  the media element. (#39)
+- `supportsEndToEndEncryption` on `IHandler`, carried by the three default
+  handlers. Absent is the safe default. (#38)
+
+### Changed
+
+- `@nextcloud/vue` 9.13.0 is the minimum: `startSlideshow` drives NcModal's
+  `v-model:slideshow-running`, which landed there. Below it the option does
+  nothing at runtime. (#39)
+- `@nextcloud/image-editor` 1.0.0-beta.4. An edited JPEG is written at the
+  quality its source was written at rather than the browser's default, and the
+  decode and the half-size copies the editor draws from happen in a worker: on
+  a 12 Mpx photo and a phone-class CPU, opening one went from 6.1 s to 0.9 s,
+  and the longest frame the main thread was held from 5.1 s to 0.4 s. (#41)
+
+### Fixed
+
+- An end-to-end encrypted file is no longer offered to a handler that fetches
+  it through its own endpoint and would get ciphertext. Since Nextcloud 33 the
+  e2ee app decrypts transparently, but only over WebDAV, so the file is offered
+  to handlers that say they read it that way. (#38)
+- The API documentation builds again: typedoc reads the rolled-up declarations
+  from `dist` rather than running tsc over sources it cannot resolve single
+  file components in. It had failed on every push to `main` since beta.8. (#40)
+
 ## 2.0.0-beta.8
 
 ### Changed
