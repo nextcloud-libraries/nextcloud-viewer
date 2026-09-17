@@ -6,6 +6,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.10
+
+### Fixed
+
+- Closing the viewer left `openfile=true` in the URL until the history
+  unwind landed, and the Files list opens a file for exactly that flag.
+  Anything that made it re-read the route in that window opened a second
+  viewer over the one that was closing, which on a slow machine is wide
+  enough to hit: three media tests in nextcloud/server#63954 failed their
+  close assertion with two modals in the DOM. The flag now comes off the
+  entry being left before the jump is asked for. (#43)
+
 ## 2.0.0-beta.9
 
 ### Added
