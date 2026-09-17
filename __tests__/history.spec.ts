@@ -152,6 +152,34 @@ describe('openWithHistory', () => {
 		expect(removeSpy).toHaveBeenCalledWith('popstate', expect.any(Function))
 	})
 
+	it('drops the openfile flag before the jump, not after it', () => {
+		const router = setRouter()
+		const file = makeFile({ id: 1 })
+		openWithHistory([file], file, view, folder)
+		router.query.openfile = 'true'
+
+		const order: string[] = []
+		vi.mocked(router.goToRoute).mockImplementation(() => {
+			order.push('route')
+		})
+		goSpy.mockImplementation(() => {
+			order.push('go')
+		})
+
+		openOptions().onClose()
+
+		// history.go() lands on a later task. Until it does the URL still says
+		// openfile=true, and the Files list opens the file again if anything
+		// makes it re-read the route in that window.
+		expect(order).toEqual(['route', 'go'])
+		expect(router.goToRoute).toHaveBeenCalledWith(
+			'filelist',
+			router.params,
+			expect.not.objectContaining({ openfile: 'true' }),
+			true,
+		)
+	})
+
 	it('drops the openfile flag in place when closing a refresh-opened viewer', () => {
 		const router = setRouter({ openfile: 'true', dir: '/photos' })
 		const file = makeFile({ id: 1 })
