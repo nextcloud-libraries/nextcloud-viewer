@@ -93,6 +93,14 @@ export interface ViewerEmits {
 	 * @param editing Whether the viewer is now in editing mode
 	 */
 	'update:editing': [boolean]
+
+	/**
+	 * Emit this event when your component starts or stops playing media. The
+	 * slideshow waits while media plays, rather than moving on in the middle of it.
+	 *
+	 * @param playing Whether media is playing
+	 */
+	'update:playing': [boolean]
 }
 
 /**
@@ -135,6 +143,12 @@ export type ViewerOptions = {
 	 * Whether the viewer can loop from last to first item and vice versa. Defaults to true.
 	 */
 	canLoop?: boolean
+
+	/**
+	 * Whether to start the slideshow as soon as the viewer opens. Ignored for
+	 * a single file, as there is nothing to move on to.
+	 */
+	startSlideshow?: boolean
 
 	/**
 	 * Whether to offer the Files sidebar for the open file. Defaults to true.

@@ -19,6 +19,9 @@ export class ViewerPage {
 	public readonly nextButton: Locator
 	public readonly previousButton: Locator
 	public readonly closeButton: Locator
+	/** The slideshow button, named after what it does next */
+	public readonly pauseSlideshowButton: Locator
+	public readonly startSlideshowButton: Locator
 
 	constructor(public readonly page: Page) {
 		// NcModal teleports to the body, so match it by class rather than
@@ -29,13 +32,15 @@ export class ViewerPage {
 		this.nextButton = this.container.getByRole('button', { name: 'Next' })
 		this.previousButton = this.container.getByRole('button', { name: 'Previous' })
 		this.closeButton = this.container.getByRole('button', { name: 'Close' })
+		this.pauseSlideshowButton = this.container.getByRole('button', { name: 'Pause slideshow' })
+		this.startSlideshowButton = this.container.getByRole('button', { name: 'Start slideshow' })
 	}
 
 	/**
 	 * Open the playground and click one of its files.
 	 *
 	 * @param name the file to open
-	 * @param query optional playground flags, e.g. `previews`
+	 * @param query optional playground flags, e.g. `previews` or `slideshow`
 	 */
 	async open(name: string, query = ''): Promise<void> {
 		await this.page.goto(query ? `/?${query}` : '/')
