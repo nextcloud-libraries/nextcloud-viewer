@@ -163,19 +163,28 @@ function closeHistory(): void {
 		return
 	}
 
+	const query = { ...router.query }
+	delete query.openfile
+	delete query.editing
+
 	const offset = currentOffset()
 	if (offset > 0) {
+		// Drop the flag on the entry being left before jumping. history.go() is
+		// asynchronous, and until it lands the URL still says openfile=true:
+		// anything that makes the Files list re-read the route in that window
+		// runs the default action again and opens a second viewer over the one
+		// that is closing.
+		router.goToRoute(routeName(router), router.params, query, true)
+
 		// Jump back past every entry the viewer added, in one step, so the back
 		// button returns to the opening page instead of a previously shown file.
 		window.history.go(-offset)
 		return
 	}
 
-	// Opened from an openfile URL with no pre-viewer entry to return to (refresh):
-	// just drop the openfile flag on the current entry.
-	const query = { ...router.query }
-	delete query.openfile
-	delete query.editing
+	// Opened from an openfile URL with no pre-viewer entry to return to
+	// (refresh): the flag comes off the current entry and there is nothing to
+	// unwind.
 	router.goToRoute(routeName(router), router.params, query, true)
 }
 
