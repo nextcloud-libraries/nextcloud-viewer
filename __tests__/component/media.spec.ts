@@ -443,6 +443,23 @@ describe('Videos.vue (smoke)', () => {
 	})
 })
 
+describe('media reporting that it plays', () => {
+	it.each([
+		['Videos', Videos, 'video', 'clip.mp4', 'video/mp4'],
+		['Audios', Audios, 'audio', 'song.mp3', 'audio/mpeg'],
+	])('%s tells the viewer when it plays and pauses', async (_name, component, tag, basename, mime) => {
+		const file = makeFile({ basename, mime })
+		const wrapper = mount(component, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+
+		await wrapper.find(tag).trigger('play')
+		expect(wrapper.emitted('update:playing')).toEqual([[true]])
+
+		await wrapper.find(tag).trigger('pause')
+		expect(wrapper.emitted('update:playing')).toEqual([[true], [false]])
+	})
+})
+
 describe('the page around a full screen player', () => {
 	/**
 	 * Mount Videos with the page furniture the server renders around it.

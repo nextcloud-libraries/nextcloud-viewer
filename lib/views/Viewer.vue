@@ -8,6 +8,7 @@
 	<NcModal
 		v-if="!!currentFile || !!errorString"
 		ref="modal"
+		v-model:slideshowRunning="slideshowRunning"
 		:additionalTrapElements="trapElements"
 		:clearViewDelay="-1 /* disable fade-out because of accessibility reasons */"
 		:closeButtonOutside="true"
@@ -21,7 +22,7 @@
 		:lightBackdrop="lightBackdrop"
 		:name="modalName"
 		:show="!!currentFile || !!errorString"
-		:slideshowPaused="editing"
+		:slideshowPaused="editing || playing"
 		:spreadNavigation="true"
 		:style="{ width: isSidebarShown ? `${sidebarPosition}px` : null }"
 		class="viewer__modal"
@@ -263,6 +264,9 @@ const canSwipe = ref(true)
 const isFullscreen = ref(false)
 const editing = ref(false)
 const lightBackdrop = ref(false)
+const slideshowRunning = ref(false)
+// Whether the current handler is playing media, which the slideshow waits for
+const playing = ref(false)
 
 // Sidebar handling
 const sidebarPosition = ref(0)
@@ -678,6 +682,10 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 	errorString.value = null
 	// Open straight into edit mode when requested (e.g. from an `editing=true` URL).
 	editing.value = Boolean(options?.editing) && canEdit.value
+	// A slideshow of one file has nowhere to go
+	if (options?.startSlideshow && currentFileList.value.length > 1) {
+		slideshowRunning.value = true
+	}
 
 	onOpen()
 	preloadNeighbors()
@@ -830,7 +838,7 @@ function onError(reported: unknown) {
 	errorString.value = error.message
 }
 
-// `update:canSwipe` and `update:editing` are bound by hand rather than with
+// `update:canSwipe`, `update:editing` and `update:playing` are bound by hand rather than with
 // v-on. A handler is a custom element, so its emits leave as DOM events under
 // the name it declared, while v-on hyphenates the listener it is given
 // (`update:canSwipe` becomes `update:can-swipe`) and then matches nothing.
@@ -840,11 +848,15 @@ watch(handlerElement, (element, previous) => {
 	if (previous) {
 		previous.removeEventListener('update:canSwipe', onCanSwipe)
 		previous.removeEventListener('update:editing', onHandlerEditing)
+		previous.removeEventListener('update:playing', onPlaying)
 	}
 	if (element) {
 		element.addEventListener('update:canSwipe', onCanSwipe)
 		element.addEventListener('update:editing', onHandlerEditing)
+		element.addEventListener('update:playing', onPlaying)
 	}
+	// Whatever the previous handler was playing left with it
+	playing.value = false
 })
 
 /**
@@ -866,6 +878,15 @@ function onCanSwipe(reported: unknown) {
  */
 function onHandlerEditing(reported: unknown) {
 	setEditing(emittedValue<boolean>(reported) === true)
+}
+
+/**
+ * A handler reporting that it started, or stopped, playing media.
+ *
+ * @param reported - What the handler emitted
+ */
+function onPlaying(reported: unknown) {
+	playing.value = emittedValue<boolean>(reported) === true
 }
 
 /**
@@ -893,6 +914,8 @@ function close() {
 	// Reset transient UI state so it never leaks into the next open
 	loading.value = true
 	canSwipe.value = true
+	slideshowRunning.value = false
+	playing.value = false
 	pendingLoads.value = 0
 	openedSubmenu.value = null
 	folderListing?.abort()

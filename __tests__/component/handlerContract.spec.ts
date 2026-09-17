@@ -44,7 +44,7 @@ const Probe = defineComponent({
 		isSidebarShown: { type: Boolean, default: false },
 		localSource: { type: String, default: undefined },
 	},
-	emits: ['loaded', 'errored', 'update:canSwipe', 'update:editing'],
+	emits: ['loaded', 'errored', 'update:canSwipe', 'update:editing', 'update:playing'],
 	setup(props, { emit }) {
 		emitFromProbe = (event, payload) => emit(event as 'loaded', payload as never)
 		return () => {
@@ -352,6 +352,49 @@ describe('a handler that misbehaves', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(lastRender().editing).toBe(false)
+	})
+})
+
+describe('a handler playing media', () => {
+	it('holds the slideshow until the media stops', async () => {
+		renders.length = 0
+		const f1 = makeFile({ basename: 'a.mp4', mime: 'video/mp4' })
+		const f2 = makeFile({ basename: 'b.mp4', mime: 'video/mp4' })
+		const { vm, wrapper, modalProps } = mountViewer([probeHandler()])
+
+		await vm.open([f1, f2], f1, { startSlideshow: true })
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+		expect(modalProps().slideshowPaused).toBe(false)
+
+		// What Videos.vue emits as the video plays and ends
+		emitFromProbe!('update:playing', true)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().slideshowPaused).toBe(true)
+
+		emitFromProbe!('update:playing', false)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().slideshowPaused).toBe(false)
+	})
+
+	it('lets go of the slideshow when the file changes', async () => {
+		renders.length = 0
+		const f1 = makeFile({ basename: 'a.mp4', mime: 'video/mp4' })
+		const f2 = makeFile({ basename: 'b.jpg', mime: 'image/jpeg' })
+		const { vm, wrapper, modalProps, emitModal } = mountViewer([probeHandler()])
+
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		emitFromProbe!('update:playing', true)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().slideshowPaused).toBe(true)
+
+		// The video left with its handler, and nothing on the image plays
+		await emitModal('next')
+		await flushPromises()
+		expect(modalProps().slideshowPaused).toBe(false)
 	})
 })
 

@@ -35,9 +35,10 @@ export const NcModalStub = defineComponent({
 		enableSlideshow: { type: Boolean, default: false },
 		disableSwipe: { type: Boolean, default: false },
 		slideshowPaused: { type: Boolean, default: false },
+		slideshowRunning: { type: Boolean, default: false },
 		lightBackdrop: { type: Boolean, default: false },
 	},
-	emits: ['next', 'previous', 'close'],
+	emits: ['next', 'previous', 'close', 'update:slideshowRunning'],
 	template: `
 		<div
 			v-show="show"
@@ -129,6 +130,8 @@ export interface MountViewerResult {
 	vm: any
 	/** Emit an NcModal event (next|previous|close) to drive navigation. */
 	emitModal: (event: 'next' | 'previous' | 'close') => Promise<void>
+	/** What the modal reports when its play / pause button is used. */
+	reportSlideshow: (running: boolean) => Promise<void>
 	/** Read the modal `data-handler` attribute. */
 	modalHandlerId: () => string | undefined
 	/** Read the modal name (basename / comparison title). */
@@ -187,6 +190,11 @@ export function mountViewer(handlers: IHandler[] = []): MountViewerResult {
 		await wrapper.vm.$nextTick()
 	}
 
+	const reportSlideshow = async (running: boolean) => {
+		findModal().vm.$emit('update:slideshowRunning', running)
+		await wrapper.vm.$nextTick()
+	}
+
 	const renderedTags = () => {
 		const html = wrapper.html()
 		return [...html.matchAll(/<(oca-viewer-[a-z0-9-]+)/g)].map(([, tag]) => tag!)
@@ -197,6 +205,7 @@ export function mountViewer(handlers: IHandler[] = []): MountViewerResult {
 		wrapper,
 		vm: wrapper.vm as any,
 		emitModal,
+		reportSlideshow,
 		modalStyle: () => findModal().attributes('style'),
 		modalHandlerId: () => findModal().attributes('data-handler'),
 		modalName: () => findModal().attributes('data-name'),
