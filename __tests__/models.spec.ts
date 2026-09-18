@@ -159,6 +159,7 @@ describe('audios model', () => {
 describe('images model', () => {
 	it.each([
 		'image/apng',
+		'image/avif',
 		'image/bmp',
 		'image/gif',
 		'image/jpeg',

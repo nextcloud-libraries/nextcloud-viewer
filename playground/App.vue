@@ -40,6 +40,7 @@ const fixtures: Fixture[] = [
 	...(withPreviews ? [{ name: 'previewed.jpg', mime: 'image/jpeg', hasPreview: true }] : []),
 	{ name: 'gradient.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'portrait.jpg', mime: 'image/jpeg', editable: true },
+	{ name: 'photo.avif', mime: 'image/avif', editable: true },
 	{ name: 'animation.gif', mime: 'image/gif' },
 	{ name: 'protected.jpg', mime: 'image/jpeg', noDownload: true },
 	{ name: 'video.mp4', mime: 'video/mp4' },
