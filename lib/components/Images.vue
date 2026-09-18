@@ -132,15 +132,38 @@ const metadataFilesLivePhoto = computed(() => props.file.attributes?.['metadata-
 // Asked for the space it will be shown in, rather than for the whole display
 const previewPath = computed(() => getPreviewIfAny(props.file, { width: props.maxWidth, height: props.maxHeight }))
 
+/**
+ * Quarter turns anticlockwise the viewer is showing.
+ *
+ * Read through Number because a handler is mounted as a custom element,
+ * where a prop can arrive as the string it was written as: "0" is truthy,
+ * and a picture that was never turned would be given a transform.
+ */
+const turns = computed(() => Number(props.turns ?? 0) % 4)
+
+/** Whether that turn puts the picture on its side */
+const quarterTurned = computed(() => turns.value % 2 === 1)
+
+/**
+ * The element's extent on screen, which is its own the right way up and
+ * its other one when it has been turned a quarter. Zoom and pan are
+ * measured against what the user sees, not against the element's box.
+ */
+const screenWidth = computed(() => quarterTurned.value ? height.value : width.value)
+const screenHeight = computed(() => quarterTurned.value ? width.value : height.value)
+
 const zoomHeight = computed(() => Math.round(height.value * zoomRatio.value))
 const zoomWidth = computed(() => Math.round(width.value * zoomRatio.value))
 const alt = computed(() => props.file.displayname)
 
 const imgStyle = computed(() => {
+	// Anticlockwise, about the element's centre, so the picture stays put
+	const transform = turns.value === 0 ? undefined : `rotate(${-90 * turns.value}deg)`
 	if (zoomRatio.value === 1) {
 		return {
 			height: zoomHeight.value + 'px',
 			width: zoomWidth.value + 'px',
+			transform,
 		}
 	}
 	return {
@@ -148,6 +171,7 @@ const imgStyle = computed(() => {
 		marginLeft: Math.round(shiftX.value * 2) + 'px',
 		height: zoomHeight.value + 'px',
 		width: zoomWidth.value + 'px',
+		transform,
 	}
 })
 
@@ -298,7 +322,13 @@ function updateImageSize() {
 		return
 	}
 
-	const ratio = Math.min(props.maxHeight / mediaHeight, props.maxWidth / mediaWidth)
+	// A turned picture is fitted by the box it occupies on screen, which
+	// is its own with the sides swapped. Fitting the element's own box
+	// instead would leave a landscape photo taller than the frame the
+	// moment it went on its side, and it would spill over the chrome.
+	const boxWidth = quarterTurned.value ? mediaHeight : mediaWidth
+	const boxHeight = quarterTurned.value ? mediaWidth : mediaHeight
+	const ratio = Math.min(props.maxHeight / boxHeight, props.maxWidth / boxWidth)
 	width.value = Math.floor(mediaWidth * ratio)
 	height.value = Math.floor(mediaHeight * ratio)
 }
@@ -306,6 +336,13 @@ function updateImageSize() {
 // Refit on container resize (max height/width change) using the element's
 // already-known intrinsic size. A new file refits through its load event.
 watch([() => props.maxWidth, () => props.maxHeight], updateImageSize)
+
+// A turn changes the box the picture has to fit, and starts it square:
+// a zoom carried across a turn leaves the view somewhere nobody chose
+watch(turns, () => {
+	resetZoom()
+	updateImageSize()
+})
 
 onUnmounted(() => {
 	inFlight?.controller.abort()
@@ -330,8 +367,8 @@ async function getBase64FromImage(signal?: AbortSignal): Promise<string> {
  * @param newZoomRatio - The zoom ratio used to compute the maximum allowed shift
  */
 function updateShift(newShiftX: number, newShiftY: number, newZoomRatio: number) {
-	const maxShiftX = width.value * newZoomRatio - width.value
-	const maxShiftY = height.value * newZoomRatio - height.value
+	const maxShiftX = screenWidth.value * newZoomRatio - screenWidth.value
+	const maxShiftY = screenHeight.value * newZoomRatio - screenHeight.value
 	shiftX.value = Math.min(Math.max(newShiftX, -maxShiftX / 2), maxShiftX / 2)
 	shiftY.value = Math.min(Math.max(newShiftY, -maxShiftY / 2), maxShiftY / 2)
 }
@@ -348,14 +385,17 @@ function updateZoomAndShift(stableX: number, stableY: number, newZoomRatio: numb
 		return
 	}
 
-	const scrollX = stableX - element.getBoundingClientRect().x - (width.value * zoomRatio.value / 2)
-	const scrollY = stableY - element.getBoundingClientRect().y - (height.value * zoomRatio.value / 2)
-	const scrollPercX = scrollX / (width.value * zoomRatio.value)
-	const scrollPercY = scrollY / (height.value * zoomRatio.value)
+	// Against the extent on screen: the rect a turned element reports is
+	// its turned one, so measuring the anchor off the element's own box
+	// would put the point the zoom pivots on in the wrong place
+	const scrollX = stableX - element.getBoundingClientRect().x - (screenWidth.value * zoomRatio.value / 2)
+	const scrollY = stableY - element.getBoundingClientRect().y - (screenHeight.value * zoomRatio.value / 2)
+	const scrollPercX = scrollX / (screenWidth.value * zoomRatio.value)
+	const scrollPercY = scrollY / (screenHeight.value * zoomRatio.value)
 
 	// calc how much the img grow from its current size and adjust the margin accordingly
-	const growX = width.value * newZoomRatio - width.value * zoomRatio.value
-	const growY = height.value * newZoomRatio - height.value * zoomRatio.value
+	const growX = screenWidth.value * newZoomRatio - screenWidth.value * zoomRatio.value
+	const growY = screenHeight.value * newZoomRatio - screenHeight.value * zoomRatio.value
 
 	// compensate for existing margins
 	const newShiftX = shiftX.value - scrollPercX * growX

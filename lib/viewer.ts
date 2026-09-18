@@ -50,6 +50,13 @@ export interface ViewerProps {
 	isSidebarShown: boolean
 
 	/**
+	 * Quarter turns anticlockwise the viewer is showing on top of the
+	 * file's own orientation, while a rotation is being written. Handlers
+	 * that can turn their content should honour it; the rest may ignore it.
+	 */
+	turns?: number
+
+	/**
 	 * Optional client-side source to display instead of fetching from the server
 	 * (e.g. an object URL for a freshly edited image not yet reflected in the
 	 * server preview). Handlers that support it should prefer this over `file`.
