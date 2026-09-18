@@ -18,8 +18,13 @@ const browserSupportedMimes = [
 	'audio/mpeg',
 	'audio/ogg',
 	'audio/vorbis',
+	// The same RIFF/WAVE container under all three of its names: the one in
+	// common use, the registered one (RFC 2361) that mail clients send, and the
+	// historic x- form. What plays is decided by the bytes, not by the name.
+	'audio/vnd.wave',
 	'audio/wav',
 	'audio/webm',
+	'audio/x-wav',
 ]
 
 export const tagname = 'oca-viewer-audio'
