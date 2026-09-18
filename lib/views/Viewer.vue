@@ -18,7 +18,7 @@
 		:enableSlideshow="!isComparing && (hasPrevious || hasNext)"
 		:hasNext="!isComparing && hasNext"
 		:hasPrevious="!isComparing && hasPrevious"
-		:inlineActions="canEdit ? 1 : 0"
+		:inlineActions="(canRotate ? 1 : 0) + (canEdit ? 1 : 0)"
 		:lightBackdrop="lightBackdrop"
 		:name="modalName"
 		:show="!!currentFile || !!errorString"
@@ -32,6 +32,17 @@
 		@next="next">
 		<!-- Header actions -->
 		<template #actions>
+			<!-- Ahead of the edit button, which is where it appears -->
+			<NcActionButton
+				v-if="canRotate && !editing"
+				:closeAfterClick="false"
+				@click="rotateLeft">
+				<template #icon>
+					<RotateLeftIcon :size="20" />
+				</template>
+				{{ t('Rotate left') }}
+			</NcActionButton>
+
 			<!-- Internal edit action, handled by the handler itself -->
 			<NcActionButton
 				v-if="canEdit && !editing"
@@ -170,6 +181,7 @@
 			:max-height="height"
 			:max-width="width"
 			:editing="editing"
+			:turns="turns"
 			:local-source="editedSources[currentFile.fileid!]"
 			@loaded="onLoad"
 			@errored="onError" />
@@ -225,6 +237,8 @@ import FileAlertOutlineIcon from 'vue-material-design-icons/FileAlertOutline.vue
 import FullscreenIcon from 'vue-material-design-icons/Fullscreen.vue'
 import FullscreenExitIcon from 'vue-material-design-icons/FullscreenExit.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
+import RotateLeftIcon from 'vue-material-design-icons/RotateLeft.vue'
+import { useRotation } from '../composables/useRotation.ts'
 import { useViewerActions } from '../composables/useViewerActions.ts'
 import { getHandlers, isHandlerEnabled } from '../handlers.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
@@ -311,6 +325,9 @@ function handlerFor(file: IFile): IHandler | undefined {
  */
 const canEdit = computed(() => currentHandler.value?.canEdit === true
 	&& ((currentFile.value?.permissions ?? Permission.NONE) & Permission.UPDATE) !== 0)
+
+// Turning the picture on screen, written back to the file shortly after
+const { canRotate, rotateLeft, turns } = useRotation(currentFile)
 // What the opener asked for, or nothing at all: every read of this falls
 // back to the default of that one option, and the service fills in the rest
 // for a caller that passes no options (see defaultViewerOptions).
