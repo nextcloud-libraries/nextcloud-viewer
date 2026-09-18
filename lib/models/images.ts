@@ -39,6 +39,10 @@ const previewSupportedMimes = [
  */
 const browserSupportedMimes = [
 	'image/apng',
+	// Decoded natively by every engine the viewer runs in, so it needs no
+	// preview: there is no provider for it either, and waiting for one
+	// would keep it unopenable on servers that will never have it
+	'image/avif',
 	'image/bmp',
 	'image/gif',
 	'image/jpeg',
