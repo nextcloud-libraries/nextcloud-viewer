@@ -14,6 +14,7 @@ import { makeFile } from '../factories.ts'
 // media components perform, so we replace it with a deterministic fake blob URL.
 vi.mock('../../lib/services/mediaPreloader.ts', () => ({
 	preloadMedia: vi.fn(async () => 'blob:mock-preloaded-media'),
+	preloadPreview: vi.fn(async () => 'blob:mock-preloaded-preview'),
 }))
 
 // An svg is read and sanitized rather than handed to the element, so the
@@ -93,9 +94,10 @@ import Images from '../../lib/components/Images.vue'
 import Videos from '../../lib/components/Videos.vue'
 import { usePlyrPlayer } from '../../lib/composables/usePlyrPlayer.ts'
 import { logger } from '../../lib/services/logger.ts'
-import { preloadMedia } from '../../lib/services/mediaPreloader.ts'
+import { preloadMedia, preloadPreview } from '../../lib/services/mediaPreloader.ts'
 
 const preloadMediaMock = vi.mocked(preloadMedia)
+const preloadPreviewMock = vi.mocked(preloadPreview)
 
 /**
  * Build the full ViewerProps set with sensible defaults for a mounted media component.
@@ -128,6 +130,7 @@ function mountImages(overrides: Partial<ViewerProps> = {}) {
 
 beforeEach(() => {
 	preloadMediaMock.mockClear()
+	preloadPreviewMock.mockClear()
 })
 
 describe('Images.vue', () => {
@@ -182,6 +185,65 @@ describe('Images.vue', () => {
 		expect(preloadMediaMock).toHaveBeenCalledWith(file, expect.any(AbortSignal))
 		expect(wrapper.find('img').attributes('src')).toBe('blob:mock-preloaded-media')
 		expect(wrapper.emitted('errored')).toBeUndefined()
+	})
+
+	it('asks for the preview by hand when the share forbids downloading', async () => {
+		// The share refuses the file itself, so fetching it would fail the
+		// same way the element's own request just did. Only the preview is
+		// still available, and only to a request that carries the header.
+		const file = makeFile({
+			basename: 'restricted.jpg',
+			attributes: { hasPreview: true, hideDownload: true },
+		})
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		expect(preloadPreviewMock).toHaveBeenCalledTimes(1)
+		expect(preloadPreviewMock.mock.calls[0]![0]).toContain('/core/preview')
+		expect(preloadMediaMock).not.toHaveBeenCalled()
+		expect(wrapper.find('img').attributes('src')).toBe('blob:mock-preloaded-preview')
+		expect(wrapper.emitted('errored')).toBeUndefined()
+	})
+
+	it('releases the blob it fetched when the viewer closes', async () => {
+		// An object URL holds its blob until it is revoked, so a folder of
+		// these would otherwise stay in memory for as long as the viewer is
+		// open
+		const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+		const file = makeFile({ basename: 'broken.jpg' })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		wrapper.unmount()
+
+		expect(revoke).toHaveBeenCalledWith('blob:mock-preloaded-media')
+		revoke.mockRestore()
+	})
+
+	it('releases the previous blob when it fetches another', async () => {
+		const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+		const first = makeFile({ basename: 'first.jpg' })
+		const second = makeFile({ basename: 'second.jpg' })
+		const wrapper = mountImages({ file: first, files: [first, second] })
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+		expect(revoke).not.toHaveBeenCalled()
+
+		preloadMediaMock.mockResolvedValueOnce('blob:second-media')
+		await wrapper.setProps({ file: second })
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		expect(revoke).toHaveBeenCalledWith('blob:mock-preloaded-media')
+		revoke.mockRestore()
+		wrapper.unmount()
 	})
 
 	it('falls back for a file whose preview fails to load', async () => {
