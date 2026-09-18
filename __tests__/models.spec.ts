@@ -130,8 +130,10 @@ describe('audios model', () => {
 		'audio/mpeg',
 		'audio/ogg',
 		'audio/vorbis',
+		'audio/vnd.wave',
 		'audio/wav',
 		'audio/webm',
+		'audio/x-wav',
 	])('enables browser-supported mime %s', async (mime) => {
 		const { registerAudioHandler } = await import('../lib/models/audios.ts')
 		registerAudioHandler()
