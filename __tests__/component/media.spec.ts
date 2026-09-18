@@ -208,6 +208,44 @@ describe('Images.vue', () => {
 		expect(wrapper.emitted('errored')).toBeUndefined()
 	})
 
+	it('releases the blob it fetched when the viewer closes', async () => {
+		// An object URL holds its blob until it is revoked, so a folder of
+		// these would otherwise stay in memory for as long as the viewer is
+		// open
+		const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+		const file = makeFile({ basename: 'broken.jpg' })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		wrapper.unmount()
+
+		expect(revoke).toHaveBeenCalledWith('blob:mock-preloaded-media')
+		revoke.mockRestore()
+	})
+
+	it('releases the previous blob when it fetches another', async () => {
+		const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+		const first = makeFile({ basename: 'first.jpg' })
+		const second = makeFile({ basename: 'second.jpg' })
+		const wrapper = mountImages({ file: first, files: [first, second] })
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+		expect(revoke).not.toHaveBeenCalled()
+
+		preloadMediaMock.mockResolvedValueOnce('blob:second-media')
+		await wrapper.setProps({ file: second })
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		expect(revoke).toHaveBeenCalledWith('blob:mock-preloaded-media')
+		revoke.mockRestore()
+		wrapper.unmount()
+	})
+
 	it('falls back for a file whose preview fails to load', async () => {
 		const file = makeFile({ basename: 'previewed.jpg', attributes: { hasPreview: true } })
 		const wrapper = mountImages({ file, files: [file] })
