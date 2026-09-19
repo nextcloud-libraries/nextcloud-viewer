@@ -4,6 +4,7 @@
  */
 import { registerAudioHandler } from './models/audios.ts'
 import { registerImageHandler } from './models/images.ts'
+import { registerSheetmusicHandler } from './models/sheetmusic.ts'
 import { registerVideoHandler } from './models/videos.ts'
 
 let registered = false
@@ -27,4 +28,5 @@ export function registerDefaultHandlers(): void {
 	registerAudioHandler()
 	registerVideoHandler()
 	registerImageHandler()
+	registerSheetmusicHandler()
 }

@@ -41,6 +41,8 @@ const fixtures: Fixture[] = [
 	{ name: 'gradient.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'portrait.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'photo.avif', mime: 'image/avif', editable: true },
+	{ name: 'score.musicxml', mime: 'application/vnd.recordare.musicxml+xml' },
+	{ name: 'score.mxl', mime: 'application/vnd.recordare.musicxml' },
 	{ name: 'animation.gif', mime: 'image/gif' },
 	{ name: 'protected.jpg', mime: 'image/jpeg', noDownload: true },
 	{ name: 'video.mp4', mime: 'video/mp4' },

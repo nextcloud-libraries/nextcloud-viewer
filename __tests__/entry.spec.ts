@@ -29,7 +29,7 @@ describe('importing @nextcloud/viewer', () => {
 		expect(getViewer()).toBe(scope.service)
 	})
 
-	it('registers no handler until asked, then the image, video and audio ones', async () => {
+	it('registers no handler until asked, then the built-in ones', async () => {
 		const { getHandlers, registerDefaultHandlers } = await importEntry()
 
 		// The server asks from an init script; a second copy on the page
@@ -38,7 +38,7 @@ describe('importing @nextcloud/viewer', () => {
 
 		registerDefaultHandlers()
 
-		expect([...getHandlers().keys()].sort()).toEqual(['audios', 'images', 'videos'])
+		expect([...getHandlers().keys()].sort()).toEqual(['audios', 'images', 'sheetmusic', 'videos'])
 	})
 
 	it('does not mount anything, or fetch its heavy half, until a file is opened', async () => {
