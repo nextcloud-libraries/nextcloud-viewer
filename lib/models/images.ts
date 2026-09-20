@@ -27,6 +27,10 @@ const enabledPreviewProviders = (getCapabilities() as PreviewCapabilities).core?
 const previewSupportedMimes = [
 	'image/heic',
 	'image/heif',
+	// No browser decodes JPEG 2000, and libgd cannot either, so this one
+	// depends entirely on the server rendering it. Filtered out below
+	// wherever no provider is enabled for it, as tiff already is.
+	'image/jp2',
 	'image/tiff',
 	'image/x-xbitmap',
 	'image/emf',

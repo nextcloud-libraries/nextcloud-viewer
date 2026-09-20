@@ -39,6 +39,22 @@ describe('preview providers', () => {
 		expect(handler.enabled([makeFile({ mime: 'image/heic' })])).toBe(false)
 	})
 
+	it('opens a JPEG 2000 where the server renders one', async () => {
+		// Nothing decodes this in the browser, so the server having a
+		// provider for it is the whole of the support
+		const handler = await registerWithProviders(['/image\\/jp2/'])
+
+		expect(handler.enabled([makeFile({ mime: 'image/jp2' })])).toBe(true)
+	})
+
+	it('leaves a JPEG 2000 alone on a server that cannot render one', async () => {
+		// Which is every server until an admin enables the provider, so
+		// offering it would open a file that can only come up empty
+		const handler = await registerWithProviders(['/image\\/jpeg/'])
+
+		expect(handler.enabled([makeFile({ mime: 'image/jp2' })])).toBe(false)
+	})
+
 	it('falls back to the browser mimes when the capability is missing', async () => {
 		const handler = await registerWithProviders(undefined)
 
