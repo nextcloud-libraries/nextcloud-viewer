@@ -43,10 +43,25 @@ const fixtures: Fixture[] = [
 	{ name: 'photo.avif', mime: 'image/avif', editable: true },
 	{ name: 'score.musicxml', mime: 'application/vnd.recordare.musicxml+xml' },
 	{ name: 'score.mxl', mime: 'application/vnd.recordare.musicxml' },
+	{ name: 'picture.png', mime: 'image/png' },
+	{ name: 'picture.bmp', mime: 'image/bmp' },
+	{ name: 'picture.webp', mime: 'image/webp' },
+	{ name: 'picture.ico', mime: 'image/x-icon' },
+	{ name: 'picture.apng', mime: 'image/apng' },
+	{ name: 'drawing.svg', mime: 'image/svg+xml' },
 	{ name: 'animation.gif', mime: 'image/gif' },
 	{ name: 'protected.jpg', mime: 'image/jpeg', noDownload: true },
 	{ name: 'video.mp4', mime: 'video/mp4' },
 	{ name: 'audio.mp3', mime: 'audio/mpeg' },
+	// The same WAV under each of the three names a server may give it,
+	// which is what nextcloud-libraries/nextcloud-viewer#45 was about
+	{ name: 'sound.wav', mime: 'audio/wav' },
+	{ name: 'sound-xwav.wav', mime: 'audio/x-wav' },
+	{ name: 'sound-vnd.wav', mime: 'audio/vnd.wave' },
+	{ name: 'sound.flac', mime: 'audio/flac' },
+	{ name: 'sound.ogg', mime: 'audio/ogg' },
+	{ name: 'sound.webm', mime: 'audio/webm' },
+	{ name: 'sound.m4a', mime: 'audio/mp4' },
 ]
 
 /** Where the fixtures are served from, shaped like a WebDAV path */
