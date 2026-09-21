@@ -27,6 +27,16 @@ const BUDGET_GZIP = 10 * 1024
 /** Chunks that must only ever be reached through a dynamic import */
 const MUST_BE_LAZY = ['mount', 'Images', 'Videos', 'Audios', 'ImageEditor', 'usePlyrPlayer', 'translations']
 
+/**
+ * Packages a page must not pay for unless it opens something needing them.
+ *
+ * The chunk names above only catch this library's own code. These are
+ * dependencies, which leave the bundle as bare specifiers and so never
+ * appear there: the canvas library and the editor built on it, and the
+ * score renderer, which is two megabytes by itself.
+ */
+const MUST_BE_LAZY_PACKAGES = ['konva', 'opensheetmusicdisplay', '@nextcloud/image-editor']
+
 const ENTRY = 'dist/index.mjs'
 
 /**
@@ -39,6 +49,8 @@ const ENTRY = 'dist/index.mjs'
  */
 function staticGraph(entry) {
 	const seen = new Set()
+	/** Dependencies reached without a dynamic import */
+	const packages = new Set()
 	const queue = [entry]
 
 	while (queue.length > 0) {
@@ -49,6 +61,14 @@ function staticGraph(entry) {
 		seen.add(file)
 
 		const source = readFileSync(file, 'utf8')
+
+		// A dependency leaves the bundle as a bare specifier, so it is never
+		// one of the chunks walked below. Matched on the whole statement
+		// rather than on the quotes, because every string has quotes.
+		for (const statement of source.matchAll(/(?:^|[\s;}])(?:import|export)\s+(?:[^'";]*?\sfrom\s+)?["']([^."'][^"']*)["']/gm)) {
+			packages.add(statement[1])
+		}
+
 		// `import x from "./y"` and `export … from "./y"`, but never `import("./y")`
 		for (const match of source.matchAll(/(?<!\bimport\s*\(\s*)["']([^"']+)["']/g)) {
 			const specifier = match[1]
@@ -66,10 +86,10 @@ function staticGraph(entry) {
 		}
 	}
 
-	return [...seen]
+	return { files: [...seen], packages: [...packages] }
 }
 
-const files = staticGraph(resolve(ENTRY))
+const { files, packages } = staticGraph(resolve(ENTRY))
 let raw = 0
 let gzip = 0
 
@@ -82,8 +102,18 @@ for (const file of files.sort()) {
 }
 console.info(`\n  ${String(raw).padStart(8)}  total, ${(gzip / 1024).toFixed(1)} kB gzipped (budget ${(BUDGET_GZIP / 1024).toFixed(0)} kB)\n`)
 
+console.info(`  dependencies: ${packages.sort().join(', ') || 'none'}\n`)
+
 const eager = files.map((file) => file.replace(/.*\/([^/]+)\.mjs$/, '$1'))
 const leaked = MUST_BE_LAZY.filter((chunk) => eager.includes(chunk))
+const leakedPackages = MUST_BE_LAZY_PACKAGES.filter(
+	(name) => packages.some((used) => used === name || used.startsWith(`${name}/`)),
+)
+
+if (leakedPackages.length > 0) {
+	console.error(`These are only needed once a file is open, and something imports them at the top level: ${leakedPackages.join(', ')}`)
+	process.exit(1)
+}
 
 if (leaked.length > 0) {
 	console.error(`These are meant to load only when a file is opened, and something imports them at the top level: ${leaked.join(', ')}`)

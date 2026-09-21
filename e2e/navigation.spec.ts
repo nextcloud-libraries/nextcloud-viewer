@@ -34,6 +34,8 @@ const MEDIA = [
 	'sound.ogg',
 	'sound.webm',
 	'sound.m4a',
+	'sound.aac',
+	'clip.webm',
 ]
 
 test.describe('Viewer navigation', () => {

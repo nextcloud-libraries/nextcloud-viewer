@@ -21,7 +21,7 @@ import { t } from '../utils/l10n.ts'
  * unrecognised file falls back to would have handed this handler far more
  * than sheet music.
  */
-const supportedMimes = [
+export const supportedMimes = [
 	'application/vnd.recordare.musicxml',
 	'application/vnd.recordare.musicxml+xml',
 ]

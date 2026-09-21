@@ -24,7 +24,7 @@ const enabledPreviewProviders = (getCapabilities() as PreviewCapabilities).core?
  * Those mimes needs a proper preview to be displayed
  * if they are not enabled on the server, let's not activate them.
  */
-const previewSupportedMimes = [
+export const previewSupportedMimes = [
 	'image/heic',
 	'image/heif',
 	// No browser decodes JPEG 2000, and libgd cannot either, so this one
@@ -41,7 +41,7 @@ const previewSupportedMimes = [
  * Since we fallback to the source image if there is no
  * preview, we can always include them.
  */
-const browserSupportedMimes = [
+export const browserSupportedMimes = [
 	'image/apng',
 	// Decoded natively by every engine the viewer runs in, so it needs no
 	// preview: there is no provider for it either, and waiting for one
