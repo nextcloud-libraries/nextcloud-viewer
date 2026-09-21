@@ -7,3 +7,6 @@ playground/dist/
 
 # Built by build:e2e-app, mounted into the test container
 e2e-server/js/
+.stryker-tmp/
+mutation-report/
+reports/
