@@ -6,6 +6,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.11
+
+### Added
+
+- A rotate button, ahead of the edit button, turns the picture at once
+  and writes the turn to the file about a second later by rewriting its
+  Exif orientation tag. Nothing is decoded or re-encoded, so the picture
+  is the same picture however many times it is turned, and the tag is
+  what the preview generator reads, so the new framing follows the file
+  into the Files grid and the mobile clients. JPEG only, and only where
+  the user may write: no other format carries an orientation this stack
+  honours. Written once the user settles rather than once per click,
+  since every write makes a version of the file (#49)
+- `turns` on `ViewerProps`: the quarter turns the viewer is showing on top
+  of the file's own orientation, while a rotation is being written. A
+  handler that can turn its content should honour it; the rest may ignore
+  it, so this breaks nothing that already exists (#49)
+- AVIF opens. Every engine the viewer runs in decodes it natively, so it
+  is shown from the file itself; nothing in Nextcloud previews it, so
+  listing it as preview-supported would have kept it closed everywhere
+  (#50)
+- MusicXML scores open, `.musicxml` and the zipped `.mxl`, drawn with
+  opensheetmusicdisplay. The renderer is imported inside the component,
+  so it is fetched the first time somebody opens a score and never for
+  anyone who only opens photos (#52)
+- JPEG 2000 opens where the server renders it. Nothing decodes it in the
+  browser, so it sits with the other formats that depend on a preview
+  provider, and it needs nextcloud/server#64603, which is in 36 (#53)
+
+### Fixed
+
+- A WAV arrives under three different names depending on who wrote it,
+  and only one of them was listed, so the other two would not open (#45)
+
 ## 2.0.0-beta.10
 
 ### Fixed
