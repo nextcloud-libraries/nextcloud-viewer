@@ -1,6 +1,6 @@
 {
 	"$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
-	"_comment": "Audits the tests rather than the code: every mutant that survives is a change to the library that no test noticed. Scoped to the pure logic, where it is fast and where a surviving mutant almost always means a real gap rather than an equivalent one.",
+	"_comment": "Audits the tests rather than the code: a mutant that survives is a change no test noticed. Scoped to the logic, where a survivor usually means a real gap. Components and views are left out: most of their mutants are DOM glue that a unit test cannot observe, so the score would measure the wrong thing.",
 	"packageManager": "npm",
 	"testRunner": "vitest",
 	"inPlace": true,
@@ -17,10 +17,15 @@
 	},
 	"coverageAnalysis": "perTest",
 	"mutate": [
+		"lib/*.ts",
 		"lib/utils/**/*.ts",
 		"lib/composables/**/*.ts",
+		"lib/models/**/*.ts",
+		"lib/services/**/*.ts",
+		"lib/helpers/**/*.ts",
 		"!lib/**/*.d.ts",
-		"!lib/utils/plyrTranslations.ts"
+		"!lib/utils/plyrTranslations.ts",
+		"!lib/services/logger.ts"
 	],
 	"thresholds": {
 		"high": 90,
