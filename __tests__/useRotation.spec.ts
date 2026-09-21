@@ -24,7 +24,11 @@ vi.mock('@nextcloud/dialogs', () => ({ showError: vi.fn(), showSuccess: vi.fn() 
 const setOrientation = vi.hoisted(() => vi.fn<() => Uint8Array<ArrayBuffer> | null>(() => new Uint8Array([0xFF, 0xD8, 0x99])))
 vi.mock('@nextcloud/image-editor/jpeg', () => ({
 	readJpegOrientation: () => 1,
-	rotateOrientation: (orientation: number) => orientation + 1,
+	// Honours the direction, so a composable that turned the picture the
+	// wrong way is visible here rather than only in an end-to-end run
+	rotateOrientation: (orientation: number, turn: 'left' | 'right') => (
+		turn === 'left' ? orientation + 1 : orientation - 1
+	),
 	setJpegOrientation: setOrientation,
 }))
 
@@ -147,6 +151,56 @@ describe('useRotation', () => {
 			// change is worse than no version
 			expect(axiosGet).not.toHaveBeenCalled()
 			expect(axiosPut).not.toHaveBeenCalled()
+		})
+
+		it('turns the picture the way the button says', async () => {
+			// Two quarters anticlockwise from 1, as the stubbed composition
+			// counts them. A composable that asked for 'right' would arrive
+			// at a different number and nothing else here would notice
+			start(makeFile())
+			rotation.rotateLeft()
+			rotation.rotateLeft()
+			await settle()
+
+			expect(setOrientation).toHaveBeenCalledWith(expect.anything(), 3)
+		})
+
+		it('says while it is writing, and stops saying so', async () => {
+			// The request is held open, because advancing the timers also
+			// drains the promises and the write would otherwise be over
+			// before there is anything to observe
+			const { promise, resolve } = Promise.withResolvers<unknown>()
+			axiosGet.mockReturnValueOnce(promise)
+
+			start(makeFile())
+			expect(rotation.saving.value).toBe(false)
+
+			rotation.rotateLeft()
+			await vi.advanceTimersByTimeAsync(AFTER_QUIET)
+			expect(rotation.saving.value).toBe(true)
+
+			resolve({ data: new Uint8Array([0xFF, 0xD8, 0x00]).buffer })
+			await flushPromises()
+			expect(rotation.saving.value).toBe(false)
+		})
+
+		it('stops saying it is writing after a failure too', async () => {
+			axiosPut.mockRejectedValue(new Error('nope'))
+			start(makeFile())
+			rotation.rotateLeft()
+			await settle()
+
+			expect(rotation.saving.value).toBe(false)
+		})
+
+		it('unquotes an etag however the server quoted it', async () => {
+			// A dav etag comes back quoted, and which quoting depends on who
+			// wrote it: a literal quote or the escaped entity
+			start(makeFile({ attributes: { etag: '&quot;opened-as&quot;' } }))
+			rotation.rotateLeft()
+			await settle()
+
+			expect(axiosPut.mock.calls[0]![2].headers).toEqual({ 'If-Match': '"opened-as"' })
 		})
 
 		it('sends the bytes back as a JPEG', async () => {

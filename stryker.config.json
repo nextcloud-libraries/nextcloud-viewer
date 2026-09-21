@@ -1,0 +1,32 @@
+{
+	"$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
+	"_comment": "Audits the tests rather than the code: every mutant that survives is a change to the library that no test noticed. Scoped to the pure logic, where it is fast and where a surviving mutant almost always means a real gap rather than an equivalent one.",
+	"packageManager": "npm",
+	"testRunner": "vitest",
+	"inPlace": true,
+	"vitest": {
+		"configFile": "vitest.config.ts"
+	},
+	"reporters": [
+		"html",
+		"clear-text",
+		"progress"
+	],
+	"htmlReporter": {
+		"fileName": "mutation-report/index.html"
+	},
+	"coverageAnalysis": "perTest",
+	"mutate": [
+		"lib/utils/**/*.ts",
+		"lib/composables/**/*.ts",
+		"!lib/**/*.d.ts",
+		"!lib/utils/plyrTranslations.ts"
+	],
+	"thresholds": {
+		"high": 90,
+		"low": 70,
+		"break": null
+	},
+	"timeoutMS": 30000,
+	"concurrency": 4
+}
