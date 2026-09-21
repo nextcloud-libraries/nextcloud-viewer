@@ -7,6 +7,7 @@ import Viewer from './views/Viewer.vue'
 import plyrIcons from './img/plyr.svg?raw'
 import { registerAudioCustomElement } from './models/audios.ts'
 import { registerImageCustomElement } from './models/images.ts'
+import { registerSheetmusicCustomElement } from './models/sheetmusic.ts'
 import { registerVideoCustomElement } from './models/videos.ts'
 import { logger } from './services/logger.ts'
 import { getViewer } from './viewer.ts'
@@ -25,6 +26,7 @@ export async function mount(): Promise<void> {
 	await Promise.all([
 		registerAudioCustomElement(),
 		registerImageCustomElement(),
+		registerSheetmusicCustomElement(),
 		registerVideoCustomElement(),
 	])
 

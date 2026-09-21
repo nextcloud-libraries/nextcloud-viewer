@@ -34,7 +34,7 @@ describe('default handlers', () => {
 		registerDefaultHandlers()
 		registerDefaultHandlers()
 
-		expect(scope.handlers!.size).toBe(3)
+		expect(scope.handlers!.size).toBe(4)
 		expect(warn).not.toHaveBeenCalled()
 	})
 })

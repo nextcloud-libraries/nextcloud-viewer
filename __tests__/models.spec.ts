@@ -156,6 +156,42 @@ describe('audios model', () => {
 	})
 })
 
+describe('sheetmusic model', () => {
+	it.each([
+		'application/vnd.recordare.musicxml',
+		'application/vnd.recordare.musicxml+xml',
+	])('enables the score mime %s', async (mime) => {
+		const { registerSheetmusicHandler } = await import('../lib/models/sheetmusic.ts')
+		registerSheetmusicHandler()
+		const handler = handlerById('sheetmusic')
+		expect(handler.enabled([makeFile({ mime })])).toBe(true)
+	})
+
+	it('does not claim the type every unrecognised file falls back to', async () => {
+		// An earlier attempt registered application/octet-stream, because
+		// the extensions had no mapping yet. They do since server 32, and
+		// claiming it would hand this handler every unknown binary
+		const { registerSheetmusicHandler } = await import('../lib/models/sheetmusic.ts')
+		registerSheetmusicHandler()
+		const handler = handlerById('sheetmusic')
+		expect(handler.enabled([makeFile({ mime: 'application/octet-stream' })])).toBe(false)
+	})
+
+	it('rejects a file that is not a score', async () => {
+		const { registerSheetmusicHandler } = await import('../lib/models/sheetmusic.ts')
+		registerSheetmusicHandler()
+		const handler = handlerById('sheetmusic')
+		expect(handler.enabled([makeFile({ mime: 'image/jpeg' })])).toBe(false)
+	})
+
+	it('disables an empty nodes array', async () => {
+		const { registerSheetmusicHandler } = await import('../lib/models/sheetmusic.ts')
+		registerSheetmusicHandler()
+		const handler = handlerById('sheetmusic')
+		expect(handler.enabled([])).toBe(false)
+	})
+})
+
 describe('images model', () => {
 	it.each([
 		'image/apng',
