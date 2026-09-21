@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  - SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+  -
+  - Carries what an svg can be used to smuggle, so the viewer's sanitiser
+  - has something to strip: a script element, an event handler attribute,
+  - and a foreign object. The circle and the title are the drawing, and
+  - have to survive.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180" viewBox="0 0 240 180">
+  <title>Sanitiser test drawing</title>
+  <script type="text/javascript">window.__svgScriptRan = true</script>
+  <rect width="240" height="180" fill="#2d6ae3" onload="window.__svgOnLoadRan = true"/>
+  <circle cx="120" cy="90" r="60" fill="#e3452d"/>
+  <foreignObject width="240" height="180">
+    <body xmlns="http://www.w3.org/1999/xhtml"><img src="x" onerror="window.__svgOnErrorRan = true"/></body>
+  </foreignObject>
+</svg>

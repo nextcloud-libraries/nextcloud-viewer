@@ -7,7 +7,34 @@ import { ViewerPage } from './support/viewer.ts'
 
 // The order the playground lists them in, which is the order the viewer is
 // handed and the order it has to step through
-const IMAGES = ['photo.jpg', 'gradient.jpg', 'portrait.jpg', 'photo.avif', 'animation.gif', 'protected.jpg']
+const IMAGES = [
+	'photo.jpg',
+	'gradient.jpg',
+	'portrait.jpg',
+	'photo.avif',
+	'picture.png',
+	'picture.bmp',
+	'picture.webp',
+	'picture.ico',
+	'picture.apng',
+	'drawing.svg',
+	'animation.gif',
+	'protected.jpg',
+]
+
+// The video and audio handlers share the 'media' group, so these page
+// among themselves and never into the images
+const MEDIA = [
+	'video.mp4',
+	'audio.mp3',
+	'sound.wav',
+	'sound-xwav.wav',
+	'sound-vnd.wav',
+	'sound.flac',
+	'sound.ogg',
+	'sound.webm',
+	'sound.m4a',
+]
 
 test.describe('Viewer navigation', () => {
 	test('steps through the list and loops around at both ends', async ({ page }) => {
@@ -38,19 +65,21 @@ test.describe('Viewer navigation', () => {
 
 	test('pages within the handler group and not across it', async ({ page }) => {
 		const viewer = new ViewerPage(page)
-		// The video and audio handlers share the 'media' group, images are on
-		// their own, so opening a video pages through the media and stops there
-		await viewer.open('video.mp4')
+		// Images are on their own, so opening a video pages through the
+		// media and stops there
+		await viewer.open(MEDIA[0]!)
 		await viewer.waitForOpen()
-		expect(await viewer.currentName()).toBe('video.mp4')
+		expect(await viewer.currentName()).toBe(MEDIA[0])
 
-		await viewer.next()
-		await viewer.waitForOpen()
-		expect(await viewer.currentName()).toBe('audio.mp3')
+		for (const file of MEDIA.slice(1)) {
+			await viewer.next()
+			await viewer.waitForOpen()
+			expect(await viewer.currentName()).toBe(file)
+		}
 
 		// Round the end of the media, rather than on into the images
 		await viewer.next()
 		await viewer.waitForOpen()
-		expect(await viewer.currentName()).toBe('video.mp4')
+		expect(await viewer.currentName()).toBe(MEDIA[0])
 	})
 })
