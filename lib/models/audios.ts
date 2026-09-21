@@ -10,7 +10,7 @@ import { logger } from '../services/logger.ts'
 import { defineCustomElementOnce } from '../utils/customElements.ts'
 import { t } from '../utils/l10n.ts'
 
-const browserSupportedMimes = [
+export const browserSupportedMimes = [
 	'audio/aac',
 	'audio/aacp',
 	'audio/flac',

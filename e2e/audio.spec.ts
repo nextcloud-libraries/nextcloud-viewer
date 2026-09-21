@@ -22,6 +22,7 @@ const AUDIO = [
 	'sound.ogg',
 	'sound.webm',
 	'sound.m4a',
+	'sound.aac',
 ]
 
 test.describe('Audio', () => {

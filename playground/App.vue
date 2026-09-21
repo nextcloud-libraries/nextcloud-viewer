@@ -62,6 +62,8 @@ const fixtures: Fixture[] = [
 	{ name: 'sound.ogg', mime: 'audio/ogg' },
 	{ name: 'sound.webm', mime: 'audio/webm' },
 	{ name: 'sound.m4a', mime: 'audio/mp4' },
+	{ name: 'sound.aac', mime: 'audio/aac' },
+	{ name: 'clip.webm', mime: 'video/webm' },
 ]
 
 /** Where the fixtures are served from, shaped like a WebDAV path */
