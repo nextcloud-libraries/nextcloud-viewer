@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--
+  - SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+  - SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+<info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
+	<id>viewer_e2e</id>
+	<name>Viewer end-to-end harness</name>
+	<summary>Loads this checkout of @nextcloud/viewer into a real server</summary>
+	<description><![CDATA[
+Not a real app. It exists so the library's end-to-end tests can run against a
+real Nextcloud rather than against static files, which is the only way to
+cover the formats that depend on the server rendering a preview.
+	]]></description>
+	<version>1.0.0</version>
+	<licence>agpl</licence>
+	<author>Nextcloud GmbH and Nextcloud contributors</author>
+	<namespace>ViewerE2E</namespace>
+	<category>tools</category>
+	<dependencies>
+		<nextcloud min-version="30" max-version="40"/>
+	</dependencies>
+</info>
