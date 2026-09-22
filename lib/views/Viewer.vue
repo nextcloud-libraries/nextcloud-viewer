@@ -1300,6 +1300,19 @@ defineExpose<ViewerAPI>({
 
 <style scoped lang="scss">
 .viewer__modal {
+	// The backdrop is dark whatever theme the server runs, so what sits on
+	// it has to come from the dark palette too. Without this the header
+	// inherits the light theme's #222 and lands at 1.3:1 against black,
+	// which is a title nobody can read. A handler that asked for a light
+	// backdrop keeps the theme's own colours.
+	&:not(.modal-mask--light) {
+		--color-main-text: #ffffff;
+		--color-text-maxcontrast: #d8d8d8;
+		--color-main-background: #171717;
+
+		color: var(--color-main-text);
+	}
+
 	:deep(.modal-container__content) {
 		display: flex;
 		justify-content: center;
@@ -1307,7 +1320,11 @@ defineExpose<ViewerAPI>({
 	}
 
 	:deep(.modal-container) {
-		top: var(--header-height) !important;
+		// A little air under the header, so the picture is not touching the
+		// bar above it. The band below is left as it was: the one above now
+		// holds the header and this gap, which is what stops the picture
+		// reading as pushed up against the top of the window.
+		top: calc(var(--header-height) + 8px) !important;
 		bottom: var(--header-height) !important;
 		height: auto !important;
 		background-color: transparent !important;
