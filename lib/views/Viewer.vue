@@ -1300,6 +1300,19 @@ defineExpose<ViewerAPI>({
 
 <style scoped lang="scss">
 .viewer__modal {
+	// The backdrop is dark whatever theme the server runs, so what sits on
+	// it has to come from the dark palette too. Without this the header
+	// inherits the light theme's #222 and lands at 1.3:1 against black,
+	// which is a title nobody can read. A handler that asked for a light
+	// backdrop keeps the theme's own colours.
+	&:not(.modal-mask--light) {
+		--color-main-text: #ffffff;
+		--color-text-maxcontrast: #d8d8d8;
+		--color-main-background: #171717;
+
+		color: var(--color-main-text);
+	}
+
 	:deep(.modal-container__content) {
 		display: flex;
 		justify-content: center;
