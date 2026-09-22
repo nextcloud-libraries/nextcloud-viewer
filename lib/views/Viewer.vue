@@ -1320,7 +1320,11 @@ defineExpose<ViewerAPI>({
 	}
 
 	:deep(.modal-container) {
-		top: var(--header-height) !important;
+		// A little air under the header, so the picture is not touching the
+		// bar above it. The band below is left as it was: the one above now
+		// holds the header and this gap, which is what stops the picture
+		// reading as pushed up against the top of the window.
+		top: calc(var(--header-height) + 8px) !important;
 		bottom: var(--header-height) !important;
 		height: auto !important;
 		background-color: transparent !important;
