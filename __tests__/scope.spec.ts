@@ -20,6 +20,31 @@ describe('compareVersions', () => {
 
 	it('ranks a release above its own prereleases', () => {
 		expect(compareVersions('2.0.0', '2.0.0-beta.1')).toBeGreaterThan(0)
+		// Both ways round. Only one direction was asserted, and the election
+		// asks in whichever order the two copies happen to load, so a beta
+		// could have won a page against a release with nothing to show for it
+		expect(compareVersions('2.0.0-beta.1', '2.0.0')).toBeLessThan(0)
+	})
+
+	it('is the same comparison whichever way it is asked', () => {
+		// Adding zero, because Math.sign(0) is 0 and negating it is -0, and
+		// the two are not the same value to a strict comparison
+		const sign = (value: number) => Math.sign(value) + 0
+		const versions = ['1.9.9', '2.0.0-1', '2.0.0-alpha', '2.0.0-beta.2', '2.0.0-beta.10', '2.0.0', '2.0.1']
+		for (const a of versions) {
+			for (const b of versions) {
+				expect(sign(compareVersions(a, b)), `${a} against ${b}`)
+					.toBe(-sign(compareVersions(b, a)) + 0)
+			}
+		}
+	})
+
+	it('orders a full run of versions the way semver does', () => {
+		// Sorting the list is the question the election actually asks
+		const ordered = ['1.9.9', '2.0.0-1', '2.0.0-alpha', '2.0.0-beta.2', '2.0.0-beta.10', '2.0.0', '2.0.1']
+		const shuffled = ['2.0.0', '2.0.0-beta.10', '1.9.9', '2.0.1', '2.0.0-alpha', '2.0.0-1', '2.0.0-beta.2']
+
+		expect([...shuffled].sort(compareVersions)).toEqual(ordered)
 	})
 
 	it('compares prerelease identifiers the way semver does', () => {

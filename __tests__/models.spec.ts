@@ -156,6 +156,54 @@ describe('audios model', () => {
 	})
 })
 
+/** Register the four built-in handlers, the way each suite below does */
+async function registerAll() {
+	const [images, videos, audios, sheetmusic] = await Promise.all([
+		import('../lib/models/images.ts'),
+		import('../lib/models/videos.ts'),
+		import('../lib/models/audios.ts'),
+		import('../lib/models/sheetmusic.ts'),
+	])
+	images.registerImageHandler()
+	videos.registerVideoHandler()
+	audios.registerAudioHandler()
+	sheetmusic.registerSheetmusicHandler()
+}
+
+describe('a selection of more than one file', () => {
+	// Every handler answers for the whole selection, so one file it cannot
+	// open has to disqualify the lot. Written for all of them at once
+	// because `every` reads exactly like `some` until something asks.
+	it.each([
+		['images', 'image/jpeg', 'application/pdf'],
+		['videos', 'video/mp4', 'application/pdf'],
+		['audios', 'audio/mpeg', 'application/pdf'],
+		['sheetmusic', 'application/vnd.recordare.musicxml', 'application/pdf'],
+	])('%s refuses a selection it can only partly open', async (id, supported, other) => {
+		await registerAll()
+		const handler = handlerById(id)
+
+		expect(handler.enabled([makeFile({ mime: supported })])).toBe(true)
+		expect(handler.enabled([
+			makeFile({ mime: supported }),
+			makeFile({ mime: other }),
+		])).toBe(false)
+	})
+
+	it.each([
+		['images', 'image/jpeg', 'image/png'],
+		['audios', 'audio/mpeg', 'audio/flac'],
+	])('%s takes a selection it can open all of', async (id, first, second) => {
+		await registerAll()
+		const handler = handlerById(id)
+
+		expect(handler.enabled([
+			makeFile({ mime: first }),
+			makeFile({ mime: second }),
+		])).toBe(true)
+	})
+})
+
 describe('sheetmusic model', () => {
 	it.each([
 		'application/vnd.recordare.musicxml',
