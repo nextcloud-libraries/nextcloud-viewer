@@ -326,8 +326,14 @@ function handlerFor(file: IFile): IHandler | undefined {
 const canEdit = computed(() => currentHandler.value?.canEdit === true
 	&& ((currentFile.value?.permissions ?? Permission.NONE) & Permission.UPDATE) !== 0)
 
-// Turning the picture on screen, written back to the file shortly after
-const { canRotate, rotateLeft, turns } = useRotation(currentFile)
+// Turning the picture on screen, written back to the file shortly after.
+// The update a write announces is ours, and the turn is already on screen,
+// unless the user has moved on: then nothing reloads for it anyway
+const { canRotate, rotateLeft, turns } = useRotation(currentFile, (node) => {
+	if (node.fileid !== undefined && node.fileid === currentFile.value?.fileid) {
+		ownSaves.add(node.fileid)
+	}
+})
 // What the opener asked for, or nothing at all: every read of this falls
 // back to the default of that one option, and the service fills in the rest
 // for a caller that passes no options (see defaultViewerOptions).

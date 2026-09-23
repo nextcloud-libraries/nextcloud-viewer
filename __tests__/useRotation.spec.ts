@@ -21,7 +21,7 @@ vi.mock('@nextcloud/dialogs', () => ({ showError: vi.fn(), showSuccess: vi.fn() 
 // here is the orchestration around it: when a turn is written, which file
 // it is written to, and what is sent with it. The stub composes turns the
 // way the real one does so the count can be asserted.
-const setOrientation = vi.hoisted(() => vi.fn<() => Uint8Array<ArrayBuffer> | null>(() => new Uint8Array([0xFF, 0xD8, 0x99])))
+const setOrientation = vi.hoisted(() => vi.fn<(bytes: Uint8Array<ArrayBuffer>, orientation: number) => Uint8Array<ArrayBuffer> | null>(() => new Uint8Array([0xFF, 0xD8, 0x99])))
 vi.mock('@nextcloud/image-editor/jpeg', () => ({
 	readJpegOrientation: () => 1,
 	// Honours the direction, so a composable that turned the picture the
@@ -239,6 +239,84 @@ describe('useRotation', () => {
 			await settle()
 
 			expect(emitBus).toHaveBeenCalledWith('files:node:updated', expect.anything())
+		})
+
+		it('hands the written file over before announcing it', async () => {
+			// The viewer marks the update as its own here, or it reloads the
+			// picture it already shows turned, and the picture flashes
+			const onWritten = vi.fn(() => expect(emitBus).not.toHaveBeenCalled())
+			const node = makeFile()
+			file = ref(node)
+			scope = effectScope()
+			rotation = scope.run(() => useRotation(file, onWritten))!
+			rotation.rotateLeft()
+			await settle()
+
+			expect(onWritten).toHaveBeenCalledWith(node)
+			expect(emitBus).toHaveBeenCalledOnce()
+		})
+
+		it('hands nothing over when the write fails', async () => {
+			axiosPut.mockRejectedValue(new Error('nope'))
+			const onWritten = vi.fn()
+			file = ref(makeFile())
+			scope = effectScope()
+			rotation = scope.run(() => useRotation(file, onWritten))!
+			rotation.rotateLeft()
+			await settle()
+
+			expect(onWritten).not.toHaveBeenCalled()
+			expect(emitBus).not.toHaveBeenCalled()
+		})
+
+		it('builds a second turn on the bytes it wrote, not on a fresh read', async () => {
+			// A read can be answered before the previous write lands, and a
+			// turn computed from it writes the old orientation back
+			const first = new Uint8Array([0xFF, 0xD8, 0x01])
+			setOrientation.mockReturnValueOnce(first)
+			start(makeFile())
+			rotation.rotateLeft()
+			await settle()
+			rotation.rotateLeft()
+			await settle()
+
+			expect(axiosGet).toHaveBeenCalledTimes(1)
+			expect(setOrientation.mock.calls[1]![0]).toBe(first)
+		})
+
+		it('reads the file again once it has moved on to another', async () => {
+			start(makeFile({ basename: 'first.jpg' }))
+			rotation.rotateLeft()
+			await settle()
+			file.value = makeFile({ basename: 'second.jpg' })
+			rotation.rotateLeft()
+			await settle()
+
+			expect(axiosGet).toHaveBeenCalledTimes(2)
+			expect(axiosGet.mock.calls[1]![0]).toContain('second.jpg')
+		})
+
+		it('holds a turn made during a write until that write lands', async () => {
+			// Two writes racing each other each start from the file as it was,
+			// so the second undoes the first, or fails on the stale etag
+			const { promise, resolve } = Promise.withResolvers<unknown>()
+			axiosPut.mockReturnValueOnce(promise)
+			start(makeFile({ attributes: { etag: 'opened-as' } }))
+			rotation.rotateLeft()
+			await settle()
+			rotation.rotateLeft()
+			await settle()
+
+			expect(axiosPut).toHaveBeenCalledTimes(1)
+			expect(rotation.saving.value).toBe(true)
+
+			resolve({ headers: { 'oc-etag': '"written"' } })
+			await flushPromises()
+
+			expect(axiosPut).toHaveBeenCalledTimes(2)
+			expect(axiosPut.mock.calls[1]![2].headers).toEqual({ 'If-Match': '"written"' })
+			expect(axiosGet).toHaveBeenCalledTimes(1)
+			expect(rotation.saving.value).toBe(false)
 		})
 
 		it('leaves the preview where it is, so the turn on screen holds', async () => {
