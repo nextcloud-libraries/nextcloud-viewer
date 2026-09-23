@@ -40,8 +40,10 @@ const ROTATABLE_MIME = 'image/jpeg'
  * Photos, the mobile clients.
  *
  * @param file the file on screen
+ * @param onWritten called with a file just before its update is announced,
+ *   so the viewer can tell its own write from a change made elsewhere
  */
-export function useRotation(file: Ref<IFile | undefined>) {
+export function useRotation(file: Ref<IFile | undefined>, onWritten?: (node: IFile) => void) {
 	/** Quarter turns anticlockwise the viewer is showing, beyond the file's own */
 	const turns = ref(0)
 
@@ -65,7 +67,22 @@ export function useRotation(file: Ref<IFile | undefined>) {
 	 */
 	const versions = new Map<string, string>()
 
-	/** How many writes are in flight, so the last one out clears the flag */
+	/**
+	 * The bytes last written, and the file they were written to. The next
+	 * turn of that picture builds on them rather than on a fresh read,
+	 * which could overtake the write before it and undo it. Only the last
+	 * file's are kept, since a photo runs to megabytes.
+	 */
+	let written: { source: string, bytes: Uint8Array<ArrayBuffer> } | undefined
+
+	/**
+	 * The writes, one after another. A turn made while the previous one
+	 * is still on its way waits for it, so each write starts from the
+	 * orientation and the version the previous one left.
+	 */
+	let queue: Promise<void> = Promise.resolve()
+
+	/** How many writes are queued or in flight, so the last one out clears the flag */
 	let writing = 0
 
 	/**
@@ -103,35 +120,55 @@ export function useRotation(file: Ref<IFile | undefined>) {
 	 * quarters leave the file as it was, and a version of a file that did
 	 * not change is worse than no version at all.
 	 */
-	async function save(): Promise<void> {
+	function save(): Promise<void> {
 		clearTimeout(timer)
 		const owed = pending % 4
 		const node = target
 		pending = 0
 		target = undefined
 		if (node === undefined || owed === 0) {
-			return
+			return queue
 		}
 
 		writing++
 		saving.value = true
+		queue = queue.then(() => write(node, owed))
+		return queue
+	}
+
+	/**
+	 * Turn the file a number of quarters anticlockwise and write it back.
+	 *
+	 * The rest of the app is told the file changed once it lands, and
+	 * `onWritten` runs first so the viewer, which already shows the turn,
+	 * does not reload the picture for it.
+	 *
+	 * @param node the file to write
+	 * @param owed quarter turns to add, 1 to 3
+	 */
+	async function write(node: IFile, owed: number): Promise<void> {
 		try {
-			const response = await axios.get(node.encodedSource, { responseType: 'arraybuffer' })
-			const bytes = new Uint8Array(response.data as ArrayBuffer)
+			let bytes: Uint8Array<ArrayBuffer>
+			if (written?.source === node.source) {
+				bytes = written.bytes
+			} else {
+				const response = await axios.get(node.encodedSource, { responseType: 'arraybuffer' })
+				bytes = new Uint8Array(response.data as ArrayBuffer)
+			}
 
 			let orientation = readJpegOrientation(bytes)
 			for (let turn = 0; turn < owed; turn++) {
 				orientation = rotateOrientation(orientation, 'left')
 			}
-			const written = setJpegOrientation(bytes, orientation)
-			if (written === null) {
+			const turned = setJpegOrientation(bytes, orientation)
+			if (turned === null) {
 				logger.error('Could not write the orientation of this JPEG', { source: node.source })
 				showError(t('This image could not be rotated'))
 				return
 			}
 
 			const known = versions.get(node.source) ?? node.attributes?.etag as string | undefined
-			const result = await axios.put(node.encodedSource, new Blob([written], { type: ROTATABLE_MIME }), {
+			const result = await axios.put(node.encodedSource, new Blob([turned], { type: ROTATABLE_MIME }), {
 				headers: known ? { 'If-Match': `"${String(known).replace(/&quot;|"/g, '')}"` } : undefined,
 			})
 
@@ -139,7 +176,9 @@ export function useRotation(file: Ref<IFile | undefined>) {
 			if (saved) {
 				versions.set(node.source, String(saved).replace(/"/g, ''))
 			}
+			written = { source: node.source, bytes: turned }
 
+			onWritten?.(node)
 			emitBus('files:node:updated', node)
 		} catch (error) {
 			logger.error('Failed to rotate the image', { error })
