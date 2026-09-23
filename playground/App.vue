@@ -38,6 +38,9 @@ const startSlideshow = flags.has('slideshow')
 const fixtures: Fixture[] = [
 	{ name: 'photo.jpg', mime: 'image/jpeg', editable: true },
 	...(withPreviews ? [{ name: 'previewed.jpg', mime: 'image/jpeg', hasPreview: true }] : []),
+	// A share that forbids downloading: the preview endpoint refuses the
+	// element's own request, so the viewer has to ask for it by hand
+	...(withPreviews ? [{ name: 'restricted.jpg', mime: 'image/jpeg', hasPreview: true, noDownload: true }] : []),
 	{ name: 'gradient.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'portrait.jpg', mime: 'image/jpeg', editable: true },
 	{ name: 'photo.avif', mime: 'image/avif', editable: true },

@@ -81,7 +81,8 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import { useViewerProps } from '../composables/useViewerProps.ts'
 import { logger } from '../services/logger.ts'
-import { preloadMedia } from '../services/mediaPreloader.ts'
+import { preloadMedia, preloadPreview } from '../services/mediaPreloader.ts'
+import { canDownload } from '../utils/canDownload.ts'
 import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromFileId } from '../utils/livePhotoUtils.ts'
 import { getPreviewIfAny } from '../utils/previewUtils.ts'
@@ -192,6 +193,29 @@ const livePhotoSrc = computed(() => livePhoto.value?.encodedSource ?? null)
  */
 let inFlight: { controller: AbortController, source: string } | null = null
 
+/**
+ * The object URL this component made, if it made one.
+ *
+ * An object URL holds its blob until it is revoked, so paging through a
+ * folder of E2EE files or of previews fetched by hand would otherwise keep
+ * every one of them in memory for as long as the viewer is open. Only URLs
+ * made here are released: `localSource` belongs to whoever passed it.
+ */
+let ownedUrl: string | null = null
+
+/**
+ * Show a blob this component fetched, releasing the one it showed before.
+ *
+ * @param url an object URL made here
+ */
+function showOwnedUrl(url: string): void {
+	if (ownedUrl !== null) {
+		URL.revokeObjectURL(ownedUrl)
+	}
+	ownedUrl = url
+	data.value = url
+}
+
 // Load data when component mounts or file changes. Keyed on the source, as
 // two files can be shown under one name and it is the source that says
 // which bytes to fetch.
@@ -254,7 +278,14 @@ async function loadData() {
 	// use: an E2EE file, or a preview the server cannot produce. Fetch the
 	// bytes by hand and show those instead.
 	if (fallback.value) {
-		data.value = await preloadMedia(props.file, signal)
+		// Which retry depends on what the share allows. A file that may be
+		// downloaded is fetched whole, which is what an E2EE file needs. One
+		// that may not is refused at the source too, so its preview is the
+		// only thing left to ask for, and only with a header an element
+		// cannot set on its own request.
+		showOwnedUrl(canDownload(props.file)
+			? await preloadMedia(props.file, signal)
+			: await preloadPreview(previewPath.value, signal))
 		return
 	}
 
@@ -346,6 +377,10 @@ watch(turns, () => {
 
 onUnmounted(() => {
 	inFlight?.controller.abort()
+	if (ownedUrl !== null) {
+		URL.revokeObjectURL(ownedUrl)
+		ownedUrl = null
+	}
 })
 
 /**

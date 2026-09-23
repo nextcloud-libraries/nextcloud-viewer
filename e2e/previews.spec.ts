@@ -35,6 +35,42 @@ test.describe('Previews', () => {
 		expect(url.searchParams.get('etag')).toBe('etag-2')
 	})
 
+	test('asks for the preview by hand when the share forbids downloading', async ({ page }) => {
+		// The server refuses a plain request for the preview of a share that
+		// cannot be downloaded, and serves it when the request says it comes
+		// from the viewer. An element cannot set that header on its own
+		// request, so a refusal here has to be answered by fetching it.
+		const headers: Array<string | undefined> = []
+		await page.route('**/core/preview*', async (route) => {
+			const header = route.request().headers()['x-nc-preview']
+			headers.push(header)
+			if (header !== 'true') {
+				await route.fulfill({ status: 403, contentType: 'text/plain', body: 'Forbidden' })
+				return
+			}
+			await route.fulfill({ contentType: 'image/jpeg', body: IMAGE })
+		})
+
+		const viewer = new ViewerPage(page)
+		await viewer.open('restricted.jpg', 'previews')
+		await viewer.waitForOpen()
+
+		// The picture is on screen, which it could not be without the retry
+		const image = viewer.container.locator('img').first()
+		await expect(image).toBeVisible()
+		await expect(async () => {
+			const decoded = await image.evaluate((element: HTMLImageElement) => ({
+				complete: element.complete,
+				width: element.naturalWidth,
+			}))
+			expect(decoded.complete).toBe(true)
+			expect(decoded.width).toBeGreaterThan(0)
+		}).toPass({ timeout: 10_000 })
+
+		// Refused once as the element asked, then asked for again with the header
+		expect(headers).toEqual([undefined, 'true'])
+	})
+
 	test('loads the file itself when there is no preview', async ({ page }) => {
 		let asked = false
 		await page.route('**/core/preview*', async (route) => {
