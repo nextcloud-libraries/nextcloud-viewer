@@ -12,6 +12,7 @@ vi.mock('../../lib/services/dav.ts', () => ({ fetchFolderContent: vi.fn(async ()
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { registerFileAction } from '@nextcloud/files'
+import { defineCustomElement } from 'vue'
 import { restoreTitle } from '../../lib/utils/documentTitle.ts'
 import { makeFile, makeHandler } from '../factories.ts'
 import { mountViewer } from './mountViewer.ts'
@@ -638,5 +639,128 @@ describe('Viewer loading gate', () => {
 		await vm.compare(f1, f2)
 		await wrapper.vm.$nextTick()
 		expect(renderedTags().filter((t) => t === 'oca-viewer-image')).toHaveLength(2)
+	})
+})
+
+describe('a handler passing its file on', () => {
+	function pdfHandler() {
+		return makeHandler({
+			id: 'pdf',
+			tagname: 'oca-viewer-pdf',
+			enabled: (nodes) => nodes.every((n) => n.mime === 'application/pdf'),
+		})
+	}
+
+	// Takes nothing by mime, like a handler only ever reached by id
+	function officeHandler() {
+		return makeHandler({
+			id: 'office',
+			tagname: 'oca-viewer-office',
+			enabled: () => false,
+		})
+	}
+
+	function passOn(wrapper: ReturnType<typeof mountViewer>['wrapper'], from: string, to: string) {
+		wrapper.find(from).element.dispatchEvent(new CustomEvent('open-with', { detail: [to] }))
+		return wrapper.vm.$nextTick()
+	}
+
+	it('shows the file with the handler it names', async () => {
+		const { vm, wrapper, modalHandlerId, renderedTags } = mountViewer([pdfHandler(), officeHandler()])
+		const doc = makeFile({ basename: 'doc.pdf', mime: 'application/pdf' })
+		await vm.open([doc], doc)
+		await wrapper.vm.$nextTick()
+
+		await passOn(wrapper, 'oca-viewer-pdf', 'office')
+
+		expect(modalHandlerId()).toBe('office')
+		expect(renderedTags()).toContain('oca-viewer-office')
+		expect(renderedTags()).not.toContain('oca-viewer-pdf')
+	})
+
+	it('keeps what the opener handed over', async () => {
+		// The opener's callbacks are why this is not a new open: the Files
+		// app clears its URL on close and follows the file on navigation
+		const onClose = vi.fn()
+		const onNext = vi.fn()
+		const { vm, wrapper, modalName, modalHandlerId, emitModal } = mountViewer([pdfHandler(), officeHandler()])
+		const first = makeFile({ basename: 'first.pdf', mime: 'application/pdf' })
+		const second = makeFile({ basename: 'second.pdf', mime: 'application/pdf' })
+		await vm.open([first, second], first, { onClose, onNext, canLoop: false })
+		await wrapper.vm.$nextTick()
+
+		await passOn(wrapper, 'oca-viewer-pdf', 'office')
+		expect(modalHandlerId()).toBe('office')
+		await emitModal('next')
+		expect(onNext).toHaveBeenCalledWith(second)
+		expect(modalName()).toBe('second.pdf')
+
+		vm.close()
+		await wrapper.vm.$nextTick()
+		expect(onClose).toHaveBeenCalled()
+	})
+
+	it('shows the next file with whichever handler takes it', async () => {
+		// Only the file that was passed on changes hands: the pdf handler
+		// decides again for the next one
+		const { vm, wrapper, modalHandlerId, emitModal } = mountViewer([pdfHandler(), officeHandler()])
+		const first = makeFile({ basename: 'first.pdf', mime: 'application/pdf' })
+		const second = makeFile({ basename: 'second.pdf', mime: 'application/pdf' })
+		await vm.open([first, second], first)
+		await wrapper.vm.$nextTick()
+
+		await passOn(wrapper, 'oca-viewer-pdf', 'office')
+		expect(modalHandlerId()).toBe('office')
+		await emitModal('next')
+
+		expect(modalHandlerId()).toBe('pdf')
+	})
+
+	it('waits for the new handler to load', async () => {
+		const { vm, wrapper } = mountViewer([pdfHandler(), officeHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc)
+		await wrapper.vm.$nextTick()
+		// The handler passing it on may well have said it loaded first
+		wrapper.find('oca-viewer-pdf').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+
+		await passOn(wrapper, 'oca-viewer-pdf', 'office')
+		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+
+		wrapper.find('oca-viewer-office').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+	})
+
+	it('hears a handler written as a Vue custom element', async () => {
+		// What an app actually ships: emit() on a custom element leaves as a
+		// DOM event under the declared name, which the binding has to match
+		const tagname = 'oca-viewer-passing'
+		customElements.define(tagname, defineCustomElement({
+			emits: ['open-with'],
+			mounted() {
+				this.$emit('open-with', 'office')
+			},
+			render: () => null,
+		}, { shadowRoot: false }))
+		const passing = makeHandler({ id: 'passing', tagname, enabled: (nodes) => nodes.every((n) => n.mime === 'application/pdf') })
+		const { vm, modalHandlerId } = mountViewer([passing, officeHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc)
+		await flushPromises()
+
+		expect(modalHandlerId()).toBe('office')
+	})
+
+	it('leaves the handler on screen when the one it names is not registered', async () => {
+		const { vm, wrapper, modalHandlerId } = mountViewer([pdfHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc)
+		await wrapper.vm.$nextTick()
+
+		await passOn(wrapper, 'oca-viewer-pdf', 'office')
+
+		expect(modalHandlerId()).toBe('pdf')
 	})
 })

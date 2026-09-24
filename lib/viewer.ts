@@ -108,6 +108,21 @@ export interface ViewerEmits {
 	 * @param playing Whether media is playing
 	 */
 	'update:playing': [boolean]
+
+	/**
+	 * Emit this event to hand the file you are showing to another handler,
+	 * e.g. to one that renders it on the server when this one cannot respect
+	 * a share that forbids downloading it. The viewer stays open on the same
+	 * list, with the options it was opened with, and the next file is again
+	 * shown by whichever handler takes it.
+	 *
+	 * An id that is not registered is ignored with a warning, and your
+	 * handler stays on screen: check `getHandlers().has(id)` first if you
+	 * need to show something else instead.
+	 *
+	 * @param handlerId The id of the handler to show the file with
+	 */
+	'open-with': [string]
 }
 
 /**
