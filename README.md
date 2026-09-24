@@ -91,6 +91,7 @@ const src = computed(() => props.file.encodedSource)
 | `update:canSwipe`  | `[boolean]` | Enable/disable the swipe gesture (e.g. for custom controls) |
 | `update:editing`   | `[boolean]` | Notify the viewer the editing mode changed                  |
 | `update:playing`   | `[boolean]` | Notify the viewer media plays, so the slideshow waits for it |
+| `open-with`        | `[string]`  | Hand the file to the handler with that id, keeping the list and options |
 
 #### 2. Define the custom element and register the handler
 
@@ -287,6 +288,7 @@ instead, and the viewer works with `@nextcloud/files` nodes rather than the
 | `OCA.Viewer.open({ path, list })`                 | `getViewer().open(nodes, file)`                                |
 | `OCA.Viewer.open({ fileInfo, list })`             | `getViewer().open(nodes, file)`                                |
 | `OCA.Viewer.openWith(id, { … })`                  | `getViewer().open(nodes, file, options, id)`                   |
+| `OCA.Viewer.openWith(id, { list: OCA.Viewer.list, … })` from a handler | `emit('open-with', id)`                   |
 | `OCA.Viewer.open({ …, startSlideshow: true })`    | `getViewer().open(nodes, file, { startSlideshow: true })`      |
 | `OCA.Viewer.compare(fileInfo1, fileInfo2)`        | `getViewer().compare(node1, node2)`                            |
 | `OCA.Viewer.close()`                              | `getViewer().close()`                                          |

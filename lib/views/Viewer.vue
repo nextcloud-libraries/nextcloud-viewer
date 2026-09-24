@@ -184,7 +184,8 @@
 			:turns="turns"
 			:local-source="editedSources[currentFile.fileid!]"
 			@loaded="onLoad"
-			@errored="onError" />
+			@errored="onError"
+			@openWith="onOpenWith" />
 		<!-- eslint-enable vue/attribute-hyphenation -->
 	</NcModal>
 
@@ -859,6 +860,33 @@ function onError(reported: unknown) {
 	loading.value = false
 	pendingLoads.value = 0
 	errorString.value = error.message
+}
+
+/**
+ * A handler handing the file it shows to another handler.
+ *
+ * Only the handler changes: the list, the options and the forced handler
+ * stay, so the opener's callbacks keep working and the next file is again
+ * shown by whichever handler takes it.
+ *
+ * @param reported What the handler emitted: the event, or the id itself
+ */
+function onOpenWith(reported: unknown) {
+	const handlerId = emittedValue<string>(reported)
+	const handler = handlerId === undefined ? undefined : getHandlers().get(handlerId)
+	if (handler === undefined) {
+		logger.warn('A handler passed its file on to a handler that is not registered', { handlerId, from: currentHandler.value?.id })
+		return
+	}
+	if (handler.id === currentHandler.value?.id) {
+		return
+	}
+
+	setEditing(false)
+	errorString.value = null
+	loading.value = true
+	pendingLoads.value = 1
+	currentHandler.value = handler
 }
 
 // `update:canSwipe`, `update:editing` and `update:playing` are bound by hand rather than with
