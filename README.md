@@ -175,6 +175,9 @@ Gotchas:
   it is not namespaced for you. A collision does not throw: the second
   registration is silently dropped with a console warning, so pick something
   specific to your app (`myapp-image`, not `image`).
+- Registering the same handler again, with the same `id` and `tagname`, is
+  quietly ignored. That is what happens when several copies of the package
+  on a page register the defaults, so there is nothing to guard against.
 - Registering after the viewer has already read the handler list is not an
   error either — the handler just never appears in the "Open with …" menu.
   See [step 3](#3-load-your-registration-before-the-viewer) below for why

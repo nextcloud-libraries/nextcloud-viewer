@@ -129,7 +129,8 @@ describe('registerHandler registry', () => {
 		const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {})
 
 		registerHandler(makeHandler({ id: 'dup' }))
-		registerHandler(makeHandler({ id: 'dup' }))
+		// Another handler, not the same one registered twice
+		registerHandler(makeHandler({ id: 'dup', tagname: 'other-app-dup' }))
 
 		expect(warn).toHaveBeenCalledTimes(1)
 		expect(warn).toHaveBeenCalledWith(expect.stringContaining('dup'))
