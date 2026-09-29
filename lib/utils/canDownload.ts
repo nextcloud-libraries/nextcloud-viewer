@@ -43,16 +43,18 @@ function parseShareAttributes(attributes?: string | ShareAttribute[]): ShareAttr
  * @param file the file to check
  */
 export function canDownload(file: IFile): boolean {
+	// The share's dav properties, under the names the node got them by
 	const attributes = file.attributes as {
-		hideDownload?: boolean
-		shareAttributes?: string | ShareAttribute[]
+		'hide-download'?: boolean | string
+		'share-attributes'?: string | ShareAttribute[]
 	}
 
-	if (attributes?.hideDownload) {
+	const hidden = attributes?.['hide-download']
+	if (hidden === true || hidden === 'true') {
 		return false
 	}
 
-	const shareAttributes = parseShareAttributes(attributes?.shareAttributes)
+	const shareAttributes = parseShareAttributes(attributes?.['share-attributes'])
 	if (shareAttributes === undefined) {
 		// A restriction that cannot be read is still a restriction: the
 		// answer this one guards is whether to leave the browser its own
