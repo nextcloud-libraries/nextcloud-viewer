@@ -640,3 +640,85 @@ describe('Viewer loading gate', () => {
 		expect(renderedTags().filter((t) => t === 'oca-viewer-image')).toHaveLength(2)
 	})
 })
+
+describe('opening over a viewer that is still open', () => {
+	function pdfHandler() {
+		return makeHandler({
+			id: 'pdf',
+			tagname: 'oca-viewer-pdf',
+			enabled: (nodes) => nodes.every((n) => n.mime === 'application/pdf'),
+		})
+	}
+
+	function officeHandler() {
+		return makeHandler({ id: 'office', tagname: 'oca-viewer-office', enabled: () => false })
+	}
+
+	it('still tells the first opener when a handler reopens without options', async () => {
+		// A handler passing its file to another one reopens it with nothing
+		// of its own, and the Files app still has to clean its URL on close
+		const onClose = vi.fn()
+		const { vm, wrapper, modalHandlerId } = mountViewer([pdfHandler(), officeHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc, { onClose })
+		await vm.open([doc], doc, undefined, 'office')
+		await wrapper.vm.$nextTick()
+
+		expect(modalHandlerId()).toBe('office')
+		expect(onClose).not.toHaveBeenCalled()
+
+		vm.close()
+		expect(onClose).toHaveBeenCalledOnce()
+	})
+
+	it('calls an onClose passed again only once', async () => {
+		// The Files app opens the same file again as the sidebar opens
+		const onClose = vi.fn()
+		const { vm } = mountViewer([pdfHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc, { onClose })
+		await vm.open([doc], doc, { onClose })
+
+		vm.close()
+		expect(onClose).toHaveBeenCalledOnce()
+	})
+
+	it('tells both openers, the first one too', async () => {
+		const first = vi.fn()
+		const second = vi.fn()
+		const { vm } = mountViewer([pdfHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc, { onClose: first })
+		await vm.open([doc], doc, { onClose: second })
+
+		vm.close()
+		expect(first).toHaveBeenCalledOnce()
+		expect(second).toHaveBeenCalledOnce()
+	})
+
+	it('tells the others when one of them throws', async () => {
+		const throwing = vi.fn(() => {
+			throw new Error('nope')
+		})
+		const after = vi.fn()
+		const { vm } = mountViewer([pdfHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc, { onClose: throwing })
+		await vm.open([doc], doc, { onClose: after })
+
+		vm.close()
+		expect(after).toHaveBeenCalledOnce()
+	})
+
+	it('does not bring back the onClose of a viewer already closed', async () => {
+		const onClose = vi.fn()
+		const { vm } = mountViewer([pdfHandler()])
+		const doc = makeFile({ mime: 'application/pdf' })
+		await vm.open([doc], doc, { onClose })
+		vm.close()
+		await vm.open([doc], doc)
+		vm.close()
+
+		expect(onClose).toHaveBeenCalledOnce()
+	})
+})
