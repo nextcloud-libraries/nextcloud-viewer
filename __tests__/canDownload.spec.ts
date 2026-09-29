@@ -24,12 +24,15 @@ describe('canDownload', () => {
 	})
 
 	it('refuses a file the share hides the download of', () => {
-		expect(canDownload(file({ hideDownload: true }))).toBe(false)
+		expect(canDownload(file({ 'hide-download': true }))).toBe(false)
+		// Depending on who parsed the dav response, it can be the string
+		expect(canDownload(file({ 'hide-download': 'true' }))).toBe(false)
+		expect(canDownload(file({ 'hide-download': false }))).toBe(true)
 	})
 
 	it('refuses when a share attribute forbids it', () => {
 		expect(canDownload(file({
-			shareAttributes: [{ scope: 'permissions', key: 'download', value: false }],
+			'share-attributes': [{ scope: 'permissions', key: 'download', value: false }],
 		}))).toBe(false)
 	})
 
@@ -39,7 +42,7 @@ describe('canDownload', () => {
 	it('refuses a file whose share attributes cannot be read', () => {
 		const logged = vi.spyOn(logger, 'error').mockImplementation(() => {})
 
-		expect(canDownload(file({ shareAttributes: '[{"scope":"permi' }))).toBe(false)
+		expect(canDownload(file({ 'share-attributes': '[{"scope":"permi' }))).toBe(false)
 
 		expect(logged).toHaveBeenCalled()
 	})
@@ -47,31 +50,31 @@ describe('canDownload', () => {
 	it('reads share attributes that arrive as a string', () => {
 		// They come off the wire as JSON
 		expect(canDownload(file({
-			shareAttributes: '[{"scope":"permissions","key":"download","value":false}]',
+			'share-attributes': '[{"scope":"permissions","key":"download","value":false}]',
 		}))).toBe(false)
 	})
 
 	it('allows when the download attribute permits it', () => {
 		expect(canDownload(file({
-			shareAttributes: [{ scope: 'permissions', key: 'download', value: true }],
+			'share-attributes': [{ scope: 'permissions', key: 'download', value: true }],
 		}))).toBe(true)
 	})
 
 	it('only an explicit false forbids it', () => {
 		// Anything else is not a refusal, and must not be read as one
 		expect(canDownload(file({
-			shareAttributes: [{ scope: 'permissions', key: 'download', value: null }],
+			'share-attributes': [{ scope: 'permissions', key: 'download', value: null }],
 		}))).toBe(true)
 	})
 
 	it('ignores attributes about something else', () => {
 		expect(canDownload(file({
-			shareAttributes: [{ scope: 'permissions', key: 'reshare', value: false }],
+			'share-attributes': [{ scope: 'permissions', key: 'reshare', value: false }],
 		}))).toBe(true)
 	})
 
 	it('copes with an empty attribute string', () => {
-		expect(canDownload(file({ shareAttributes: '' }))).toBe(true)
+		expect(canDownload(file({ 'share-attributes': '' }))).toBe(true)
 	})
 
 	it('copes with a file that has no attributes at all', () => {

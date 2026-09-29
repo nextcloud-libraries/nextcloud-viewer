@@ -564,7 +564,11 @@ describe('the context menu over the media', () => {
 
 	it('is refused for a file whose share forbids downloading', async () => {
 		const shareAttributes = JSON.stringify([{ scope: 'permissions', key: 'download', value: false }])
-		expect(await rightClick(makeFile({ attributes: { shareAttributes } }))).toBe(true)
+		expect(await rightClick(makeFile({ attributes: { 'share-attributes': shareAttributes } }))).toBe(true)
+	})
+
+	it('is refused for a file whose share hides the download', async () => {
+		expect(await rightClick(makeFile({ attributes: { 'hide-download': true } }))).toBe(true)
 	})
 })
 
