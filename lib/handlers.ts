@@ -211,8 +211,17 @@ export function registerHandler(handler: IHandler): void {
 	validateHandler(handler)
 
 	scope.handlers ??= new Map<string, IHandler>()
-	if (scope.handlers.has(handler.id)) {
-		logger.warn(`Handler with id ${handler.id} is already registered.`)
+	const registered = scope.handlers.get(handler.id)
+	if (registered !== undefined) {
+		// Every app bundles its own copy of the package, so the same handler
+		// can be registered more than once: the server's copy and an app's
+		// both register the defaults. The first one stays, as the custom
+		// element its tagname names is the first copy's too.
+		if (registered.tagname === handler.tagname) {
+			logger.debug(`Handler ${handler.id} is already registered, keeping the first registration`)
+		} else {
+			logger.warn(`Handler with id ${handler.id} is already registered for <${registered.tagname}>, ignoring the one for <${handler.tagname}>.`)
+		}
 		return
 	}
 
