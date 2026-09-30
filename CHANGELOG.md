@@ -6,6 +6,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.12
+
+### Changed
+
+- Every `onClose` passed while the viewer is open is called once when it
+  closes, not only the last one. Opening over a viewer that is still open
+  used to drop the first opener's, so the Files app never cleaned
+  `openfile=true` out of its URL when a handler handed its file to
+  another one with `open()`. The same function passed twice is still
+  called once, and one that throws does not stop the others (#66)
+- The options filled in for a caller that passes none no longer carry
+  no-op callbacks. The viewer always called them optionally (#66)
+
+### Fixed
+
+- Clicking rotate again while the previous turn was still being written
+  could undo it, and every turn made the picture flash once written.
+  Writes now wait for each other and build on the bytes just sent, and
+  the viewer no longer reloads a picture it is already showing turned
+  (#61)
+- The right-click menu is refused on a share that hides or forbids
+  the download: the check read the old viewer's names for those
+  restrictions, not the ones nodes carry, `hide-download` and
+  `share-attributes` (#65)
+- Registering the same handler twice, as the server's copy and an app's
+  do with the defaults, no longer warns. Another handler taking an id
+  that is already used still does (#64)
+- The header is readable on the dark backdrop (#60)
+
+### Documentation
+
+- A tutorial that builds a handler from scratch, and a reference that
+  lists every option and the whole migration from `OCA.Viewer` (#67)
+
 ## 2.0.0-beta.11
 
 ### Added
