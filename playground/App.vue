@@ -93,7 +93,7 @@ const nodes: IFile[] = fixtures.map((fixture, index) => new File({
 	attributes: {
 		hasPreview: fixture.hasPreview === true,
 		etag: `etag-${index + 1}`,
-		hideDownload: fixture.noDownload === true,
+		'hide-download': fixture.noDownload === true,
 	},
 }))
 
