@@ -339,6 +339,13 @@ const { canRotate, rotateLeft, turns } = useRotation(currentFile, (node) => {
 // for a caller that passes no options (see defaultViewerOptions).
 const currentOptions = ref<ViewerOptions>({})
 
+// Everyone who opened the viewer since it last opened, to tell once it
+// closes. Opening over a viewer that is still open replaces what is shown
+// but does not end the earlier opener's session: calling its onClose then
+// would let the Files app unwind its history and close what was just
+// opened. A Set, as the Files app opens the same file twice with one.
+const closeCallbacks = new Set<() => void>()
+
 // The sidebar resolves a file by its dav source, so it can only be offered
 // for a file the Files app can find there.
 const canOpenSidebar = computed(() => currentOptions.value.enableSidebar !== false)
@@ -692,11 +699,19 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 		&& currentHandler.value?.id === handler.id
 		&& comparisonFile.value === undefined
 
+	// A viewer opened afresh owes nothing to whoever opened it before
+	if (currentFile.value === undefined) {
+		closeCallbacks.clear()
+	}
+
 	comparisonFile.value = undefined
 	comparisonHandler.value = undefined
 	currentHandler.value = handler
 	currentFile.value = file
 	currentOptions.value = options ?? {} as ViewerOptions
+	if (currentOptions.value.onClose) {
+		closeCallbacks.add(currentOptions.value.onClose)
+	}
 	if (!isSameFile) {
 		loading.value = true
 		pendingLoads.value = 1
@@ -925,7 +940,14 @@ function close() {
 			// Nothing to do: the page is simply left as the browser has it
 		})
 	}
-	currentOptions.value.onClose?.()
+	for (const onClose of closeCallbacks) {
+		try {
+			onClose()
+		} catch (error) {
+			logger.error('An onClose callback threw', { error })
+		}
+	}
+	closeCallbacks.clear()
 	currentFile.value = undefined
 	currentFileList.value = []
 	currentHandler.value = undefined

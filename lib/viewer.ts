@@ -130,7 +130,12 @@ export type ViewerOptions = {
 	onNext?: (file: IFile) => void
 
 	/**
-	 * Called when the viewer is closed
+	 * Called once when the viewer is closed.
+	 *
+	 * Opening over a viewer that is still open does not drop it: every
+	 * `onClose` passed since the viewer opened is called when it closes, each
+	 * once, so a handler passing its file to another one with `open()` still
+	 * lets the first opener clean up.
 	 */
 	onClose?: () => void
 
@@ -177,11 +182,9 @@ export type ViewerOptions = {
 	folder?: IFolder
 }
 
+// No callbacks here: the viewer calls them optionally, and every onClose
+// passed is kept until the viewer closes (see open() in Viewer.vue)
 const defaultViewerOptions: ViewerOptions = {
-	loadMore: async () => [],
-	onPrev: () => {},
-	onNext: () => {},
-	onClose: () => {},
 	canLoop: true,
 	enableSidebar: true,
 }
