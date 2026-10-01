@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { runOcc } from '@nextcloud/e2e-test-server/docker'
+import { User } from '@nextcloud/e2e-test-server'
 import { createRandomUser } from '@nextcloud/e2e-test-server/playwright'
 import { expect, test } from '@playwright/test'
 import { basic, openFromList, signIn, upload } from './support.ts'
@@ -19,12 +19,18 @@ test.describe('A share that forbids downloading', () => {
 	// With viewing without download allowed, the default, the server hands
 	// such a file out anyway and there is nothing for the viewer to get
 	// past. The restriction only bites once an admin turns that off.
-	test.beforeAll(async () => {
-		await runOcc(['config:app:set', 'core', 'shareapi_allow_view_without_download', '--value=false', '--type=boolean'])
+	// Through the API rather than occ: the web server keeps the app config
+	// in its own APCu, which a change from the command line does not clear.
+	const setting = '/ocs/v2.php/apps/provisioning_api/api/v1/config/apps/core/shareapi_allow_view_without_download'
+	const asAdmin = { Authorization: basic(new User('admin', 'admin')), 'OCS-APIRequest': 'true' }
+
+	test.beforeAll(async ({ request }) => {
+		const response = await request.post(setting, { headers: asAdmin, form: { value: 'no' } })
+		expect(response.status(), 'turning viewing without download off').toBe(200)
 	})
 
-	test.afterAll(async () => {
-		await runOcc(['config:app:delete', 'core', 'shareapi_allow_view_without_download'])
+	test.afterAll(async ({ request }) => {
+		await request.delete(setting, { headers: asAdmin })
 	})
 
 	test('still shows the picture, through the preview the viewer asks for', async ({ page, request }) => {
