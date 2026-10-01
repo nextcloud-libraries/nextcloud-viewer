@@ -89,8 +89,9 @@ export default defineConfig((env) => {
 		replace: {
 			__TRANSLATIONS__: JSON.stringify(translations),
 			__TRANSLATIONS_EAGER__: JSON.stringify(eagerTranslations),
-			// A copy has to know its own version to offer itself as a candidate
-			__VIEWER_VERSION__: JSON.stringify(version),
+			// A copy has to know its own version to offer itself as a candidate.
+			// The e2e app overrides it, to be elected over the copy the server bundles
+			__VIEWER_VERSION__: JSON.stringify(process.env.VIEWER_VERSION ?? version),
 		},
 		DTSPluginOptions: {
 			rollupTypes: env.mode === 'production',

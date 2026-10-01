@@ -48,7 +48,7 @@
 		"test:coverage": "vitest run --coverage",
 		"test:e2e": "playwright test",
 		"test:e2e:server": "playwright test --config playwright.server.config.ts",
-		"build:e2e-app": "npm run build && vite build --config e2e-server/vite.config.ts",
+		"build:e2e-app": "VIEWER_VERSION=2.99999.0-e2e npm run build && vite build --config e2e-server/vite.config.ts",
 		"test:watch": "vitest watch",
 		"typecheck": "vue-tsc --noEmit -p tsconfig.check.json",
 		"watch": "vite --mode development build --watch",
