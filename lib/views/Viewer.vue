@@ -116,6 +116,9 @@
 		<!-- Loading overlay, shown on top of the (mounted but hidden) handler -->
 		<span v-if="loading && !errorString" class="viewer__loading">
 			<NcLoadingIcon :appearance="lightBackdrop ? 'dark' : 'light'" :size="32" />
+			<span class="viewer__loading-hint" role="status">
+				<template v-if="slowLoading">{{ t('Still loading…') }}</template>
+			</span>
 		</span>
 
 		<!-- Error message -->
@@ -125,6 +128,11 @@
 			:description="t('We were unable to display the requested file.')">
 			<template #icon>
 				<FileAlertOutlineIcon />
+			</template>
+			<template v-if="currentFile" #action>
+				<NcButton @click="retry">
+					{{ t('Try again') }}
+				</NcButton>
 			</template>
 		</NcEmptyContent>
 
@@ -225,6 +233,7 @@ import { FileType, Permission } from '@nextcloud/files'
 import debounce from 'debounce'
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, triggerRef, useTemplateRef, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
+import NcButton from '@nextcloud/vue/components/NcButton'
 import NcDialog from '@nextcloud/vue/components/NcDialog'
 import NcEmptyContent from '@nextcloud/vue/components/NcEmptyContent'
 import NcIconSvgWrapper from '@nextcloud/vue/components/NcIconSvgWrapper'
@@ -269,6 +278,34 @@ const errorString = ref<string | null>(null)
 const pendingLoads = ref(0)
 // Bumped to force the current handler to remount (e.g. after an edit save).
 const reloadKey = ref(0)
+
+/** How long a load runs before the viewer says it is still at it */
+const SLOW_LOADING_MS = 5000
+
+// Set once a load has run for a while, so the spinner is not all there is
+const slowLoading = ref(false)
+let slowLoadingTimer: ReturnType<typeof setTimeout> | undefined
+watch(loading, (isLoading) => {
+	clearTimeout(slowLoadingTimer)
+	slowLoading.value = false
+	if (isLoading) {
+		slowLoadingTimer = setTimeout(() => {
+			slowLoading.value = true
+		}, SLOW_LOADING_MS)
+	}
+}, { immediate: true })
+onUnmounted(() => clearTimeout(slowLoadingTimer))
+
+/**
+ * Show the current file again after it failed: the handler is remounted
+ * and gets a fresh start.
+ */
+function retry() {
+	errorString.value = null
+	loading.value = true
+	pendingLoads.value = 1
+	reloadKey.value++
+}
 // Object URLs of freshly edited images, by file id, shown without refetching.
 const editedSources = ref<Record<number, string>>({})
 // Files this viewer has just saved, whose next update event is its own.
@@ -1358,6 +1395,13 @@ defineExpose<ViewerAPI>({
 		background-color: transparent !important;
 		box-shadow: none !important;
 	}
+}
+
+.viewer__loading-hint {
+	display: block;
+	margin-top: calc(2 * var(--default-grid-baseline));
+	text-align: center;
+	color: var(--color-text-maxcontrast);
 }
 
 .viewer__comparison {
