@@ -5,7 +5,7 @@
 import type { VueWrapper } from '@vue/test-utils'
 
 import { flushPromises } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent } from 'vue'
 
 vi.mock('@nextcloud/event-bus')
@@ -391,6 +391,13 @@ describe('the startSlideshow option', () => {
 })
 
 describe('the editing option', () => {
+	// The viewer loads the editor on demand, and that import pulls in the
+	// whole image editor: on a busy runner it took longer than the second
+	// vi.waitFor() gives it. Loaded here, the viewer's own import is instant.
+	beforeAll(async () => {
+		await import('../../lib/components/ImageEditor.vue')
+	})
+
 	it('opens straight into editing for a handler that can edit a writable file', async () => {
 		const { vm, modalProps } = mountViewer([imageHandler({ canEdit: true })])
 		const file = makeFile()
