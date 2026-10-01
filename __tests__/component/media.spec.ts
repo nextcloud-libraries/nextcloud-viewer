@@ -739,6 +739,23 @@ describe('media that cannot be played', () => {
 				expect(error.message).toBe('Your browser cannot play this file format.')
 			})
 
+			it('keeps its source when playback fails after the element loaded', async () => {
+				const file = makeFile({ basename: 'media.bin', mime })
+				const wrapper = mount(component, { props: makeProps({ file, files: [file] }) })
+				await flushPromises()
+				const element = wrapper.find(tag).element as HTMLMediaElement
+				const source = element.getAttribute('src')
+				element.dispatchEvent(new Event('canplay'))
+
+				// What Firefox reports with no audio device to play on
+				// (MEDIA_ERR_DECODE, "OnMediaSinkAudioError")
+				await fail(element, 3)
+
+				expect(preloadMediaMock).not.toHaveBeenCalled()
+				expect(wrapper.find(tag).attributes('src')).toBe(source)
+				expect(wrapper.emitted('errored')).toBeUndefined()
+			})
+
 			it('keeps the plain message for any other failure', async () => {
 				preloadMediaMock.mockResolvedValueOnce('blob:fetched')
 				const file = makeFile({ basename: 'media.bin', mime })

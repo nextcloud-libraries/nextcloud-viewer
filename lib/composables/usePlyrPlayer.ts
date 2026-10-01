@@ -38,6 +38,14 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 
 	const fallback = ref(false)
 
+	// Whether the element got as far as playing what it was given. The
+	// fallback is for a source that does not load: an error after this one
+	// is the playback failing, which another source does not mend
+	let playable = false
+	watch(src, () => {
+		playable = false
+	})
+
 	const options = computed(() => {
 		return {
 			autoplay: true,
@@ -65,6 +73,7 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	 * Tell Viewer that the video is ready to be shown
 	 */
 	function doneLoading() {
+		playable = true
 		// The speed menu is built from numbers plyr formats itself, which its
 		// i18n does not reach, so those are relabelled once the controls exist
 		const root = (forAudio ? audio : video).value?.closest('.plyr')
@@ -100,6 +109,13 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		// If we fail on the blank media, don't do anything.
 		// This is expected to cancel any network requests when switching files.
 		if (src.value === blankVideo) {
+			return
+		}
+
+		// Firefox without an audio device fails here on any sound it has
+		// already loaded, and the element recovers from it on its own
+		if (playable) {
+			logger.warn(`Playback of file ${filename.value} failed after it loaded`, { error: (event?.target as HTMLMediaElement | null)?.error })
 			return
 		}
 
