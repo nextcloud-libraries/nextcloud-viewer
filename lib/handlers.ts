@@ -36,7 +36,7 @@ export interface IHandler {
 	/**
 	 * The custom element tag name to use for this handler.
 	 */
-	tagname: string
+	tagName: string
 
 	/**
 	 * Identifier to group handlers by.
@@ -216,11 +216,11 @@ export function registerHandler(handler: IHandler): void {
 		// Every app bundles its own copy of the package, so the same handler
 		// can be registered more than once: the server's copy and an app's
 		// both register the defaults. The first one stays, as the custom
-		// element its tagname names is the first copy's too.
-		if (registered.tagname === handler.tagname) {
+		// element its tagName names is the first copy's too.
+		if (registered.tagName === handler.tagName) {
 			logger.debug(`Handler ${handler.id} is already registered, keeping the first registration`)
 		} else {
-			logger.warn(`Handler with id ${handler.id} is already registered for <${registered.tagname}>, ignoring the one for <${handler.tagname}>.`)
+			logger.warn(`Handler with id ${handler.id} is already registered for <${registered.tagName}>, ignoring the one for <${handler.tagName}>.`)
 		}
 		return
 	}
@@ -287,8 +287,8 @@ function validateHandler(handler: IHandler): void {
 		throw new Error('Handler displayName must be a non-empty string')
 	}
 
-	if (typeof handler.tagname !== 'string' || handler.tagname.trim() === '') {
-		throw new Error('Handler tagname must be a non-empty string')
+	if (typeof handler.tagName !== 'string' || handler.tagName.trim() === '') {
+		throw new Error('Handler tagName must be a non-empty string')
 	}
 
 	if (group && (typeof group !== 'string' || group.trim() === '')) {
@@ -307,28 +307,28 @@ function validateHandler(handler: IHandler): void {
 		throw new Error("Handler theme must be one of 'dark', 'light', 'default' if provided")
 	}
 
-	validateCustomElementName(handler.tagname)
+	validateCustomElementName(handler.tagName)
 }
 
 /**
  * Validate that the given tag name is a valid custom element name.
  *
- * @param tagname - The custom element tag name to validate
+ * @param tagName - The custom element tag name to validate
  */
-function validateCustomElementName(tagname: string): void {
-	if (!tagname.includes('-')) {
-		throw new Error('Handler tagname must contain a hyphen (-)')
+function validateCustomElementName(tagName: string): void {
+	if (!tagName.includes('-')) {
+		throw new Error('Handler tagName must contain a hyphen (-)')
 	}
-	if (/^[A-Z]/.test(tagname)) {
-		throw new Error('Handler tagname must not start with an uppercase letter')
+	if (/^[A-Z]/.test(tagName)) {
+		throw new Error('Handler tagName must not start with an uppercase letter')
 	}
-	if (/--/.test(tagname)) {
-		throw new Error('Handler tagname must not contain consecutive hyphens (--)')
+	if (/--/.test(tagName)) {
+		throw new Error('Handler tagName must not contain consecutive hyphens (--)')
 	}
-	if (tagname.startsWith('-') || tagname.endsWith('-')) {
-		throw new Error('Handler tagname must not start or end with a hyphen (-)')
+	if (tagName.startsWith('-') || tagName.endsWith('-')) {
+		throw new Error('Handler tagName must not start or end with a hyphen (-)')
 	}
-	if (!/^[a-z][a-z0-9-]*$/.test(tagname)) {
-		throw new Error('Handler tagname must only contain lowercase letters, numbers, and hyphens (-)')
+	if (!/^[a-z][a-z0-9-]*$/.test(tagName)) {
+		throw new Error('Handler tagName must only contain lowercase letters, numbers, and hyphens (-)')
 	}
 }

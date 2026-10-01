@@ -83,9 +83,9 @@ describe('registerHandler validation', () => {
 			.toThrow('Handler displayName must be a non-empty string')
 	})
 
-	it('throws on empty tagname', () => {
-		expect(() => registerHandler(makeHandler({ tagname: '' })))
-			.toThrow('Handler tagname must be a non-empty string')
+	it('throws on empty tagName', () => {
+		expect(() => registerHandler(makeHandler({ tagName: '' })))
+			.toThrow('Handler tagName must be a non-empty string')
 	})
 
 	it('throws on non-function enabled', () => {
@@ -98,29 +98,29 @@ describe('registerHandler validation', () => {
 			.toThrow("Handler theme must be one of 'dark', 'light', 'default' if provided")
 	})
 
-	it('throws on a tagname without a hyphen', () => {
-		expect(() => registerHandler(makeHandler({ tagname: 'nohyphen' })))
-			.toThrow('Handler tagname must contain a hyphen (-)')
+	it('throws on a tagName without a hyphen', () => {
+		expect(() => registerHandler(makeHandler({ tagName: 'nohyphen' })))
+			.toThrow('Handler tagName must contain a hyphen (-)')
 	})
 
-	it('throws on a tagname starting with an uppercase letter', () => {
-		expect(() => registerHandler(makeHandler({ tagname: 'Oca-viewer' })))
-			.toThrow('Handler tagname must not start with an uppercase letter')
+	it('throws on a tagName starting with an uppercase letter', () => {
+		expect(() => registerHandler(makeHandler({ tagName: 'Oca-viewer' })))
+			.toThrow('Handler tagName must not start with an uppercase letter')
 	})
 
-	it('throws on a tagname with consecutive hyphens', () => {
-		expect(() => registerHandler(makeHandler({ tagname: 'oca--viewer' })))
-			.toThrow('Handler tagname must not contain consecutive hyphens (--)')
+	it('throws on a tagName with consecutive hyphens', () => {
+		expect(() => registerHandler(makeHandler({ tagName: 'oca--viewer' })))
+			.toThrow('Handler tagName must not contain consecutive hyphens (--)')
 	})
 
-	it('throws on a tagname starting with a hyphen', () => {
-		expect(() => registerHandler(makeHandler({ tagname: '-oca-viewer' })))
-			.toThrow('Handler tagname must not start or end with a hyphen (-)')
+	it('throws on a tagName starting with a hyphen', () => {
+		expect(() => registerHandler(makeHandler({ tagName: '-oca-viewer' })))
+			.toThrow('Handler tagName must not start or end with a hyphen (-)')
 	})
 
-	it('throws on a tagname ending with a hyphen', () => {
-		expect(() => registerHandler(makeHandler({ tagname: 'oca-viewer-' })))
-			.toThrow('Handler tagname must not start or end with a hyphen (-)')
+	it('throws on a tagName ending with a hyphen', () => {
+		expect(() => registerHandler(makeHandler({ tagName: 'oca-viewer-' })))
+			.toThrow('Handler tagName must not start or end with a hyphen (-)')
 	})
 })
 
@@ -130,7 +130,7 @@ describe('registerHandler registry', () => {
 
 		registerHandler(makeHandler({ id: 'dup' }))
 		// Another handler, not the same one registered twice
-		registerHandler(makeHandler({ id: 'dup', tagname: 'other-app-dup' }))
+		registerHandler(makeHandler({ id: 'dup', tagName: 'other-app-dup' }))
 
 		expect(warn).toHaveBeenCalledTimes(1)
 		expect(warn).toHaveBeenCalledWith(expect.stringContaining('dup'))
@@ -140,8 +140,8 @@ describe('registerHandler registry', () => {
 	})
 
 	it('registers the shared actions only once across handlers', () => {
-		registerHandler(makeHandler({ id: 'one', tagname: 'oca-viewer-one' }))
-		registerHandler(makeHandler({ id: 'two', tagname: 'oca-viewer-two' }))
+		registerHandler(makeHandler({ id: 'one', tagName: 'oca-viewer-one' }))
+		registerHandler(makeHandler({ id: 'two', tagName: 'oca-viewer-two' }))
 
 		expect(registered.filter((a) => a.id === ACTION_VIEWER)).toHaveLength(1)
 		expect(registered.filter((a) => a.id === ACTION_VIEWER_MENU)).toHaveLength(1)
@@ -150,7 +150,7 @@ describe('registerHandler registry', () => {
 
 describe('action gate', () => {
 	it('with one matching handler: default enabled, "Open with …" not enabled', () => {
-		registerHandler(makeHandler({ id: 'only', tagname: 'oca-viewer-only', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'only', tagName: 'oca-viewer-only', enabled: () => true }))
 		const file = makeFile()
 
 		expect(action(ACTION_VIEWER)!.enabled!(ctx([file]))).toBe(true)
@@ -158,8 +158,8 @@ describe('action gate', () => {
 	})
 
 	it('with two matching handlers: "Open with …" is enabled', () => {
-		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
-		registerHandler(makeHandler({ id: 'b', tagname: 'oca-viewer-b', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'a', tagName: 'oca-viewer-a', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'b', tagName: 'oca-viewer-b', enabled: () => true }))
 		const file = makeFile()
 
 		expect(action(ACTION_VIEWER)!.enabled!(ctx([file]))).toBe(true)
@@ -167,8 +167,8 @@ describe('action gate', () => {
 	})
 
 	it('is never enabled for folders', () => {
-		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
-		registerHandler(makeHandler({ id: 'b', tagname: 'oca-viewer-b', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'a', tagName: 'oca-viewer-a', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'b', tagName: 'oca-viewer-b', enabled: () => true }))
 		const folder = makeFolder()
 
 		expect(action(ACTION_VIEWER)!.enabled!(ctx([folder]))).toBe(false)
@@ -176,7 +176,7 @@ describe('action gate', () => {
 	})
 
 	it('is not enabled for a file the user cannot read', () => {
-		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'a', tagName: 'oca-viewer-a', enabled: () => true }))
 		const file = makeFile({ permissions: Permission.NONE })
 
 		expect(action(ACTION_VIEWER)!.enabled!(ctx([file]))).toBe(false)
@@ -184,7 +184,7 @@ describe('action gate', () => {
 	})
 
 	it('is enabled for a file that is only readable, as deleted files are', () => {
-		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'a', tagName: 'oca-viewer-a', enabled: () => true }))
 		// The trashbin reports its files as GD: readable and deletable
 		const file = makeFile({ permissions: Permission.READ | Permission.DELETE })
 
@@ -192,7 +192,7 @@ describe('action gate', () => {
 	})
 
 	it('is not enabled when one of several files cannot be read', () => {
-		registerHandler(makeHandler({ id: 'a', tagname: 'oca-viewer-a', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'a', tagName: 'oca-viewer-a', enabled: () => true }))
 		const readable = makeFile()
 		const other = makeFile({ permissions: Permission.NONE })
 
@@ -200,7 +200,7 @@ describe('action gate', () => {
 	})
 
 	it('is not enabled when no handler matches the file', () => {
-		registerHandler(makeHandler({ id: 'none', tagname: 'oca-viewer-none', enabled: () => false }))
+		registerHandler(makeHandler({ id: 'none', tagName: 'oca-viewer-none', enabled: () => false }))
 		const file = makeFile()
 
 		expect(action(ACTION_VIEWER)!.enabled!(ctx([file]))).toBe(false)
@@ -211,7 +211,7 @@ describe('per-handler child action', () => {
 	it('is enabled only when its own handler matches the file', () => {
 		registerHandler(makeHandler({
 			id: 'pdf',
-			tagname: 'oca-viewer-pdf',
+			tagName: 'oca-viewer-pdf',
 			enabled: (nodes) => nodes.every((n) => n.mime === 'application/pdf'),
 		}))
 
@@ -222,7 +222,7 @@ describe('per-handler child action', () => {
 	})
 
 	it('forces its own handler id when opening', async () => {
-		registerHandler(makeHandler({ id: 'pdf', tagname: 'oca-viewer-pdf', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'pdf', tagName: 'oca-viewer-pdf', enabled: () => true }))
 		const file = makeFile()
 
 		await action(`${ACTION_VIEWER_MENU}-pdf`)!.exec(ctx([file]))
@@ -232,7 +232,7 @@ describe('per-handler child action', () => {
 	})
 
 	it('default action opens without forcing a handler id', async () => {
-		registerHandler(makeHandler({ id: 'pdf', tagname: 'oca-viewer-pdf', enabled: () => true }))
+		registerHandler(makeHandler({ id: 'pdf', tagName: 'oca-viewer-pdf', enabled: () => true }))
 		const file = makeFile()
 
 		await action(ACTION_VIEWER)!.exec(ctx([file]))

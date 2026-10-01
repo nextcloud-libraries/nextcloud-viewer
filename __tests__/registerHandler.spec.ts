@@ -17,9 +17,9 @@ describe('registering a handler whose id is taken', () => {
 		// Several copies of the package on a page each register the
 		// defaults: that is one handler, not a collision
 		const warn = vi.spyOn(logger, 'warn')
-		const first = makeHandler({ id: 'repeat', tagname: 'oca-viewer-repeat' })
+		const first = makeHandler({ id: 'repeat', tagName: 'oca-viewer-repeat' })
 		registerHandler(first)
-		registerHandler(makeHandler({ id: 'repeat', tagname: 'oca-viewer-repeat' }))
+		registerHandler(makeHandler({ id: 'repeat', tagName: 'oca-viewer-repeat' }))
 
 		expect(scope.handlers!.get('repeat')).toBe(first)
 		expect(warn).not.toHaveBeenCalled()

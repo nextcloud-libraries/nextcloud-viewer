@@ -144,7 +144,7 @@
 			     is patched before it upgrades. -->
 			<!-- eslint-disable vue/attribute-hyphenation -->
 			<component
-				:is="currentHandler?.tagname"
+				:is="currentHandler?.tagName"
 				v-if="currentFile"
 				:file="currentFile"
 				:files="[]"
@@ -155,7 +155,7 @@
 				@loaded="onLoad"
 				@errored="onError" />
 			<component
-				:is="comparisonHandler?.tagname"
+				:is="comparisonHandler?.tagName"
 				v-if="comparisonFile"
 				:file="comparisonFile"
 				:files="[]"
@@ -169,7 +169,7 @@
 
 		<!-- Single file view -->
 		<component
-			:is="currentHandler?.tagname"
+			:is="currentHandler?.tagName"
 			v-else-if="currentFile"
 			v-show="!loading && !errorString"
 			:key="`${currentFile.fileid}-${reloadKey}`"

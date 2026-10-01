@@ -19,7 +19,7 @@ import { mountViewer } from './mountViewer.ts'
 function imageHandler() {
 	return makeHandler({
 		id: 'image',
-		tagname: 'oca-viewer-image',
+		tagName: 'oca-viewer-image',
 		group: 'media',
 		enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('image/')),
 	})
@@ -60,7 +60,7 @@ describe('Viewer.open()', () => {
 	it('filters currentFileList to files of the same handler group', async () => {
 		const pdfHandler = makeHandler({
 			id: 'pdf',
-			tagname: 'oca-viewer-pdf',
+			tagName: 'oca-viewer-pdf',
 			group: 'documents',
 			enabled: (nodes) => nodes.every((n) => n.mime === 'application/pdf'),
 		})
@@ -105,7 +105,7 @@ describe('Viewer.open()', () => {
 		['dark', false],
 		['default', false],
 	] as const)('gives the modal a light backdrop only for a %s themed handler', async (theme, lightBackdrop) => {
-		const handler = makeHandler({ id: theme, tagname: `oca-viewer-${theme}`, theme, enabled: () => true })
+		const handler = makeHandler({ id: theme, tagName: `oca-viewer-${theme}`, theme, enabled: () => true })
 		const { vm, wrapper, modalProps } = mountViewer([handler])
 		const f1 = makeFile()
 		await vm.open([f1], f1)
@@ -371,7 +371,7 @@ describe('Viewer preload', () => {
 		const preload = vi.fn(async () => {})
 		const handler = makeHandler({
 			id: 'image',
-			tagname: 'oca-viewer-image',
+			tagName: 'oca-viewer-image',
 			group: 'media',
 			preload,
 			enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('image/')),
@@ -396,7 +396,7 @@ describe('Viewer preload', () => {
 		// reason for the file the user clicked to never show up
 		const handler = makeHandler({
 			id: 'image',
-			tagname: 'oca-viewer-image',
+			tagName: 'oca-viewer-image',
 			preload: (() => {
 				throw new Error('boom')
 			}) as never,
@@ -645,13 +645,13 @@ describe('opening over a viewer that is still open', () => {
 	function pdfHandler() {
 		return makeHandler({
 			id: 'pdf',
-			tagname: 'oca-viewer-pdf',
+			tagName: 'oca-viewer-pdf',
 			enabled: (nodes) => nodes.every((n) => n.mime === 'application/pdf'),
 		})
 	}
 
 	function officeHandler() {
-		return makeHandler({ id: 'office', tagname: 'oca-viewer-office', enabled: () => false })
+		return makeHandler({ id: 'office', tagName: 'oca-viewer-office', enabled: () => false })
 	}
 
 	it('still tells the first opener when a handler reopens without options', async () => {

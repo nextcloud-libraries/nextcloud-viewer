@@ -34,7 +34,7 @@ const CANNOT_OPEN = 'We were not able to open the file.'
 function imageHandler(overrides = {}) {
 	return makeHandler({
 		id: 'image',
-		tagname: 'oca-viewer-image',
+		tagName: 'oca-viewer-image',
 		enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('image/')),
 		...overrides,
 	})
@@ -121,7 +121,7 @@ describe('open() with bad input', () => {
 describe('open() with a forced handler', () => {
 	// Both take every image, so the first one registered is what
 	// getHandlerForFile answers with, whatever the opener asked for.
-	const editor = () => imageHandler({ id: 'editor', tagname: 'oca-viewer-editor' })
+	const editor = () => imageHandler({ id: 'editor', tagName: 'oca-viewer-editor' })
 
 	it('keeps the file list of the handler that was asked for', async () => {
 		const { vm, wrapper, modalProps, renderedTags } = mountViewer([imageHandler(), editor()])
@@ -152,7 +152,7 @@ describe('open() with a forced handler', () => {
 		const images = imageHandler({ group: 'media' })
 		const videos = makeHandler({
 			id: 'videos',
-			tagname: 'oca-viewer-videos',
+			tagName: 'oca-viewer-videos',
 			group: 'media',
 			enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('video/')),
 		})
@@ -303,7 +303,7 @@ describe('compare() with bad input', () => {
 	})
 
 	it('uses the given handler for both sides', async () => {
-		const other = makeHandler({ id: 'other', tagname: 'oca-viewer-other' })
+		const other = makeHandler({ id: 'other', tagName: 'oca-viewer-other' })
 		const { vm, wrapper, renderedTags } = mountViewer([imageHandler(), other])
 
 		await vm.compare(makeFile(), makeFile(), 'other')

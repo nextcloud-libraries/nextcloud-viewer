@@ -97,16 +97,16 @@ import { registerHandler } from '@nextcloud/viewer'
 import { defineCustomElement } from 'vue'
 import NoteView from './views/NoteView.vue'
 
-const tagname = 'myapp-note-view'
+const tagName = 'myapp-note-view'
 
-if (!window.customElements.get(tagname)) {
-	window.customElements.define(tagname, defineCustomElement(NoteView, { shadowRoot: false }))
+if (!window.customElements.get(tagName)) {
+	window.customElements.define(tagName, defineCustomElement(NoteView, { shadowRoot: false }))
 }
 
 registerHandler({
 	id: 'myapp-notes',
 	displayName: t('myapp', 'Notes'),
-	tagname,
+	tagName,
 	enabled: (nodes) => nodes.every((node) => node.mime === 'application/x-myapp-note'),
 })
 ```
@@ -192,7 +192,7 @@ To show your own file type in the viewer, register a handler with the
 
 Handlers are rendered as **native custom elements**, not as Vue components passed
 directly to the viewer. You register a custom element with the browser, then
-reference it from your handler by its `tagname`.
+reference it from your handler by its `tagName`.
 
 #### 1. Create your view component
 
@@ -250,7 +250,7 @@ const src = computed(() => props.file.encodedSource)
 
 Turn your component into a custom element with Vue's `defineCustomElement`, define
 it on `window.customElements`, then register a handler that points at it via
-`tagname`:
+`tagName`:
 
 ```ts
 import MyIconSvg from '@mdi/svg/svg/file-image.svg?raw'
@@ -261,13 +261,13 @@ import MyView from './MyView.vue'
 
 // A valid custom element tag name: lowercase, must contain a hyphen,
 // no consecutive hyphens, no leading/trailing hyphen.
-const tagname = 'my-app-viewer'
+const tagName = 'my-app-viewer'
 
 // Define the custom element. `shadowRoot: false` keeps the element in the
 // light DOM so Nextcloud's global styles and CSS variables apply. A tag can
 // only be defined once per page, hence the check.
-if (!window.customElements.get(tagname)) {
-	window.customElements.define(tagname, defineCustomElement(MyView, { shadowRoot: false }))
+if (!window.customElements.get(tagName)) {
+	window.customElements.define(tagName, defineCustomElement(MyView, { shadowRoot: false }))
 }
 
 // Register the handler.
@@ -279,7 +279,7 @@ registerHandler({
 	displayName: t('myapp', 'My viewer'),
 
 	// The custom element tag name registered above.
-	tagname,
+	tagName,
 
 	// Optional inline SVG icon for the "Open with …" menu entry.
 	iconSvgInline: MyIconSvg,
@@ -315,7 +315,7 @@ The full handler shape (see the `IHandler` interface):
 | --------------- | ------------------------------------- | -------- | ------------------------------------------------------------------ |
 | `id`            | `string`                              | yes      | Unique, non-empty handler identifier                               |
 | `displayName`   | `string`                              | yes      | Translated name shown in the "Open with …" menu                    |
-| `tagname`       | `string`                              | yes      | Registered custom element tag name (must contain a hyphen)         |
+| `tagName`       | `string`                              | yes      | Registered custom element tag name (must contain a hyphen)         |
 | `enabled`       | `(nodes: File[]) => boolean`          | yes      | Whether the handler can open the given files                       |
 | `iconSvgInline` | `string`                              | no       | Inline SVG icon for the menu entry                                 |
 | `group`         | `string`                              | no       | Group used to combine handlers when opening a folder               |
@@ -325,13 +325,13 @@ The full handler shape (see the `IHandler` interface):
 
 Gotchas:
 
-- `tagname` must be lowercase, contain a hyphen, and have no leading, trailing
+- `tagName` must be lowercase, contain a hyphen, and have no leading, trailing
   or consecutive hyphens (e.g. `my-app-viewer`). An invalid one throws.
 - `id` must be unique **across every app on the page**, not just your own:
   it is not namespaced for you. A collision does not throw: the second
   registration is silently dropped with a console warning, so pick something
   specific to your app (`myapp-image`, not `image`).
-- Registering the same handler again, with the same `id` and `tagname`, is
+- Registering the same handler again, with the same `id` and `tagName`, is
   quietly ignored. That is what happens when several copies of the package
   on a page register the defaults, so there is nothing to guard against.
 - Registering after the viewer has already read the handler list is not an
@@ -452,7 +452,7 @@ instead, and the viewer works with `@nextcloud/files` nodes rather than the
 | `OCA.Viewer.mimetypes.includes(node.mime)`        | `canView(node)`                                                |
 | `OCA.Viewer.mimetypesCompare.includes(node.mime)` | `canView(node)`                                                |
 | `OCA.Viewer.availableHandlers`                    | `getHandlers()`, or `canView(node)` to test one file           |
-| `OCA.Viewer.registerHandler({ component })`       | `registerHandler({ tagname })`, see above                      |
+| `OCA.Viewer.registerHandler({ component })`       | `registerHandler({ tagName })`, see above                      |
 | `canCompare: true` on a handler                   | nothing, any handler can be compared                           |
 | `\OCP\Util::addScript` for the registration        | `\OCP\Util::addInitScript`                                      |
 | A listener for `OCA\Viewer\Event\LoadViewer`       | a listener for `BeforeTemplateRenderedEvent`, see the [tutorial](#4-load-it-on-every-page) |
@@ -471,7 +471,7 @@ Inside a handler, what used to be read off the global comes in as props:
 Two changes are worth calling out because they are not a rename:
 
 Handlers are custom elements now, not Vue components handed to the viewer. A
-handler names a `tagname` you have defined on `window.customElements`, which is
+handler names a `tagName` you have defined on `window.customElements`, which is
 what lets the viewer render a handler written in any framework, or none. The
 [registration section](#-add-your-own-file-view) walks through it.
 
@@ -514,7 +514,7 @@ The handler registry and the elected viewer live under a window key named for
 the **handler ABI**, not for this package's version:
 
 ```js
-window._nc_viewer_scope.handlers_v1
+window._nc_viewer_scope.handlers_v2
 ```
 
 Keying it by package version would split the registry on every major release,

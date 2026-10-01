@@ -59,7 +59,7 @@ export function makeHandler(overrides: Partial<IHandler> = {}): IHandler {
 	return {
 		id: 'test',
 		displayName: 'Test handler',
-		tagname: 'oca-viewer-test',
+		tagName: 'oca-viewer-test',
 		enabled: () => true,
 		...overrides,
 	}

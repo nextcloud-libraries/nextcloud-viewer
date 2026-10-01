@@ -8,7 +8,7 @@ import { makeFile, makeHandler, registerTestHandlers } from './factories.ts'
 
 describe('getHandlerForFile', () => {
 	it('returns the first handler whose enabled matches', () => {
-		registerTestHandlers(makeHandler({ id: 'image', tagname: 'oca-viewer-image', enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('image/')) }))
+		registerTestHandlers(makeHandler({ id: 'image', tagName: 'oca-viewer-image', enabled: (nodes) => nodes.every((n) => n.mime?.startsWith('image/')) }))
 		expect(getHandlerForFile(makeFile({ mime: 'image/png' }))?.id).toBe('image')
 	})
 
@@ -18,7 +18,7 @@ describe('getHandlerForFile', () => {
 	})
 
 	it('respects the group filter', () => {
-		registerTestHandlers(makeHandler({ id: 'video', tagname: 'oca-viewer-video', group: 'media', enabled: () => true }))
+		registerTestHandlers(makeHandler({ id: 'video', tagName: 'oca-viewer-video', group: 'media', enabled: () => true }))
 		expect(getHandlerForFile(makeFile(), 'media')?.id).toBe('video')
 		expect(getHandlerForFile(makeFile(), 'other')).toBeUndefined()
 	})
