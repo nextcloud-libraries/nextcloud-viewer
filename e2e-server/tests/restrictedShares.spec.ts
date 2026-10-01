@@ -2,6 +2,7 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import { runOcc } from '@nextcloud/e2e-test-server/docker'
 import { createRandomUser } from '@nextcloud/e2e-test-server/playwright'
 import { expect, test } from '@playwright/test'
 import { basic, openFromList, signIn, upload } from './support.ts'
@@ -15,6 +16,17 @@ import { basic, openFromList, signIn, upload } from './support.ts'
  * side to any of the three fails this.
  */
 test.describe('A share that forbids downloading', () => {
+	// With viewing without download allowed, the default, the server hands
+	// such a file out anyway and there is nothing for the viewer to get
+	// past. The restriction only bites once an admin turns that off.
+	test.beforeAll(async () => {
+		await runOcc(['config:app:set', 'core', 'shareapi_allow_view_without_download', '--value=false', '--type=boolean'])
+	})
+
+	test.afterAll(async () => {
+		await runOcc(['config:app:delete', 'core', 'shareapi_allow_view_without_download'])
+	})
+
 	test('still shows the picture, through the preview the viewer asks for', async ({ page, request }) => {
 		const owner = await createRandomUser()
 		const recipient = await createRandomUser()
