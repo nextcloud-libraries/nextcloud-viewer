@@ -1,8 +1,10 @@
-import { flushPromises } from '@vue/test-utils'
 /*!
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import type { VueWrapper } from '@vue/test-utils'
+
+import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 // Mock the event bus BEFORE importing the component (shared manual mock).
@@ -784,5 +786,42 @@ describe('a file that failed to show', () => {
 		// A fresh element, so the handler starts over rather than staying broken
 		expect(renderedTags()).toContain('oca-viewer-image')
 		expect(wrapper.find('oca-viewer-image').element).not.toBe(before)
+	})
+})
+
+describe('rotating and editing', () => {
+	function editableImage() {
+		return makeHandler({ ...imageHandler(), canEdit: true })
+	}
+
+	const offered = (wrapper: VueWrapper) => wrapper.findAll('.nc-action-button-stub')
+		.map((button) => button.text())
+		.filter((label) => label === 'Rotate left' || label === 'Edit')
+
+	it('are offered once the file is shown', async () => {
+		const { vm, wrapper } = mountViewer([editableImage()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		expect(offered(wrapper)).toEqual([])
+
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+
+		expect(offered(wrapper)).toEqual(['Rotate left', 'Edit'])
+	})
+
+	it('are not offered for a file that failed to show', async () => {
+		const { vm, wrapper, errorText } = mountViewer([editableImage()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		wrapper.find('oca-viewer-image').element
+			.dispatchEvent(new CustomEvent('errored', { detail: [new Error('decoder gave up')] }))
+		await wrapper.vm.$nextTick()
+
+		expect(errorText()).toBe('decoder gave up')
+		expect(offered(wrapper)).toEqual([])
 	})
 })
