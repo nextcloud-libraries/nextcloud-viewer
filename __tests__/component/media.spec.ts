@@ -654,3 +654,42 @@ describe('Audios.vue (smoke)', () => {
 		expect(wrapper.find('audio').exists()).toBe(true)
 	})
 })
+
+describe('an image from a share that forbids downloading', () => {
+	const restricted = () => makeFile({
+		basename: 'restricted.jpg',
+		attributes: {
+			hasPreview: true,
+			'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]),
+		},
+	})
+	const message = 'No preview available, download is disabled.'
+
+	it('says why when its preview cannot be fetched', async () => {
+		preloadPreviewMock.mockRejectedValueOnce(new Error('Request failed with status code 404'))
+		const file = restricted()
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		const [[error]] = wrapper.emitted('errored') as [[Error]]
+		expect(error.message).toBe(message)
+	})
+
+	it('says why when the preview it fetched does not show either', async () => {
+		preloadPreviewMock.mockResolvedValueOnce('blob:preview')
+		const file = restricted()
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+		await wrapper.find('img').trigger('error')
+		await flushPromises()
+
+		const [[error]] = wrapper.emitted('errored') as [[Error]]
+		expect(error.message).toBe(message)
+	})
+})
