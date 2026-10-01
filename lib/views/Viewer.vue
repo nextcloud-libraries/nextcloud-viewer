@@ -18,7 +18,7 @@
 		:enableSlideshow="!isComparing && (hasPrevious || hasNext)"
 		:hasNext="!isComparing && hasNext"
 		:hasPrevious="!isComparing && hasPrevious"
-		:inlineActions="(canRotate ? 1 : 0) + (canEdit ? 1 : 0)"
+		:inlineActions="(offerRotate ? 1 : 0) + (offerEdit ? 1 : 0)"
 		:lightBackdrop="lightBackdrop"
 		:name="modalName"
 		:show="!!currentFile || !!errorString"
@@ -34,7 +34,7 @@
 		<template #actions>
 			<!-- Ahead of the edit button, which is where it appears -->
 			<NcActionButton
-				v-if="canRotate && !editing"
+				v-if="offerRotate"
 				:closeAfterClick="false"
 				@click="rotateLeft">
 				<template #icon>
@@ -45,7 +45,7 @@
 
 			<!-- Internal edit action, handled by the handler itself -->
 			<NcActionButton
-				v-if="canEdit && !editing"
+				v-if="offerEdit"
 				closeAfterClick
 				@click="editing = true">
 				<template #icon>
@@ -371,6 +371,12 @@ const { canRotate, rotateLeft, turns } = useRotation(currentFile, (node) => {
 		ownSaves.add(node.fileid)
 	}
 })
+
+// Rotating or editing a picture the user cannot see yet, or that failed to
+// show, would write changes to it blind
+const shown = computed(() => !loading.value && !errorString.value)
+const offerRotate = computed(() => canRotate.value && shown.value && !editing.value)
+const offerEdit = computed(() => canEdit.value && shown.value && !editing.value)
 // What the opener asked for, or nothing at all: every read of this falls
 // back to the default of that one option, and the service fills in the rest
 // for a caller that passes no options (see defaultViewerOptions).
