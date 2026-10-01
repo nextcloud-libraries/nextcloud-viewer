@@ -26,7 +26,7 @@
 					width: width + 'px',
 				}"
 				preload="metadata"
-				@error.capture.prevent.stop.once="onFail"
+				@error.capture.prevent.stop="onFail"
 				@ended="donePlaying"
 				@pause="onPause"
 				@play="onPlay"
@@ -51,7 +51,6 @@ import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 import VuePlyr from '@skjnldsv/vue-plyr'
 import { computed, ref, watch } from 'vue'
 import { usePlyrPlayer } from '../composables/usePlyrPlayer.ts'
-import { useViewerProps } from '../composables/useViewerProps.ts'
 import { logger } from '../services/logger.ts'
 import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromName } from '../utils/livePhotoUtils.ts'
@@ -72,11 +71,8 @@ const {
 	onPause,
 	onPlay,
 	options,
-} = usePlyrPlayer(false, props, emit)
-
-const {
 	src,
-} = useViewerProps(props)
+} = usePlyrPlayer(false, props, emit)
 
 const height = ref(0)
 const width = ref(0)

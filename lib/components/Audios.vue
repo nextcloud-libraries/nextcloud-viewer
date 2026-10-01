@@ -16,7 +16,7 @@
 				:autoplay="true"
 				:src="src"
 				preload="metadata"
-				@error.capture.prevent.stop.once="onFail"
+				@error.capture.prevent.stop="onFail"
 				@ended="donePlaying"
 				@pause="onPause"
 				@play="onPlay"
@@ -39,7 +39,6 @@ import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
 import VuePlyr from '@skjnldsv/vue-plyr'
 import { usePlyrPlayer } from '../composables/usePlyrPlayer.ts'
-import { useViewerProps } from '../composables/useViewerProps.ts'
 import { t } from '../utils/l10n.ts'
 
 defineOptions({
@@ -56,11 +55,8 @@ const {
 	onPause,
 	onPlay,
 	options,
-} = usePlyrPlayer(true, props, emit)
-
-const {
 	src,
-} = useViewerProps(props)
+} = usePlyrPlayer(true, props, emit)
 
 </script>
 

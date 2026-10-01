@@ -18,6 +18,9 @@ import { useViewerProps } from './useViewerProps.ts'
 /** Marks the page furniture the viewer hides around a full screen player */
 const HIDDEN_FULLSCREEN_CLASS = 'viewer__hidden-fullscreen'
 
+/** `MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED`, which not every environment defines */
+const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
+
 /**
  * Composable to setup a Plyr player instance.
  *
@@ -88,9 +91,12 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	}
 
 	/**
-	 * Fallback to the original image if not already done
+	 * Fetch the file by hand once when the element cannot load it, and say
+	 * why when that does not work either.
+	 *
+	 * @param event - The media element's error event
 	 */
-	async function onFail() {
+	async function onFail(event?: Event) {
 		// If we fail on the blank media, don't do anything.
 		// This is expected to cancel any network requests when switching files.
 		if (src.value === blankVideo) {
@@ -99,7 +105,12 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 
 		if (fallback.value) {
 			logger.error(`Loading of file ${filename.value} failed even after fallback`)
-			emit('errored', new Error(t('Failed to load media.')))
+			// An end-to-end encrypted file fails the same way until its bytes
+			// are fetched, so the format is only to blame once they have been
+			const code = (event?.target as HTMLMediaElement | null)?.error?.code
+			emit('errored', new Error(code === MEDIA_ERR_SRC_NOT_SUPPORTED
+				? t('Your browser cannot play this file format.')
+				: t('Failed to load media.')))
 			return
 		}
 
@@ -227,6 +238,8 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		onPause,
 		onPlay,
 		options,
+		// The source the element must show: the fallback replaces it here
+		src,
 		video,
 	}
 }
