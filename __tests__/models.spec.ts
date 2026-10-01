@@ -69,7 +69,7 @@ describe('the custom elements', () => {
 		const model = await import(module) as Record<string, () => Promise<void>>
 		await model[register]!()
 		await expect(model[register]!()).resolves.toBeUndefined()
-		expect(window.customElements.get(model.tagname as unknown as string)).toBeDefined()
+		expect(window.customElements.get(model.tagName as unknown as string)).toBeDefined()
 	})
 })
 

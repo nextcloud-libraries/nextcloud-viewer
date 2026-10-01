@@ -27,7 +27,7 @@ export const browserSupportedMimes = [
 	'audio/x-wav',
 ]
 
-export const tagname = 'oca-viewer-audio'
+export const tagName = 'oca-viewer-audio'
 
 /**
  * Register the audio custom element.
@@ -38,7 +38,7 @@ export async function registerAudioCustomElement(): Promise<void> {
 		shadowRoot: false,
 	})
 
-	defineCustomElementOnce(tagname, AudioElement)
+	defineCustomElementOnce(tagName, AudioElement)
 }
 
 /**
@@ -48,7 +48,7 @@ export function registerAudioHandler() {
 	registerHandler({
 		id: 'audios',
 		displayName: t('Audio player'),
-		tagname,
+		tagName,
 		supportsEndToEndEncryption: true,
 
 		iconSvgInline: AudioOutlineSvg,
@@ -70,5 +70,5 @@ export function registerAudioHandler() {
 			})
 		},
 	})
-	logger.info('Audio handler registered', { tagname })
+	logger.info('Audio handler registered', { tagName })
 }

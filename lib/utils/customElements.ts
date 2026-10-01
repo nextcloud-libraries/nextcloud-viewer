@@ -12,14 +12,14 @@ import { logger } from '../services/logger.ts'
  * keeps its own registry, names the same elements. Whichever mounts second
  * would throw here and never finish mounting.
  *
- * @param tagname - The custom element name to define
+ * @param tagName - The custom element name to define
  * @param constructor - The element to define it as
  */
-export function defineCustomElementOnce(tagname: string, constructor: CustomElementConstructor): void {
-	if (window.customElements.get(tagname) !== undefined) {
-		logger.debug(`The custom element ${tagname} is already defined, leaving it alone`, { tagname })
+export function defineCustomElementOnce(tagName: string, constructor: CustomElementConstructor): void {
+	if (window.customElements.get(tagName) !== undefined) {
+		logger.debug(`The custom element ${tagName} is already defined, leaving it alone`, { tagName })
 		return
 	}
 
-	window.customElements.define(tagname, constructor)
+	window.customElements.define(tagName, constructor)
 }

@@ -63,7 +63,7 @@ beforeAll(() => {
 function probeHandler(overrides = {}) {
 	return makeHandler({
 		id: 'probe',
-		tagname: 'oca-viewer-probe',
+		tagName: 'oca-viewer-probe',
 		enabled: () => true,
 		...overrides,
 	})

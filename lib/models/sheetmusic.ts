@@ -26,7 +26,7 @@ export const supportedMimes = [
 	'application/vnd.recordare.musicxml+xml',
 ]
 
-export const tagname = 'oca-viewer-sheetmusic'
+export const tagName = 'oca-viewer-sheetmusic'
 
 /**
  * Register the sheet music custom element.
@@ -37,7 +37,7 @@ export async function registerSheetmusicCustomElement(): Promise<void> {
 		shadowRoot: false,
 	})
 
-	defineCustomElementOnce(tagname, SheetmusicElement)
+	defineCustomElementOnce(tagName, SheetmusicElement)
 }
 
 /**
@@ -47,7 +47,7 @@ export function registerSheetmusicHandler() {
 	registerHandler({
 		id: 'sheetmusic',
 		displayName: t('Sheet music'),
-		tagname,
+		tagName,
 
 		iconSvgInline: MusicClefTrebleSvg,
 
@@ -59,5 +59,5 @@ export function registerSheetmusicHandler() {
 			return nodes.every((node) => supportedMimes.includes(node.mime))
 		},
 	})
-	logger.info('Sheet music handler registered', { tagname })
+	logger.info('Sheet music handler registered', { tagName })
 }

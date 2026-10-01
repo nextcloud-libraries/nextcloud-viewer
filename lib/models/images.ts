@@ -76,7 +76,7 @@ if (ignoredMimes.length > 0) {
 	logger.warn('Some mimes were ignored because they are not enabled in the server previews config', { ignoredMimes })
 }
 
-export const tagname = 'oca-viewer-image'
+export const tagName = 'oca-viewer-image'
 
 /**
  * Define the custom element the image handler names.
@@ -87,7 +87,7 @@ export async function registerImageCustomElement(): Promise<void> {
 		shadowRoot: false,
 	})
 
-	defineCustomElementOnce(tagname, ImageElement)
+	defineCustomElementOnce(tagName, ImageElement)
 }
 
 /**
@@ -97,7 +97,7 @@ export function registerImageHandler() {
 	registerHandler({
 		id: 'images',
 		displayName: t('Images'),
-		tagname,
+		tagName,
 		supportsEndToEndEncryption: true,
 		canEdit: true,
 
@@ -120,5 +120,5 @@ export function registerImageHandler() {
 			})
 		},
 	})
-	logger.info('Image handler registered', { tagname, enabledMimes, browserSupportedMimes })
+	logger.info('Image handler registered', { tagName, enabledMimes, browserSupportedMimes })
 }

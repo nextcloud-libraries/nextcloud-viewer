@@ -51,7 +51,7 @@ test.describe('Two copies of the package on one page', () => {
 		await page.goto('/')
 		await page.evaluate((path) => import(/* @vite-ignore */ `/@fs${path}/index.mjs`), secondCopy)
 
-		const candidates = await page.evaluate(() => window._nc_viewer_scope!.handlers_v1!.candidates.map((candidate) => candidate.version))
+		const candidates = await page.evaluate(() => window._nc_viewer_scope!.handlers_v2!.candidates.map((candidate) => candidate.version))
 		expect(candidates).toEqual(['0.0.0-playground', version])
 
 		// Opened from the playground's copy, shown by the built one

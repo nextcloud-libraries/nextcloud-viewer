@@ -18,7 +18,7 @@ import { logger } from './services/logger.ts'
  * is a single modal on the page, a split registry means handlers that
  * quietly never open.
  */
-const ABI = 'handlers_v1'
+const ABI = 'handlers_v2'
 
 /** A copy of the library offering to be the implementation on this page */
 export interface ViewerCandidate {

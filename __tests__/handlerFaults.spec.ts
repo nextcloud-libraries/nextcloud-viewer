@@ -17,12 +17,12 @@ import { makeFile, makeHandler } from './factories.ts'
 describe('a handler whose enabled() throws', () => {
 	const broken = makeHandler({
 		id: 'broken',
-		tagname: 'oca-viewer-broken',
+		tagName: 'oca-viewer-broken',
 		enabled: () => {
 			throw new Error('boom')
 		},
 	})
-	const fine = makeHandler({ id: 'fine', tagname: 'oca-viewer-fine' })
+	const fine = makeHandler({ id: 'fine', tagName: 'oca-viewer-fine' })
 	const file = makeFile()
 
 	it('is skipped when looking for the handler of a file', () => {

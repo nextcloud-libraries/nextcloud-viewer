@@ -24,7 +24,7 @@ export const aliasedMimes = {
 	'video/x-matroska': 'video/webm',
 }
 
-export const tagname = 'oca-viewer-video'
+export const tagName = 'oca-viewer-video'
 
 /**
  * Register the video custom element.
@@ -35,7 +35,7 @@ export async function registerVideoCustomElement(): Promise<void> {
 		shadowRoot: false,
 	})
 
-	defineCustomElementOnce(tagname, VideoElement)
+	defineCustomElementOnce(tagName, VideoElement)
 }
 
 /**
@@ -45,7 +45,7 @@ export function registerVideoHandler() {
 	registerHandler({
 		id: 'videos',
 		displayName: t('Video player'),
-		tagname,
+		tagName,
 		supportsEndToEndEncryption: true,
 
 		iconSvgInline: MovieOutlineSvg,
@@ -72,5 +72,5 @@ export function registerVideoHandler() {
 			})
 		},
 	})
-	logger.info('Video handler registered', { tagname })
+	logger.info('Video handler registered', { tagName })
 }

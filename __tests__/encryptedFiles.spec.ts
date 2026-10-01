@@ -18,8 +18,8 @@ describe('an end-to-end encrypted file', () => {
 	const plain = makeFile({ mime: 'text/markdown', attributes: { 'e2ee-is-encrypted': false } })
 	const unmarked = makeFile({ mime: 'text/markdown' })
 
-	const custom = makeHandler({ id: 'custom', tagname: 'oca-viewer-custom' })
-	const dav = makeHandler({ id: 'dav', tagname: 'oca-viewer-dav', supportsEndToEndEncryption: true })
+	const custom = makeHandler({ id: 'custom', tagName: 'oca-viewer-custom' })
+	const dav = makeHandler({ id: 'dav', tagName: 'oca-viewer-dav', supportsEndToEndEncryption: true })
 
 	it('is refused by a handler that has not opted in, without asking it', () => {
 		const enabled = vi.fn(() => true)
