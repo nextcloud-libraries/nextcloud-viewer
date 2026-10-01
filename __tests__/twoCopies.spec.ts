@@ -1,3 +1,4 @@
+import { flushPromises } from '@vue/test-utils'
 /*!
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
@@ -49,5 +50,12 @@ describe('two copies of the package on one page', () => {
 		expect(olderLoad).not.toHaveBeenCalled()
 		expect(newerLoad).toHaveBeenCalledOnce()
 		expect(document.querySelectorAll('#viewer')).toHaveLength(1)
+
+		// The real modal traps focus once its enter transition ends: wait for
+		// that and close, so nothing of it fires after the document is torn
+		// down, as in entry.spec.ts
+		await vi.waitFor(() => expect(document.activeElement).not.toBe(document.body), { timeout: 5000 })
+		first.getViewer().close()
+		await flushPromises()
 	}, 30000)
 })
