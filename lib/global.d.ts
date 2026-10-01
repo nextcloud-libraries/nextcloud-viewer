@@ -16,7 +16,7 @@ interface OCPFilesRouter {
 		params?: Record<string, string>,
 		query?: Record<string, string | (string | null)[] | null | undefined>,
 		replace?: boolean,
-	) => void
+	) => Promise<unknown> | void
 }
 
 declare global {

@@ -73,6 +73,27 @@ function currentOffset(): number {
 }
 
 /**
+ * The history changes still on their way, one after the other.
+ *
+ * The Files router lands a navigation asynchronously since its move to
+ * vue-router 5: `goToRoute()` resolves once the new entry exists. Tagging
+ * the entry before that tags the previous one, and two quick navigations
+ * would each read the offset the other had not written yet.
+ */
+let navigations: Promise<void> = Promise.resolve()
+
+/**
+ * Run a history change once the ones before it have landed.
+ *
+ * @param change - What to do with the history
+ */
+function afterNavigations(change: () => Promise<void>): void {
+	navigations = navigations
+		.then(change)
+		.catch((error) => logger.error('Could not keep the history in step with the viewer', { error }))
+}
+
+/**
  * Push a history entry for the given file so back/forward can reach it, tagging
  * it with the current viewer offset.
  *
@@ -85,22 +106,25 @@ function pushToHistory(node: IFile, view: IView, dir: string): void {
 	if (!router || node.fileid === undefined) {
 		return
 	}
-	const offset = currentOffset() + 1
-	// Do not carry a stale `editing` flag onto a freshly opened/navigated file;
-	// the editing state is (re)applied by updateEditingParam when actually editing.
-	const query: Record<string, string | (string | null)[] | null | undefined> = {
-		...router.query,
-		dir,
-		openfile: 'true',
-	}
-	delete query.editing
-	router.goToRoute(
-		routeName(router),
-		{ ...router.params, view: view.id, fileid: String(node.fileid) },
-		query,
-		false,
-	)
-	window.history.replaceState({ ...window.history.state, viewerPos: offset }, '')
+	afterNavigations(async () => {
+		const offset = currentOffset() + 1
+		// Do not carry a stale `editing` flag onto a freshly opened/navigated file;
+		// the editing state is (re)applied by updateEditingParam when actually editing.
+		const query: Record<string, string | (string | null)[] | null | undefined> = {
+			...router.query,
+			dir,
+			openfile: 'true',
+		}
+		delete query.editing
+		await router.goToRoute(
+			routeName(router),
+			{ ...router.params, view: view.id, fileid: String(node.fileid) },
+			query,
+			false,
+		)
+		// Only now is the entry the push made the current one
+		window.history.replaceState({ ...window.history.state, viewerPos: offset }, '')
+	})
 }
 
 /**
@@ -157,35 +181,37 @@ function teardown(): void {
 function closeHistory(): void {
 	teardown()
 
-	const router = getRouter()
-	if (!router || router.query?.openfile !== 'true') {
-		// Already left the viewer range (closed via back navigation): nothing to do.
-		return
-	}
+	afterNavigations(async () => {
+		const router = getRouter()
+		if (!router || router.query?.openfile !== 'true') {
+			// Already left the viewer range (closed via back navigation): nothing to do.
+			return
+		}
 
-	const query = { ...router.query }
-	delete query.openfile
-	delete query.editing
+		const query = { ...router.query }
+		delete query.openfile
+		delete query.editing
 
-	const offset = currentOffset()
-	if (offset > 0) {
-		// Drop the flag on the entry being left before jumping. history.go() is
-		// asynchronous, and until it lands the URL still says openfile=true:
-		// anything that makes the Files list re-read the route in that window
-		// runs the default action again and opens a second viewer over the one
-		// that is closing.
-		router.goToRoute(routeName(router), router.params, query, true)
+		const offset = currentOffset()
+		if (offset > 0) {
+			// Drop the flag on the entry being left before jumping. history.go() is
+			// asynchronous, and until it lands the URL still says openfile=true:
+			// anything that makes the Files list re-read the route in that window
+			// runs the default action again and opens a second viewer over the one
+			// that is closing.
+			await router.goToRoute(routeName(router), router.params, query, true)
 
-		// Jump back past every entry the viewer added, in one step, so the back
-		// button returns to the opening page instead of a previously shown file.
-		window.history.go(-offset)
-		return
-	}
+			// Jump back past every entry the viewer added, in one step, so the back
+			// button returns to the opening page instead of a previously shown file.
+			window.history.go(-offset)
+			return
+		}
 
-	// Opened from an openfile URL with no pre-viewer entry to return to
-	// (refresh): the flag comes off the current entry and there is nothing to
-	// unwind.
-	router.goToRoute(routeName(router), router.params, query, true)
+		// Opened from an openfile URL with no pre-viewer entry to return to
+		// (refresh): the flag comes off the current entry and there is nothing to
+		// unwind.
+		await router.goToRoute(routeName(router), router.params, query, true)
+	})
 }
 
 /**
