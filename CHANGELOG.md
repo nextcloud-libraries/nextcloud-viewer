@@ -6,6 +6,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.13
+
+### Fixed
+
+- Closing the viewer, then pressing back, opened the file again with the
+  Files app on vue-router 5. Its navigations land asynchronously, and the
+  viewer tagged the history entry before the router had created it, so it
+  found nothing to unwind on close. History changes now wait for the
+  router's navigation (#74)
+
 ## 2.0.0-beta.12
 
 ### Changed
