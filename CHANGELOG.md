@@ -6,6 +6,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.14
+
+### Breaking
+
+- The handler field `tagname` is now `tagName`, the name the files
+  sidebar tabs and the other registration APIs use. The shared handler
+  registry moved from `_nc_viewer_scope.handlers_v1` to `handlers_v2`,
+  so a copy of beta.13 or older on the same page does not share a viewer
+  with this one: apps and the server have to move to beta.14 together (#81)
+
+### Added
+
+- A file that takes more than 5 seconds to load says "Still loading…"
+  under the spinner, and one that failed to show offers "Try again"
+  without closing the viewer (#78)
+
+### Fixed
+
+- Pictures on a share that forbids downloading showed nothing: their
+  preview is now fetched with the `x-nc-preview` header the server asks
+  for (#51)
+- When that preview cannot be loaded either, the viewer says "No preview
+  available, download is disabled." instead of "Failed to load image." (#79)
+- Rotate and edit only show once the file is shown, not over the loading
+  spinner or the error of a file that failed to show (#80)
+
 ## 2.0.0-beta.13
 
 ### Fixed
