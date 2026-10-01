@@ -87,29 +87,33 @@ element is mounted again for every file, which is why `onMounted` is enough here
 
 #### 3. Register it
 
-This script turns the component into a custom element and tells the viewer which
-files it takes:
+This script tells the viewer which files it takes, and how to define the element
+that shows them:
 
 ```ts
 // src/init-viewer.ts
 import { t } from '@nextcloud/l10n'
 import { registerHandler } from '@nextcloud/viewer'
-import { defineCustomElement } from 'vue'
-import NoteView from './views/NoteView.vue'
 
 const tagName = 'myapp-note-view'
-
-if (!window.customElements.get(tagName)) {
-	window.customElements.define(tagName, defineCustomElement(NoteView, { shadowRoot: false }))
-}
 
 registerHandler({
 	id: 'myapp-notes',
 	displayName: t('myapp', 'Notes'),
 	tagName,
 	enabled: (nodes) => nodes.every((node) => node.mime === 'application/x-myapp-note'),
+	// Only called the first time a note is opened
+	onInit: async () => {
+		const { defineCustomElement } = await import('vue')
+		const { default: NoteView } = await import('./views/NoteView.vue')
+		window.customElements.define(tagName, defineCustomElement(NoteView, { shadowRoot: false }))
+	},
 })
 ```
+
+`onInit()` keeps your view out of this script. The viewer calls it the first
+time it needs the element, and renders the element once the promise has resolved
+and the tag is defined.
 
 Add it as an entry of your build, next to your other ones:
 
@@ -122,9 +126,9 @@ export default createAppConfig({
 })
 ```
 
-It lands in `js/myapp-init-viewer.mjs`. This script runs on every page, so keep
-it small: if your view pulls in something heavy, have the element render a small
-wrapper that loads the real view with `defineAsyncComponent`.
+It lands in `js/myapp-init-viewer.mjs`. This script runs on every page, which is
+why the view itself is only imported in `onInit()`: the script stays a few lines however
+much the view imports.
 
 #### 4. Load it on every page
 
@@ -309,6 +313,11 @@ registerHandler({
 })
 ```
 
+Defining the element up front puts the view in the script that registers the
+handler, and that script runs on every page. To keep it out, leave the
+definition to `onInit()`, as the [tutorial](#3-register-it) does: the viewer
+calls it the first time it needs the element.
+
 The full handler shape (see the `IHandler` interface):
 
 | Field           | Type                                  | Required | Description                                                        |
@@ -323,6 +332,7 @@ The full handler shape (see the `IHandler` interface):
 | `theme`         | `'dark' \| 'light' \| 'default'`      | no       | Viewer modal theme                                                 |
 | `canCompare`    | `boolean`                             | no       | Comparing two versions is worth offering, see `canCompare(node)`   |
 | `supportsEndToEndEncryption` | `boolean`                | no       | Whether the handler supports end-to-end encrypted files            |
+| `onInit`        | `() => Promise<void>`                 | no       | Defines the element for `tagName`, called the first time it is needed |
 
 Gotchas:
 

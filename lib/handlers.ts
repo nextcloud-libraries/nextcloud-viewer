@@ -70,6 +70,18 @@ export interface IHandler {
 	preload?: (node: IFile, space?: { width: number, height: number }) => Promise<void>
 
 	/**
+	 * Called the first time the viewer needs the element, to define it
+	 * (`customElements.define()` with `tagName`).
+	 *
+	 * The viewer waits for the returned promise and for the element to be
+	 * defined (`customElements.whenDefined()`) before rendering it, so the
+	 * view and everything it imports stay out of the registration script
+	 * that runs on every page. Leave it out when the element is already
+	 * defined by the time the viewer opens.
+	 */
+	onInit?: () => Promise<void>
+
+	/**
 	 * Viewer modal theme (one of 'dark', 'light', 'default')
 	 */
 	theme?: 'dark' | 'light' | 'default'
@@ -363,6 +375,10 @@ function validateHandler(handler: IHandler): void {
 
 	if (handler.preload && typeof handler.preload !== 'function') {
 		throw new Error('Handler preload must be a function if provided')
+	}
+
+	if (handler.onInit && typeof handler.onInit !== 'function') {
+		throw new Error('Handler onInit must be a function if provided')
 	}
 
 	if (handler.theme && !['dark', 'light', 'default'].includes(handler.theme)) {

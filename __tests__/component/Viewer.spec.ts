@@ -1182,3 +1182,76 @@ describe('stepping to another file', () => {
 		expect(modalProps().slideshowPaused).toBe(false)
 	})
 })
+
+describe('a handler that defines its element in onInit()', () => {
+	let count = 0
+
+	/**
+	 * A handler whose onInit() defines its element, under a tag no other test uses.
+	 *
+	 * @param before - What onInit() waits for before defining it
+	 */
+	function lazyHandler(before: () => Promise<void> = async () => {}) {
+		const tagName = `oca-viewer-lazy-${++count}`
+		const onInit = vi.fn(async () => {
+			await before()
+			customElements.define(tagName, class extends HTMLElement {})
+		})
+		return makeHandler({ id: tagName, tagName, enabled: () => true, onInit })
+	}
+
+	it('renders the element only once onInit() has defined it', async () => {
+		let resolve!: () => void
+		const handler = lazyHandler(() => new Promise((r) => {
+			resolve = r
+		}))
+		const { vm, renderedTags } = mountViewer([handler])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+
+		// Rendered before it is defined, it would get its bindings as
+		// attributes and lose them on upgrade
+		expect(renderedTags()).not.toContain(handler.tagName)
+		expect(customElements.get(handler.tagName)).toBeUndefined()
+
+		resolve()
+		await flushPromises()
+
+		expect(customElements.get(handler.tagName)).toBeDefined()
+		expect(renderedTags()).toContain(handler.tagName)
+	})
+
+	it('calls onInit() once however many files open with it', async () => {
+		const handler = lazyHandler()
+		const { vm, renderedTags } = mountViewer([handler])
+		const first = makeFile({ basename: 'first.txt' })
+		const second = makeFile({ basename: 'second.txt' })
+		await vm.open([first, second], first)
+		await flushPromises()
+		await vm.open([first, second], second)
+		await flushPromises()
+
+		expect(handler.onInit).toHaveBeenCalledOnce()
+		expect(renderedTags()).toContain(handler.tagName)
+	})
+
+	it('shows the error when onInit() fails, and tries again on the next open', async () => {
+		const handler = lazyHandler()
+		vi.mocked(handler.onInit!).mockRejectedValueOnce(new Error('Failed to fetch dynamically imported module'))
+		const { vm, errorText, renderedTags } = mountViewer([handler])
+		const file = makeFile()
+		await vm.open([file], file)
+		await flushPromises()
+
+		expect(errorText()).toBe('Failed to fetch dynamically imported module')
+		expect(renderedTags()).not.toContain(handler.tagName)
+
+		vm.close()
+		await vm.open([file], file)
+		await flushPromises()
+
+		expect(handler.onInit).toHaveBeenCalledTimes(2)
+		expect(renderedTags()).toContain(handler.tagName)
+	})
+})

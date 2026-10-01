@@ -153,7 +153,7 @@
 			<!-- eslint-disable vue/attribute-hyphenation -->
 			<component
 				:is="currentHandler?.tagName"
-				v-if="currentFile"
+				v-if="currentFile && elementReady(currentHandler)"
 				:file="currentFile"
 				:files="[]"
 				:is-sidebar-shown="isSidebarShown"
@@ -164,7 +164,7 @@
 				@errored="onError" />
 			<component
 				:is="comparisonHandler?.tagName"
-				v-if="comparisonFile"
+				v-if="comparisonFile && elementReady(comparisonHandler)"
 				:file="comparisonFile"
 				:files="[]"
 				:is-sidebar-shown="isSidebarShown"
@@ -178,7 +178,7 @@
 		<!-- Single file view -->
 		<component
 			:is="currentHandler?.tagName"
-			v-else-if="currentFile"
+			v-else-if="currentFile && elementReady(currentHandler)"
 			v-show="!loading && !errorString"
 			:key="`${currentFile.source}-${reloadKey}`"
 			ref="handlerElement"
@@ -256,6 +256,7 @@ import { getHandlerForFile } from '../helpers/handlerHelper.ts'
 import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
 import { canDownload } from '../utils/canDownload.ts'
+import { initHandlerElement } from '../utils/customElements.ts'
 import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
 import { emittedValue, toError } from '../utils/handlerEvents.ts'
 import { t } from '../utils/l10n.ts'
@@ -447,6 +448,41 @@ const offerSidebar = computed(() => !isSidebarShown.value && currentFile.value !
 const inlineActions = computed(() => (offerRotate.value ? 1 : 0)
 	+ (offerEdit.value ? 1 : 0)
 	+ (isMobile.value ? 0 : 1 + (offerSidebar.value ? 1 : 0)))
+
+// Tags whose element a handler's onInit() has defined. The registry itself
+// is not reactive, so this is what tells the template it may render them.
+const loadedTags = ref(new Set<string>())
+
+/**
+ * Whether a handler's element can be rendered yet.
+ *
+ * Rendered before its tag is defined, the element gets its bindings as
+ * attributes and loses them when it upgrades, so one that comes from
+ * `onInit()` waits for it.
+ *
+ * @param handler - The handler about to be rendered
+ */
+function elementReady(handler?: IHandler): boolean {
+	return handler !== undefined
+		&& (handler.onInit === undefined || loadedTags.value.has(handler.tagName) || window.customElements.get(handler.tagName) !== undefined)
+}
+
+watch([currentHandler, comparisonHandler], (handlers) => {
+	for (const handler of handlers) {
+		if (handler === undefined || elementReady(handler)) {
+			continue
+		}
+		initHandlerElement(handler).then(() => {
+			loadedTags.value = new Set([...loadedTags.value, handler.tagName])
+		}, (error: unknown) => {
+			logger.error('Could not initialize a handler', { handler: handler.id, error })
+			onError(error)
+		})
+	}
+// Synchronous: closing and reopening with the same handler in one tick is a
+// change a deferred watcher would not see, and the retry after a failed
+// load would never happen
+}, { immediate: true, flush: 'sync' })
 
 // Files actions rendered in the viewer menu (download, delete, …), linked to
 // the Files actions and run with the view/folder forwarded by the opener.
