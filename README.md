@@ -336,8 +336,11 @@ The full handler shape (see the `IHandler` interface):
 
 Gotchas:
 
-- `tagName` must be lowercase, contain a hyphen, and have no leading, trailing
-  or consecutive hyphens (e.g. `my-app-viewer`). An invalid one throws.
+- `tagName` must be lowercase (letters, digits, `_` and `-`), contain a hyphen,
+  and have no leading, trailing or consecutive hyphens. An invalid one throws.
+  Custom elements share one registry for the whole page, so start it with your
+  app id to avoid clashing with another app's: for the app `your_app`, a good
+  name is `your_app-viewer-handler`.
 - `id` must be unique **across every app on the page**, not just your own:
   it is not namespaced for you. A collision does not throw: the second
   registration is silently dropped with a console warning, so pick something

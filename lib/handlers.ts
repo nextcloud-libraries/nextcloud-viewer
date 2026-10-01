@@ -37,7 +37,19 @@ export interface IHandler {
 	iconSvgInline?: string
 
 	/**
-	 * The custom element tag name to use for this handler.
+	 * The tag name of the custom element that shows the file.
+	 *
+	 * The element must be defined under this name with
+	 * `CustomElementRegistry.define()`, either when the handler is registered
+	 * or within the `onInit` callback (preferred, as it keeps the view out of
+	 * the script that runs on every page). With `onInit`, the viewer waits for
+	 * the element to be defined (`customElements.whenDefined()`) before
+	 * rendering it.
+	 *
+	 * Custom elements share one registry for the whole page, so to avoid name
+	 * clashes the name has to start with your app id (e.g. `your_app`). In
+	 * addition to the custom element naming rules (lowercase, with a hyphen),
+	 * a good name would be `your_app-viewer-handler`.
 	 */
 	tagName: string
 
@@ -406,7 +418,7 @@ function validateCustomElementName(tagName: string): void {
 	if (tagName.startsWith('-') || tagName.endsWith('-')) {
 		throw new Error('Handler tagName must not start or end with a hyphen (-)')
 	}
-	if (!/^[a-z][a-z0-9-]*$/.test(tagName)) {
-		throw new Error('Handler tagName must only contain lowercase letters, numbers, and hyphens (-)')
+	if (!/^[a-z][a-z0-9_-]*$/.test(tagName)) {
+		throw new Error('Handler tagName must only contain lowercase letters, numbers, underscores (_) and hyphens (-)')
 	}
 }
