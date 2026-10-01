@@ -193,7 +193,11 @@ describe('Images.vue', () => {
 		// still available, and only to a request that carries the header.
 		const file = makeFile({
 			basename: 'restricted.jpg',
-			attributes: { hasPreview: true, hideDownload: true },
+			attributes: {
+				hasPreview: true,
+				// Named the way the dav property arrives on the node
+				'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]),
+			},
 		})
 		const wrapper = mountImages({ file, files: [file] })
 		await flushPromises()
