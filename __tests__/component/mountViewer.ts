@@ -71,7 +71,7 @@ const NcEmptyContentStub = defineComponent({
 		name: { type: String, default: '' },
 		description: { type: String, default: '' },
 	},
-	template: '<div class="nc-empty-content-stub" :data-name="name">{{ name }}<slot name="icon" /><slot /></div>',
+	template: '<div class="nc-empty-content-stub" :data-name="name">{{ name }}<slot name="icon" /><slot /><slot name="action" /></div>',
 })
 
 const NcLoadingIconStub = defineComponent({

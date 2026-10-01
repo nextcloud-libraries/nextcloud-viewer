@@ -722,3 +722,67 @@ describe('opening over a viewer that is still open', () => {
 		expect(onClose).toHaveBeenCalledOnce()
 	})
 })
+
+describe('feedback while the file loads', () => {
+	afterEach(() => {
+		vi.useRealTimers()
+	})
+
+	it('says it is still loading once a load has taken a while', async () => {
+		vi.useFakeTimers()
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		const hint = () => wrapper.find('.viewer__loading-hint').text()
+
+		expect(hint()).toBe('')
+		await vi.advanceTimersByTimeAsync(4000)
+		expect(hint()).toBe('')
+		await vi.advanceTimersByTimeAsync(1500)
+		expect(hint()).toBe('Still loading…')
+
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+	})
+
+	it('starts over for the next file', async () => {
+		vi.useFakeTimers()
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const first = makeFile({ mime: 'image/jpeg' })
+		const second = makeFile({ mime: 'image/jpeg' })
+		await vm.open([first, second], first)
+		await wrapper.vm.$nextTick()
+		await vi.advanceTimersByTimeAsync(6000)
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+
+		await vm.open([first, second], second)
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('.viewer__loading-hint').text()).toBe('')
+	})
+})
+
+describe('a file that failed to show', () => {
+	it('can be tried again without closing the viewer', async () => {
+		const { vm, wrapper, errorText, renderedTags } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		const before = wrapper.find('oca-viewer-image').element
+		before.dispatchEvent(new CustomEvent('errored', { detail: [new Error('decoder gave up')] }))
+		await wrapper.vm.$nextTick()
+		expect(errorText()).toBe('decoder gave up')
+
+		await wrapper.findAll('button').find((button) => button.text() === 'Try again')!.trigger('click')
+		await wrapper.vm.$nextTick()
+
+		expect(errorText()).toBeUndefined()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+		// A fresh element, so the handler starts over rather than staying broken
+		expect(renderedTags()).toContain('oca-viewer-image')
+		expect(wrapper.find('oca-viewer-image').element).not.toBe(before)
+	})
+})
