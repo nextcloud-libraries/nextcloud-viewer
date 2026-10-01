@@ -36,6 +36,13 @@ function setRouter(query: Record<string, string> = {}, params: Record<string, st
 }
 
 /**
+ * Let the queued history changes land: each waits for the router's navigation.
+ */
+function settle(): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, 0))
+}
+
+/**
  * Get the popstate handler registered by the module through addEventListener.
  */
 function popstateHandler(addSpy: ReturnType<typeof vi.spyOn>): () => void {
@@ -105,10 +112,11 @@ describe('openWithHistory', () => {
 		expect(addSpy).not.toHaveBeenCalledWith('popstate', expect.anything())
 	})
 
-	it('pushes a history entry and wires navigation callbacks on a fresh open', () => {
+	it('pushes a history entry and wires navigation callbacks on a fresh open', async () => {
 		const router = setRouter()
 		const file = makeFile({ id: 42 })
 		openWithHistory([file], file, view, folder)
+		await settle()
 
 		// The opened file gets its own history entry, tagged with an offset.
 		expect(router.goToRoute).toHaveBeenCalledWith(
@@ -122,6 +130,7 @@ describe('openWithHistory', () => {
 
 		router.goToRoute.mockClear()
 		openOptions().onNext(makeFile({ id: 43 }))
+		await settle()
 		expect(router.goToRoute).toHaveBeenCalledWith(
 			'filelist',
 			expect.objectContaining({ fileid: '43' }),
@@ -131,6 +140,58 @@ describe('openWithHistory', () => {
 		expect(window.history.state?.viewerPos).toBe(2)
 	})
 
+	it('tags the entry the push made, once the router has landed it', async () => {
+		// The Files router lands a navigation asynchronously since vue-router 5:
+		// tagging before that tagged the page the viewer was opened from, so
+		// closing never unwound and back opened the file again
+		const router = setRouter()
+		let land!: () => void
+		vi.mocked(router.goToRoute).mockImplementation(() => new Promise<void>((resolve) => {
+			land = () => {
+				window.history.pushState({}, '')
+				resolve()
+			}
+		}))
+		const file = makeFile({ id: 42 })
+		openWithHistory([file], file, view, folder)
+		await settle()
+
+		const opener = window.history.state
+		land()
+		await settle()
+
+		expect(opener?.viewerPos).toBeUndefined()
+		expect(window.history.state?.viewerPos).toBe(1)
+	})
+
+	it('tags the entry the router created, once its navigation has landed', async () => {
+		// The Files router on vue-router 5 creates the history entry only once
+		// the navigation resolves. Tagging before that tagged the previous
+		// entry, and closing then had no viewer entries to unwind.
+		const router = setRouter()
+		vi.mocked(router.goToRoute).mockImplementation(() => new Promise<void>((resolve) => {
+			setTimeout(() => {
+				window.history.pushState({}, '')
+				resolve()
+			}, 0)
+		}))
+		const landed = () => new Promise((resolve) => setTimeout(resolve, 20))
+		const file = makeFile({ id: 42 })
+
+		openWithHistory([file], file, view, folder)
+		await landed()
+		expect(window.history.state?.viewerPos).toBe(1)
+
+		openOptions().onNext(makeFile({ id: 43 }))
+		await landed()
+		expect(window.history.state?.viewerPos).toBe(2)
+
+		router.query.openfile = 'true'
+		openOptions().onClose()
+		await landed()
+		expect(goSpy).toHaveBeenCalledWith(-2)
+	})
+
 	it('does not push an entry when opened from an openfile URL (refresh)', () => {
 		const router = setRouter({ openfile: 'true' })
 		const file = makeFile({ id: 7 })
@@ -138,7 +199,7 @@ describe('openWithHistory', () => {
 		expect(router.goToRoute).not.toHaveBeenCalled()
 	})
 
-	it('unwinds every pushed entry when closed from within the viewer', () => {
+	it('unwinds every pushed entry when closed from within the viewer', async () => {
 		const router = setRouter()
 		const file = makeFile({ id: 1 })
 		openWithHistory([file], file, view, folder)
@@ -147,15 +208,17 @@ describe('openWithHistory', () => {
 
 		router.query.openfile = 'true'
 		openOptions().onClose()
+		await settle()
 
 		expect(goSpy).toHaveBeenCalledWith(-2)
 		expect(removeSpy).toHaveBeenCalledWith('popstate', expect.any(Function))
 	})
 
-	it('drops the openfile flag before the jump, not after it', () => {
+	it('drops the openfile flag before the jump, not after it', async () => {
 		const router = setRouter()
 		const file = makeFile({ id: 1 })
 		openWithHistory([file], file, view, folder)
+		await settle()
 		router.query.openfile = 'true'
 
 		const order: string[] = []
@@ -167,6 +230,7 @@ describe('openWithHistory', () => {
 		})
 
 		openOptions().onClose()
+		await settle()
 
 		// history.go() lands on a later task. Until it does the URL still says
 		// openfile=true, and the Files list opens the file again if anything
@@ -180,12 +244,13 @@ describe('openWithHistory', () => {
 		)
 	})
 
-	it('drops the openfile flag in place when closing a refresh-opened viewer', () => {
+	it('drops the openfile flag in place when closing a refresh-opened viewer', async () => {
 		const router = setRouter({ openfile: 'true', dir: '/photos' })
 		const file = makeFile({ id: 1 })
 		openWithHistory([file], file, view, folder)
 
 		openOptions().onClose()
+		await settle()
 
 		expect(goSpy).not.toHaveBeenCalled()
 		expect(router.goToRoute).toHaveBeenCalledWith(
@@ -216,10 +281,11 @@ describe('openWithHistory', () => {
 		expect(options.editing).toBe(true)
 	})
 
-	it('ignores a stale editing param on a fresh open (no openfile)', () => {
+	it('ignores a stale editing param on a fresh open (no openfile)', async () => {
 		const router = setRouter({ editing: 'true' })
 		const file = makeFile({ id: 42 })
 		openWithHistory([file], file, view, folder)
+		await settle()
 
 		const options = viewer.open.mock.calls[0]![2] as { editing: boolean }
 		expect(options.editing).toBe(false)
