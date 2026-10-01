@@ -80,7 +80,10 @@ async function upload(request: APIRequestContext, user: User, name: string, mime
  * @param name the file to open
  */
 async function openFromList(page: Page, name: string): Promise<void> {
-	await page.goto('/apps/files')
+	// Through the front controller: the server generates /index.php URLs, and
+	// the Files router, based there, matches no view on the rewritten
+	// /apps/files/ and never lists the folder
+	await page.goto('/index.php/apps/files')
 	const row = page.locator(`[data-cy-files-list-row-name="${name}"]`)
 	await row.waitFor({ timeout: 30_000 })
 	await row.locator('[data-cy-files-list-row-name-link]').click()
