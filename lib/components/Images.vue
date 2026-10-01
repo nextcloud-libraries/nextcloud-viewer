@@ -606,13 +606,25 @@ function onDblclick() {
 }
 
 /**
+ * What to tell the user once the image could not be fetched by hand either.
+ *
+ * A share that forbids downloading leaves only its preview to show, so
+ * when that fails too the reason is worth saying rather than a bare failure.
+ */
+function failureMessage(): string {
+	return canDownload(props.file)
+		? t('Failed to load image.')
+		: t('No preview available, download is disabled.')
+}
+
+/**
  * The element could not load what it was given: fetch the file by hand
  * once, and report the failure if that does not work either.
  */
 async function onFail() {
 	if (fallback.value) {
 		logger.error(`Loading of file ${filename.value} failed even after fallback`)
-		emit('errored', new Error(t('Failed to load image.')))
+		emit('errored', new Error(failureMessage()))
 		return
 	}
 
@@ -625,7 +637,7 @@ async function onFail() {
 		await loadData()
 	} catch (error) {
 		logger.error(`Fallback fetch of ${filename.value} failed`, { error })
-		emit('errored', new Error(t('Failed to load image.')))
+		emit('errored', new Error(failureMessage()))
 	}
 }
 
