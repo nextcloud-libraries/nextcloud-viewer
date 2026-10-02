@@ -9,6 +9,15 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 // Mock the event bus BEFORE importing the component (shared manual mock).
 vi.mock('@nextcloud/event-bus')
+// The viewer's own Delete goes through it
+const axiosDelete = vi.hoisted(() => vi.fn(async () => ({})))
+vi.mock('@nextcloud/axios', () => ({ default: { delete: axiosDelete } }))
+const showError = vi.hoisted(() => vi.fn())
+vi.mock('@nextcloud/dialogs', async (importOriginal) => ({
+	// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest importOriginal idiom
+	...await importOriginal<typeof import('@nextcloud/dialogs')>(),
+	showError,
+}))
 // Avoid the real DAV client being created on module import.
 vi.mock('../../lib/services/dav.ts', () => ({ fetchFolderContent: vi.fn(async () => []) }))
 // The real editor draws on a canvas, which the DOM here cannot do
@@ -20,10 +29,10 @@ vi.mock('@nextcloud/image-editor', async () => {
 })
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
-import { registerFileAction } from '@nextcloud/files'
+import { Permission, registerFileAction } from '@nextcloud/files'
 import { restoreTitle } from '../../lib/utils/documentTitle.ts'
 import { makeFile, makeHandler } from '../factories.ts'
-import { mountViewer } from './mountViewer.ts'
+import { mountViewer, unmountViewers } from './mountViewer.ts'
 
 function imageHandler() {
 	return makeHandler({
@@ -35,6 +44,7 @@ function imageHandler() {
 }
 
 afterEach(() => {
+	unmountViewers()
 	document.body.innerHTML = ''
 	document.body.className = ''
 	// The title the viewer borrows is module state: give it back so it is
@@ -1328,5 +1338,196 @@ describe('a handler that defines its element in onInit()', () => {
 
 		expect(handler.onInit).toHaveBeenCalledTimes(2)
 		expect(renderedTags()).toContain(handler.tagName)
+	})
+})
+
+describe('the viewer\'s own Download and Delete', () => {
+	const view = { id: 'files' } as never
+	const folder = { path: '/' } as never
+	const labels = (wrapper: VueWrapper) => wrapper.findAll('.nc-action-button-stub').map((button) => button.text())
+
+	/**
+	 * Press a key with Ctrl held, the way a user would on the page.
+	 *
+	 * @param key - The key
+	 */
+	function ctrl(key: string): KeyboardEvent {
+		const event = new KeyboardEvent('keydown', { key, ctrlKey: true, bubbles: true, cancelable: true })
+		document.body.dispatchEvent(event)
+		return event
+	}
+
+	afterEach(() => {
+		axiosDelete.mockClear()
+		vi.restoreAllMocks()
+	})
+
+	// Photos, Talk or the versions tab open files with no Files view and
+	// folder, which the Files actions need: without these the menu was empty
+	it('are offered when the opener gives the Files actions nothing to run in', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		expect(labels(wrapper)).toEqual(expect.arrayContaining(['Download', 'Delete']))
+	})
+
+	it('are left to the Files actions when the opener passes their view and folder', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file, { view, folder })
+		await wrapper.vm.$nextTick()
+
+		expect(labels(wrapper)).not.toContain('Delete')
+	})
+
+	it('offer no Download from a share that forbids it, and no Delete without the permission', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({
+			mime: 'image/jpeg',
+			permissions: Permission.READ,
+			attributes: { 'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]) },
+		})
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		expect(labels(wrapper)).not.toContain('Download')
+		expect(labels(wrapper)).not.toContain('Delete')
+	})
+
+	it('download the file through the browser', async () => {
+		const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ basename: 'a b.jpg', mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Download')!.trigger('click')
+
+		const link = click.mock.contexts[0] as HTMLAnchorElement
+		expect(link.href).toBe(file.encodedSource)
+		expect(link.download).toBe('a b.jpg')
+	})
+
+	it('delete the file and say so, as the Files app does, which moves the viewer on', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+
+		expect(axiosDelete).toHaveBeenCalledWith(file.encodedSource)
+		expect(emit).toHaveBeenCalledWith('files:node:deleted', file)
+	})
+
+	it('download on Ctrl+S, rather than the browser saving the page', async () => {
+		const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		expect(ctrl('s').defaultPrevented).toBe(true)
+		expect(click).toHaveBeenCalledOnce()
+	})
+
+	it('delete on Ctrl+Delete', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		ctrl('Delete')
+		await flushPromises()
+
+		expect(axiosDelete).toHaveBeenCalledWith(file.encodedSource)
+	})
+
+	it('edit on Ctrl+E, and delete nothing while editing', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([makeHandler({ ...imageHandler(), canEdit: true })])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+
+		ctrl('e')
+		await wrapper.vm.$nextTick()
+		// The slideshow pauses for as long as editing is on
+		expect(modalProps().slideshowPaused).toBe(true)
+
+		ctrl('Delete')
+		await flushPromises()
+		expect(axiosDelete).not.toHaveBeenCalled()
+	})
+
+	it('say so when the file could not be deleted, and stay on it', async () => {
+		axiosDelete.mockRejectedValueOnce(new Error('Request failed with status code 423'))
+		const { vm, wrapper, modalName } = mountViewer([imageHandler()])
+		const file = makeFile({ basename: 'locked.jpg', mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Delete')!.trigger('click')
+		await flushPromises()
+
+		expect(showError).toHaveBeenCalledWith('Could not delete "locked.jpg"')
+		expect(emit).not.toHaveBeenCalledWith('files:node:deleted', expect.anything())
+		expect(modalName()).toBe('locked.jpg')
+	})
+
+	// The Files actions know what the viewer does not: a received share
+	// left rather than deleted, the confirmations Files asks for
+	describe('with a Files context', () => {
+		let enabled = false
+		const filesDownload = vi.fn(async () => null)
+		const filesDelete = vi.fn(async () => null)
+
+		beforeAll(() => {
+			for (const [id, exec] of [['download', filesDownload], ['delete', filesDelete]] as const) {
+				registerFileAction({
+					id,
+					displayName: () => id,
+					iconSvgInline: () => '<svg />',
+					enabled: () => enabled,
+					exec,
+				})
+			}
+		})
+
+		afterEach(() => {
+			enabled = false
+			filesDownload.mockClear()
+			filesDelete.mockClear()
+		})
+
+		it('run its download and delete actions on Ctrl+S and Ctrl+Delete', async () => {
+			enabled = true
+			const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			await vm.open([file], file, { view, folder })
+			await wrapper.vm.$nextTick()
+
+			expect(ctrl('s').defaultPrevented).toBe(true)
+			ctrl('Delete')
+			await flushPromises()
+
+			expect(filesDownload).toHaveBeenCalledOnce()
+			expect(filesDelete).toHaveBeenCalledOnce()
+			expect(click).not.toHaveBeenCalled()
+			expect(axiosDelete).not.toHaveBeenCalled()
+		})
+	})
+
+	it('leave the page alone while nothing is shown', () => {
+		mountViewer([imageHandler()])
+
+		expect(ctrl('s').defaultPrevented).toBe(false)
+		expect(ctrl('e').defaultPrevented).toBe(false)
+		expect(axiosDelete).not.toHaveBeenCalled()
 	})
 })
