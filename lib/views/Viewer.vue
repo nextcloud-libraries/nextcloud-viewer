@@ -180,7 +180,7 @@
 			:is="currentHandler?.tagName"
 			v-else-if="currentFile"
 			v-show="!loading && !errorString"
-			:key="`${currentFile.fileid}-${reloadKey}`"
+			:key="`${currentFile.source}-${reloadKey}`"
 			ref="handlerElement"
 			:can-swipe="canSwipe"
 			:file="currentFile"
@@ -190,7 +190,7 @@
 			:max-width="width"
 			:editing="editing"
 			:turns="turns"
-			:local-source="editedSources[currentFile.fileid!]"
+			:local-source="editedSources[currentFile.source]"
 			@loaded="onLoad"
 			@errored="onError" />
 		<!-- eslint-enable vue/attribute-hyphenation -->
@@ -306,8 +306,10 @@ function retry() {
 	pendingLoads.value = 1
 	reloadKey.value++
 }
-// Object URLs of freshly edited images, by file id, shown without refetching.
-const editedSources = ref<Record<number, string>>({})
+// Object URLs of freshly edited images, by source, shown without refetching.
+// Not by file id: every version of a file shares it, and an older version
+// would otherwise show the edit made to the current one.
+const editedSources = ref<Record<string, string>>({})
 // Files this viewer has just saved, whose next update event is its own.
 const ownSaves = new Set<number>()
 
@@ -545,8 +547,8 @@ function onNodeUpdated(node: INode) {
 	if (node.fileid !== undefined && ownSaves.delete(node.fileid)) {
 		return
 	}
-	if (node.fileid === currentFile.value?.fileid) {
-		releaseEditedSource(node.fileid)
+	if (currentFile.value !== undefined && node.fileid === currentFile.value.fileid) {
+		releaseEditedSource(currentFile.value.source)
 		reloadKey.value++
 	}
 }
@@ -557,28 +559,28 @@ function onNodeUpdated(node: INode) {
  * @param source - The edited image as an object URL
  */
 function onEditSaved(source: string) {
-	const fileid = currentFile.value?.fileid
-	if (fileid === undefined) {
+	const file = currentFile.value
+	if (file?.fileid === undefined) {
 		return
 	}
 	// Release a previous edit of the same file before replacing it.
-	releaseEditedSource(fileid)
-	ownSaves.add(fileid)
-	editedSources.value = { ...editedSources.value, [fileid]: source }
+	releaseEditedSource(file.source)
+	ownSaves.add(file.fileid)
+	editedSources.value = { ...editedSources.value, [file.source]: source }
 }
 
 /**
  * Release the edited image of one file, if it has one.
  *
- * @param fileid - The file to forget the local edit of
+ * @param source - The source of the file to forget the local edit of
  */
-function releaseEditedSource(fileid?: number) {
-	if (fileid === undefined || !editedSources.value[fileid]) {
+function releaseEditedSource(source: string) {
+	if (!editedSources.value[source]) {
 		return
 	}
-	URL.revokeObjectURL(editedSources.value[fileid]!)
+	URL.revokeObjectURL(editedSources.value[source]!)
 	const remaining = { ...editedSources.value }
-	delete remaining[fileid]
+	delete remaining[source]
 	editedSources.value = remaining
 }
 
@@ -738,7 +740,8 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 	// more than once — clicking a file, and again as the sidebar opens —
 	// and the handler keeps the file it already has, so nothing would tell
 	// us it had loaded a second time and the spinner would never go away.
-	const isSameFile = currentFile.value?.fileid === file.fileid
+	// By source, not by file id: every version of a file shares its id
+	const isSameFile = currentFile.value?.source === file.source
 		&& currentHandler.value?.id === handler.id
 		&& comparisonFile.value === undefined
 
