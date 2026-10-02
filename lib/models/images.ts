@@ -103,6 +103,8 @@ export function registerImageHandler() {
 		group: 'media',
 		supportsEndToEndEncryption: true,
 		canEdit: true,
+		// Side by side is how two versions of a picture show what changed
+		canCompare: true,
 
 		enabled: (nodes) => {
 			if (nodes.length === 0) {

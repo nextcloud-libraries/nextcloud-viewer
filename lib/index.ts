@@ -26,7 +26,7 @@ registerImplementation({
 // It is an empty shell until the viewer is mounted.
 getViewer()
 
-export { canView, getHandlers, registerHandler } from './handlers.ts'
+export { canCompare, canView, getHandlers, registerHandler } from './handlers.ts'
 export type { IHandler } from './handlers.ts'
 export { getViewer, Viewer } from './viewer.ts'
 export type { ViewerAPI, ViewerEmits, ViewerOptions, ViewerProps } from './viewer.ts'
