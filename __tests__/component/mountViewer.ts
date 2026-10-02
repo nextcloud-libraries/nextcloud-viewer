@@ -154,6 +154,18 @@ export interface MountViewerResult {
 	resized: () => Promise<void>
 }
 
+/** Every viewer mounted so far, for a test file to unmount between tests */
+const mountedViewers: VueWrapper[] = []
+
+/**
+ * Unmount every viewer mounted so far. A viewer listens on the whole page
+ * for its keyboard shortcuts, so one left over from an earlier test answers
+ * them too.
+ */
+export function unmountViewers(): void {
+	mountedViewers.splice(0).forEach((wrapper) => wrapper.unmount())
+}
+
 /**
  * Mount the Viewer with lightweight stubs and the given handlers registered.
  *
@@ -182,6 +194,8 @@ export function mountViewer(handlers: IHandler[] = []): MountViewerResult {
 			},
 		},
 	})
+
+	mountedViewers.push(wrapper)
 
 	const findModal = () => wrapper.findComponent(NcModalStub)
 
