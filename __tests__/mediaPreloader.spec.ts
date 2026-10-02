@@ -2,13 +2,13 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const axiosGet = vi.hoisted(() => vi.fn())
 vi.mock('@nextcloud/axios', () => ({ default: { get: axiosGet } }))
 vi.mock('@nextcloud/files/dav', () => ({ getClient: () => ({ getFileContents: vi.fn() }) }))
 
-const { preloadPreview } = await import('../lib/services/mediaPreloader.ts')
+const { preloadImage, preloadPreview } = await import('../lib/services/mediaPreloader.ts')
 
 describe('preloadPreview', () => {
 	beforeEach(() => {
@@ -49,5 +49,55 @@ describe('preloadPreview', () => {
 		axiosGet.mockRejectedValue(new Error('forbidden'))
 
 		await expect(preloadPreview('/core/preview?fileId=1')).rejects.toThrow('forbidden')
+	})
+})
+
+describe('preloadImage', () => {
+	let decoded: { resolve: () => void, reject: (error: Error) => void }
+
+	beforeEach(() => {
+		// jsdom neither loads nor decodes images, and has no decode() at
+		// all: the test says when it is done
+		Object.defineProperty(HTMLImageElement.prototype, 'decode', {
+			configurable: true,
+			value: () => new Promise<void>((resolve, reject) => {
+				decoded = { resolve, reject }
+			}),
+		})
+		vi.spyOn(HTMLImageElement.prototype, 'naturalWidth', 'get').mockReturnValue(4000)
+	})
+
+	afterEach(() => {
+		delete (HTMLImageElement.prototype as { decode?: unknown }).decode
+		vi.restoreAllMocks()
+	})
+
+	it('answers once the image is decoded, not merely loaded', async () => {
+		const settled = vi.fn()
+		const loading = preloadImage('/core/preview?fileId=1&x=8192&y=8192').then(settled)
+
+		// Loaded is not enough: a large picture still takes a frame or two to
+		// decode, and swapped in before that it stalls on screen
+		await Promise.resolve()
+		expect(settled).not.toHaveBeenCalled()
+
+		decoded.resolve()
+		await loading
+		expect(settled).toHaveBeenCalledWith(4000)
+	})
+
+	it('fails when the image cannot be decoded', async () => {
+		const loading = preloadImage('/core/preview?fileId=1')
+		decoded.reject(new Error('EncodingError'))
+
+		await expect(loading).rejects.toThrow('Could not load /core/preview?fileId=1')
+	})
+
+	it('gives up when the viewer moves on', async () => {
+		const controller = new AbortController()
+		const loading = preloadImage('/core/preview?fileId=1', controller.signal)
+		controller.abort(new Error('moved on'))
+
+		await expect(loading).rejects.toThrow('moved on')
 	})
 })
