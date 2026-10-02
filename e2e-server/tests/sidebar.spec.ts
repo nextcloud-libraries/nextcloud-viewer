@@ -21,19 +21,13 @@ const SIDEBAR_FULLSCREEN = /viewer--sidebar-fullscreen/
  */
 test.describe('The Files sidebar beside the viewer', () => {
 	/**
-	 * Open the sidebar from the viewer's actions, wherever they put it.
+	 * Open the sidebar from the viewer's header, where it is a button of its
+	 * own on a desktop.
 	 *
 	 * @param page the page
 	 */
 	async function openSidebarFromViewer(page: Page) {
-		const modal = page.locator('.viewer__modal')
-		const inline = modal.getByRole('button', { name: 'Open sidebar' })
-		if (await inline.isVisible()) {
-			await inline.click()
-			return
-		}
-		await modal.getByRole('button', { name: 'Actions' }).click()
-		await page.getByRole('menuitem', { name: 'Open sidebar' }).click()
+		await page.locator('.viewer__modal').getByRole('button', { name: 'Open sidebar' }).click()
 	}
 
 	test('is made room for when it was open before the viewer, and follows the files', async ({ page, request }) => {
