@@ -39,10 +39,11 @@ export async function signIn(page: Page, user: User): Promise<void> {
  * @param user the owner
  * @param name the file name
  * @param mime what to upload it as
+ * @param as the name to give it, the fixture's own by default
  */
-export async function upload(request: APIRequestContext, user: User, name: string, mime: string): Promise<void> {
+export async function upload(request: APIRequestContext, user: User, name: string, mime: string, as = name): Promise<void> {
 	const body = readFileSync(fileURLToPath(new URL(`fixtures/${name}`, import.meta.url)))
-	const response = await request.put(`/remote.php/dav/files/${user.userId}/${name}`, {
+	const response = await request.put(`/remote.php/dav/files/${user.userId}/${as}`, {
 		data: body,
 		headers: {
 			'Content-Type': mime,
@@ -50,6 +51,25 @@ export async function upload(request: APIRequestContext, user: User, name: strin
 		},
 	})
 	expect(response.status(), `uploading ${name}`).toBeLessThan(300)
+}
+
+/**
+ * The id of a file at the top of a user's folder.
+ *
+ * @param request the request context
+ * @param user the owner
+ * @param name the file name
+ */
+export async function fileId(request: APIRequestContext, user: User, name: string): Promise<number> {
+	const response = await request.fetch(`/remote.php/dav/files/${user.userId}/${name}`, {
+		method: 'PROPFIND',
+		headers: { Authorization: basic(user), Depth: '0', 'Content-Type': 'application/xml' },
+		data: '<?xml version="1.0"?><d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns"><d:prop><oc:fileid/></d:prop></d:propfind>',
+	})
+	expect(response.status(), `finding ${name}`).toBe(207)
+	const id = (await response.text()).match(/<oc:fileid>(\d+)<\/oc:fileid>/)?.[1]
+	expect(id, `the id of ${name}`).toBeDefined()
+	return Number(id)
 }
 
 /**
