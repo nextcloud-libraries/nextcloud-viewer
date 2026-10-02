@@ -268,6 +268,28 @@ describe('Viewer delete handling', () => {
 		expect(ctx.modalExists()).toBe(false)
 	})
 
+	// The Files app takes a deleted file out of its URL, and puts the one
+	// shown back in from these, as for any move to another file
+	it('tells the opener which file it moved on to', async () => {
+		const ctx = mountViewer([imageHandler()])
+		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
+		const f3 = makeFile({ basename: 'f3.jpg', mime: 'image/jpeg' })
+		const onNext = vi.fn()
+		const onPrev = vi.fn()
+		await ctx.vm.open([f1, f2, f3], f2, { onNext, onPrev })
+		await ctx.wrapper.vm.$nextTick()
+
+		deletedHandler()(f2)
+		await ctx.wrapper.vm.$nextTick()
+		expect(onNext).toHaveBeenCalledWith(f3)
+
+		// The last one gone, it falls back on the one before
+		deletedHandler()(f3)
+		await ctx.wrapper.vm.$nextTick()
+		expect(onPrev).toHaveBeenCalledWith(f1)
+	})
+
 	it('ignores deletion of a file not in the viewer list', async () => {
 		const { wrapper, modalName } = await setup()
 		deletedHandler()(makeFile({ id: 9999, basename: 'other.jpg' }))
@@ -926,5 +948,50 @@ describe('versions of one file', () => {
 		// one still showing the version
 		expect(element().element).not.toBe(shownVersion)
 		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+	})
+})
+
+describe('loading more files', () => {
+	it('asks for more when opened on the last file, and goes on to them', async () => {
+		const { vm, wrapper, modalName, emitModal } = mountViewer([imageHandler()])
+		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
+		const f3 = makeFile({ basename: 'f3.jpg', mime: 'image/jpeg' })
+		const loadMore = vi.fn().mockResolvedValueOnce([f3]).mockResolvedValue([])
+
+		await vm.open([f1, f2], f2, { canLoop: false, loadMore })
+		await flushPromises()
+		expect(loadMore).toHaveBeenCalledOnce()
+
+		await emitModal('next')
+		await wrapper.vm.$nextTick()
+		expect(modalName()).toBe('f3.jpg')
+	})
+
+	it('asks once while more are on their way', async () => {
+		const { vm, emitModal } = mountViewer([imageHandler()])
+		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
+		const loadMore = vi.fn(() => new Promise<never>(() => {}))
+
+		await vm.open([f1, f2], f2, { canLoop: false, loadMore })
+		await flushPromises()
+		await emitModal('previous')
+		await emitModal('next')
+		await flushPromises()
+
+		expect(loadMore).toHaveBeenCalledOnce()
+	})
+
+	it('asks for nothing before the last file', async () => {
+		const { vm } = mountViewer([imageHandler()])
+		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
+		const loadMore = vi.fn(async () => [])
+
+		await vm.open([f1, f2], f1, { loadMore })
+		await flushPromises()
+
+		expect(loadMore).not.toHaveBeenCalled()
 	})
 })
