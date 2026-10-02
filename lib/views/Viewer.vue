@@ -557,9 +557,18 @@ function onNodeDeleted(node: INode) {
 
 	// Same index now points to the former next file; clamp to the last one when
 	// the deleted file was at the end (i.e. fall back to the previous file).
+	const wasLast = index >= currentFileList.value.length
 	const newFile = currentFileList.value[Math.min(index, currentFileList.value.length - 1)] as IFile
 	currentHandler.value = handlerFor(newFile)
 	currentFile.value = newFile
+	// Told like any move to another file: the Files app takes the file out
+	// of its URL when it is deleted, and puts the one shown back in from
+	// here, or a reload does not reopen it and closing does not unwind
+	if (wasLast) {
+		currentOptions.value.onPrev?.(newFile)
+	} else {
+		currentOptions.value.onNext?.(newFile)
+	}
 	preloadNeighbors()
 }
 
@@ -1079,21 +1088,38 @@ async function next() {
 	currentHandler.value = handlerFor(newFile)
 	currentFile.value = newFile
 	currentOptions.value.onNext?.(newFile)
-
-	// If we are at the end of the list, try to load more files if possible
-	if (newIndex === currentFileList.value.length - 1) {
-		try {
-			const moreFiles = await currentOptions.value.loadMore?.() ?? []
-			if (moreFiles.length > 0) {
-				currentFileList.value = currentFileList.value.concat(moreFiles)
-			}
-		} catch (error) {
-			logger.error('Failed to load more files', { error })
-		}
-	}
-
 	preloadNeighbors()
 }
+
+// Whether more files are being asked for, so reaching the end twice in a
+// row asks once
+let loadingMore = false
+
+/**
+ * Ask the opener for more files once the last one is shown, however it got
+ * there: opened on it, stepped onto it either way, or left on it by a
+ * deletion. Only on the way forward did it before, so a viewer opened on
+ * the last file of a long list had nowhere to go.
+ */
+async function loadMoreAtEnd() {
+	const loadMore = currentOptions.value.loadMore
+	const isLast = currentFile.value !== undefined && currentFileList.value.at(-1) === currentFile.value
+	if (loadMore === undefined || !isLast || loadingMore) {
+		return
+	}
+	loadingMore = true
+	try {
+		const moreFiles = await loadMore()
+		if (moreFiles.length > 0) {
+			currentFileList.value = currentFileList.value.concat(moreFiles)
+		}
+	} catch (error) {
+		logger.error('Failed to load more files', { error })
+	} finally {
+		loadingMore = false
+	}
+}
+watch(currentFile, loadMoreAtEnd)
 
 /**
  * Go to the previous file in the list if possible
