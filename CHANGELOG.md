@@ -6,6 +6,45 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.15
+
+### Added
+
+- Zooming into a picture goes to its full resolution: the first zoom fetches
+  the largest preview the server renders and swaps it in once decoded, and
+  the zoom goes until one of its pixels is four on screen, never less than
+  five times as before (#88, nextcloud/viewer#2391)
+- `canCompare` on a handler, and `canCompare(node)` for a caller deciding
+  whether to offer comparing two versions. The image handler sets it (#94)
+- The elected copy of the library says so in the debug log (#83)
+
+### Fixed
+
+- Saving from the image editor could damage a file: it was offered on every
+  image and wrote PNG over GIF, SVG, BMP or AVIF. It is back to JPEG, PNG and
+  WebP, on a file that may be downloaded, not while comparing, not on a phone
+  and not where non-accessible features are turned off (#89)
+- Images page through videos and sounds again, as before, and a video shows
+  the picture of the same name beside it as its poster (#86)
+- Playing a video again no longer downloads it again, and its poster comes
+  back once it has played (#87, nextcloud/viewer#2585)
+- A video or sound the browser cannot play says so instead of spinning
+  forever, and Firefox without an audio device no longer fails every sound
+  (#77, nextcloud/viewer#2930, nextcloud/viewer#542)
+- Opening the current file after an older version of it showed the old one
+  (#85, nextcloud/viewer#3052)
+- Pictures in subfolders of a public share got no preview (#90)
+- Small videos were stretched to fill the viewer, and the speed label went
+  back to an unlocalised value after a change of speed (#91)
+- More files are asked for whenever the last one is shown, not only stepping
+  forward onto it, and deleting the open file keeps the Files URL in step
+  (#92)
+- The Files sidebar, when already open as the viewer opens or restored from
+  the URL, gets room made for it and follows the file shown.
+  `viewer:sidebar:open` carries the whole node again (#93)
+- With the Files app on another copy of Vue than the elected viewer, the
+  viewer offered no previous, no next and no slideshow (#93)
+
 ## 2.0.0-beta.14
 
 ### Breaking
