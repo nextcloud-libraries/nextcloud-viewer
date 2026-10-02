@@ -98,6 +98,9 @@ export function registerImageHandler() {
 		id: 'images',
 		displayName: t('Images'),
 		tagName,
+		// With video and audio: a folder of photos and films pages through
+		// all of them, and a video finds the poster beside it in its list
+		group: 'media',
 		supportsEndToEndEncryption: true,
 		canEdit: true,
 

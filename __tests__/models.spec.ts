@@ -41,10 +41,11 @@ function handlerById(id: string): IHandler {
 	return handler
 }
 
-// A folder pages through every file of the opened handler's group, so video
-// and audio share one and images stay on their own
+// A folder pages through every file of the opened handler's group, so
+// images, video and audio share one: a film, its poster and the photos
+// beside it are one folder to page through, as they were before
 describe('handler groups', () => {
-	it('puts video and audio together, images apart', async () => {
+	it('puts images, video and audio together', async () => {
 		const { registerVideoHandler } = await import('../lib/models/videos.ts')
 		const { registerAudioHandler } = await import('../lib/models/audios.ts')
 		const { registerImageHandler } = await import('../lib/models/images.ts')
@@ -53,7 +54,7 @@ describe('handler groups', () => {
 		registerImageHandler()
 		expect(handlerById('videos').group).toBe('media')
 		expect(handlerById('audios').group).toBe('media')
-		expect(handlerById('images').group).toBeUndefined()
+		expect(handlerById('images').group).toBe('media')
 	})
 })
 
