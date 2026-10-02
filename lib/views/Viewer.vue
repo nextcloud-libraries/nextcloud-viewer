@@ -662,9 +662,24 @@ const modalName = computed(() => {
 	return currentFile.value?.displayname || ''
 })
 
+/**
+ * Where the file shown is in the list the viewer steps through.
+ *
+ * By source rather than by identity: setting `currentFile` unwraps a node to
+ * its raw object and wraps it in this copy's own reactivity, while the list
+ * keeps the proxies it was handed. When the opener runs another copy of Vue
+ * than the elected viewer, as the Files app does next to a viewer bundled
+ * by an app, the two are different objects for the same node, and the
+ * viewer found nothing to step to.
+ */
+function indexOfCurrent(): number {
+	const source = currentFile.value?.source
+	return source === undefined ? -1 : currentFileList.value.findIndex((file) => file.source === source)
+}
+
 const hasNext = computed(() => {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	if (currentIndex === -1) {
 		return false
 	}
@@ -685,7 +700,7 @@ const hasNext = computed(() => {
 })
 const hasPrevious = computed(() => {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	if (currentIndex === -1) {
 		return false
 	}
@@ -912,7 +927,7 @@ function onOpen() {
  * Uses the handler's optional preload function.
  */
 function preloadNeighbors() {
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	if (currentIndex === -1) {
 		return
 	}
@@ -1059,7 +1074,7 @@ function close() {
  */
 async function next() {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	let newIndex = currentIndex + 1
 
 	if (currentIndex === -1) {
@@ -1103,7 +1118,7 @@ let loadingMore = false
  */
 async function loadMoreAtEnd() {
 	const loadMore = currentOptions.value.loadMore
-	const isLast = currentFile.value !== undefined && currentFileList.value.at(-1) === currentFile.value
+	const isLast = currentFile.value !== undefined && indexOfCurrent() === currentFileList.value.length - 1
 	if (loadMore === undefined || !isLast || loadingMore) {
 		return
 	}
@@ -1126,7 +1141,7 @@ watch(currentFile, loadMoreAtEnd)
  */
 function previous() {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	let newIndex = currentIndex - 1
 
 	if (currentIndex === -1) {
@@ -1172,7 +1187,7 @@ function goTo(fileid: number) {
 		logger.warn('Cannot go to file, not in the current list', { fileid })
 		return
 	}
-	if (newFile === currentFile.value) {
+	if (newFile.source === currentFile.value?.source) {
 		return
 	}
 

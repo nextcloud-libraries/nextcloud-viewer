@@ -582,7 +582,7 @@ describe('Viewer sidebar', () => {
 	// the viewer, or restored from the URL with it, it is never announced
 	it('makes room for a sidebar already open, and has it show the file', async () => {
 		addSidebar(700)
-		const { vm, wrapper, modalStyle } = mountViewer([imageHandler()])
+		const { vm, modalStyle } = mountViewer([imageHandler()])
 		const file = makeFile({ mime: 'image/jpeg' })
 
 		await vm.open([file], file)
@@ -1064,5 +1064,34 @@ describe('loading more files', () => {
 		await flushPromises()
 
 		expect(loadMore).not.toHaveBeenCalled()
+	})
+})
+
+describe('nodes from another copy of Vue', () => {
+	/**
+	 * A node as the Files app hands it over when it runs another copy of Vue
+	 * than the viewer: wrapped in that copy's reactivity, which answers for
+	 * its raw object the way any copy of Vue does.
+	 *
+	 * @param file - The node to wrap
+	 */
+	function fromAnotherVue<T extends object>(file: T): T {
+		return new Proxy(file, {
+			get: (target, key, receiver) => key === '__v_raw' ? target : Reflect.get(target, key, receiver),
+		})
+	}
+
+	it('still finds the file shown in its list, and steps on from it', async () => {
+		const { vm, wrapper, modalProps, modalName, emitModal } = mountViewer([imageHandler()])
+		const a = fromAnotherVue(makeFile({ basename: 'a.jpg', mime: 'image/jpeg' }))
+		const b = fromAnotherVue(makeFile({ basename: 'b.jpg', mime: 'image/jpeg' }))
+
+		await vm.open([a, b], a)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().hasNext).toBe(true)
+
+		await emitModal('next')
+		await wrapper.vm.$nextTick()
+		expect(modalName()).toBe('b.jpg')
 	})
 })
