@@ -501,6 +501,39 @@ describe('Videos.vue (smoke)', () => {
 		expect(wrapper.emitted('loaded')).toBeTruthy()
 	})
 
+	// plyr writes the chosen speed back in its own formatting, `1.5×` where
+	// the user reads `1,5×`
+	it('relabels the speed menu again after a change of speed', async () => {
+		localizeSpeedLabels.mockClear()
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+		await wrapper.find('video').trigger('canplay')
+		const player = wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player as { on: Mock }
+		const onRateChange = player.on.mock.calls.find(([event]) => event === 'ratechange')?.[1] as () => void
+
+		onRateChange()
+
+		expect(localizeSpeedLabels).toHaveBeenCalledTimes(2)
+	})
+
+	it.each([
+		['a small clip at its own size', 320, 240, '320px', '240px'],
+		['a large one shrunk to fit', 3200, 2400, '1000px', '750px'],
+	])('shows %s', async (_name, videoWidth, videoHeight, width, height) => {
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+		const video = wrapper.find('video').element as HTMLVideoElement
+		Object.defineProperty(video, 'videoWidth', { value: videoWidth, configurable: true })
+		Object.defineProperty(video, 'videoHeight', { value: videoHeight, configurable: true })
+
+		await wrapper.find('video').trigger('loadedmetadata')
+
+		expect(video.style.width).toBe(width)
+		expect(video.style.height).toBe(height)
+	})
+
 	// Plyr labels its own controls in English unless it is handed these
 	it('hands plyr the translated control labels', async () => {
 		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })

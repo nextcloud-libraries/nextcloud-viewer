@@ -74,13 +74,22 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	 */
 	function doneLoading() {
 		playable = true
-		// The speed menu is built from numbers plyr formats itself, which its
-		// i18n does not reach, so those are relabelled once the controls exist
+		relabelSpeed()
+		emit('loaded')
+	}
+
+	/**
+	 * Relabel the speed menu in the user's locale.
+	 *
+	 * It is built from numbers plyr formats itself, which its i18n does not
+	 * reach: once the controls exist, and again after every change of speed,
+	 * as plyr writes the chosen one back as it formats it (`1.5×` in German).
+	 */
+	function relabelSpeed() {
 		const root = (forAudio ? audio : video).value?.closest('.plyr')
 		if (root) {
 			localizeSpeedLabels(root)
 		}
-		emit('loaded')
 	}
 
 	/**
@@ -164,12 +173,15 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	// What plyr says about its own full screen, rather than a count of clicks
 	// on the button: the user also leaves full screen with Escape or the
 	// browser's own control, and a count is then one behind for good, leaving
-	// the header hidden on a page that is not full screen any more.
+	// the header hidden on a page that is not full screen any more. And its
+	// changes of speed, which put back the label in plyr's own formatting.
 	watch(player, (instance, previous) => {
 		previous?.off('enterfullscreen', onEnterFullscreen)
 		previous?.off('exitfullscreen', onExitFullscreen)
+		previous?.off('ratechange', relabelSpeed)
 		instance?.on('enterfullscreen', onEnterFullscreen)
 		instance?.on('exitfullscreen', onExitFullscreen)
+		instance?.on('ratechange', relabelSpeed)
 	}, { immediate: true })
 
 	// Stable handler references so listeners can be removed again and are never

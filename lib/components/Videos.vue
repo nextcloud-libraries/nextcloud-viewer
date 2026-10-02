@@ -104,7 +104,9 @@ function updateVideoSize() {
 	const heightRatio = props.maxHeight / videoHeight
 	const widthRatio = props.maxWidth / videoWidth
 
-	const ratio = Math.min(heightRatio, widthRatio)
+	// Shrunk to fit, never blown up past its own size: a small clip stays
+	// sharp at the size it was made at
+	const ratio = Math.min(1, heightRatio, widthRatio)
 	height.value = Math.floor(videoHeight * ratio)
 	width.value = Math.floor(videoWidth * ratio)
 }
