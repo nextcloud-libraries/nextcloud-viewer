@@ -321,6 +321,7 @@ The full handler shape (see the `IHandler` interface):
 | `group`         | `string`                              | no       | Group used to combine handlers when opening a folder               |
 | `preload`       | `(node: File) => Promise<void>`       | no       | Preload data for neighbouring files                                |
 | `theme`         | `'dark' \| 'light' \| 'default'`      | no       | Viewer modal theme                                                 |
+| `canCompare`    | `boolean`                             | no       | Comparing two versions is worth offering, see `canCompare(node)`   |
 | `supportsEndToEndEncryption` | `boolean`                | no       | Whether the handler supports end-to-end encrypted files            |
 
 Gotchas:
@@ -453,7 +454,7 @@ instead, and the viewer works with `@nextcloud/files` nodes rather than the
 | `OCA.Viewer.mimetypesCompare.includes(node.mime)` | `canView(node)`                                                |
 | `OCA.Viewer.availableHandlers`                    | `getHandlers()`, or `canView(node)` to test one file           |
 | `OCA.Viewer.registerHandler({ component })`       | `registerHandler({ tagName })`, see above                      |
-| `canCompare: true` on a handler                   | nothing, any handler can be compared                           |
+| `canCompare: true` on a handler                   | the same, and `canCompare(node)` to decide whether to offer it |
 | `\OCP\Util::addScript` for the registration        | `\OCP\Util::addInitScript`                                      |
 | A listener for `OCA\Viewer\Event\LoadViewer`       | a listener for `BeforeTemplateRenderedEvent`, see the [tutorial](#4-load-it-on-every-page) |
 | Dispatching `OCA\Viewer\Event\LoadViewer`          | nothing, the viewer is on every page already                   |

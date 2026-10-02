@@ -75,6 +75,14 @@ export interface IHandler {
 	canEdit?: boolean
 
 	/**
+	 * Whether comparing two versions of a file side by side is worth offering
+	 * for this handler's files. It is a hint for callers deciding whether to
+	 * offer it at all (see `canCompare()`): `getViewer().compare()` shows any
+	 * pair either way.
+	 */
+	canCompare?: boolean
+
+	/**
 	 * Whether this handler works with end-to-end encrypted files.
 	 *
 	 * End-to-end encrypted files are decrypted when fetched from their
@@ -101,6 +109,24 @@ const ENCRYPTED_ATTRIBUTE = 'e2ee-is-encrypted'
  */
 export function canView(nodes: INode | INode[]): boolean {
 	return countEnabledHandlers(Array.isArray(nodes) ? nodes : [nodes], 1)
+}
+
+/**
+ * Whether comparing two versions of a file is worth offering.
+ *
+ * For a caller deciding whether to show a "Compare" action, like the
+ * versions tab of the Files sidebar: the file has to be viewable, and the
+ * handler the viewer would open it with has to say so with `canCompare`.
+ *
+ * @param node - The file to compare versions of
+ */
+export function canCompare(node: INode): boolean {
+	if (!canView(node)) {
+		return false
+	}
+	// The one the viewer would show it with: the first to take it
+	const handler = [...getHandlers().values()].find((candidate) => isHandlerEnabled(candidate, [node as IFile]))
+	return handler?.canCompare === true
 }
 
 /**

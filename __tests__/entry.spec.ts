@@ -53,6 +53,7 @@ describe('importing @nextcloud/viewer', () => {
 
 		expect(Object.keys(entry).sort()).toEqual([
 			'Viewer',
+			'canCompare',
 			'canView',
 			'getHandlers',
 			'getViewer',
