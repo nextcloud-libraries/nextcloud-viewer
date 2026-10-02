@@ -55,6 +55,12 @@ export function registerAudioHandler() {
 
 		group: 'media',
 
+		// Ready to play when the user steps to it, as the old viewer had it
+		preload: async (node) => {
+			const { preloadNeighbourMetadata } = await import('../utils/neighbours.ts')
+			await preloadNeighbourMetadata(node)
+		},
+
 		enabled: (nodes) => {
 			if (nodes.length === 0) {
 				return false

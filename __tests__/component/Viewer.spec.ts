@@ -410,8 +410,9 @@ describe('Viewer preload', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(preload).toHaveBeenCalledTimes(2)
-		expect(preload).toHaveBeenCalledWith(f1)
-		expect(preload).toHaveBeenCalledWith(f3)
+		// With the space they will be shown in, which a preview's size depends on
+		expect(preload).toHaveBeenCalledWith(f1, { width: expect.any(Number), height: expect.any(Number) })
+		expect(preload).toHaveBeenCalledWith(f3, { width: expect.any(Number), height: expect.any(Number) })
 	})
 
 	it('still opens the file when a neighbour preload throws instead of rejecting', async () => {
@@ -1093,5 +1094,23 @@ describe('nodes from another copy of Vue', () => {
 		await emitModal('next')
 		await wrapper.vm.$nextTick()
 		expect(modalName()).toBe('b.jpg')
+	})
+})
+
+describe('a neighbour changed elsewhere', () => {
+	it('is shown from its new node when the user steps to it', async () => {
+		const { vm, wrapper, modalName, emitModal } = mountViewer([imageHandler()])
+		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+
+		const renamed = makeFile({ id: f2.fileid, basename: 'holiday.jpg', mime: 'image/jpeg' })
+		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
+		updated(renamed)
+		await emitModal('next')
+		await wrapper.vm.$nextTick()
+
+		expect(modalName()).toBe('holiday.jpg')
 	})
 })
