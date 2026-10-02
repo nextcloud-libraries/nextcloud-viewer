@@ -18,7 +18,7 @@
 		:enableSlideshow="!isComparing && (hasPrevious || hasNext)"
 		:hasNext="!isComparing && hasNext"
 		:hasPrevious="!isComparing && hasPrevious"
-		:inlineActions="(offerRotate ? 1 : 0) + (offerEdit ? 1 : 0)"
+		:inlineActions="inlineActions"
 		:lightBackdrop="lightBackdrop"
 		:name="modalName"
 		:show="!!currentFile || !!errorString"
@@ -67,7 +67,7 @@
 
 			<!-- Open sidebar for the current file -->
 			<NcActionButton
-				v-if="!isSidebarShown && !!currentFile && canOpenSidebar"
+				v-if="offerSidebar"
 				closeAfterClick
 				@click="showSidebar">
 				<template #icon>
@@ -414,6 +414,7 @@ const shown = computed(() => !loading.value && !errorString.value)
 // Neither while comparing: the turn would go to one side of the pair only
 const offerRotate = computed(() => canRotate.value && shown.value && !editing.value && !isComparing.value)
 const offerEdit = computed(() => canEdit.value && shown.value && !editing.value)
+
 // What the opener asked for, or nothing at all: every read of this falls
 // back to the default of that one option, and the service fills in the rest
 // for a caller that passes no options (see defaultViewerOptions).
@@ -429,6 +430,16 @@ const closeCallbacks = new Set<() => void>()
 // The sidebar resolves a file by its dav source, so it can only be offered
 // for a file the Files app can find there.
 const canOpenSidebar = computed(() => currentOptions.value.enableSidebar !== false)
+// Offered for a file shown beside no sidebar yet
+const offerSidebar = computed(() => !isSidebarShown.value && currentFile.value !== undefined && canOpenSidebar.value)
+
+// The header actions shown as buttons rather than in the menu, which are the
+// first ones: rotate and edit where offered, then full screen and the
+// sidebar, which are about the viewer rather than the file. On a phone the
+// header has no room for them, and full screen is the screen already
+const inlineActions = computed(() => (offerRotate.value ? 1 : 0)
+	+ (offerEdit.value ? 1 : 0)
+	+ (isMobile.value ? 0 : 1 + (offerSidebar.value ? 1 : 0)))
 
 // Files actions rendered in the viewer menu (download, delete, …), linked to
 // the Files actions and run with the view/folder forwarded by the opener.

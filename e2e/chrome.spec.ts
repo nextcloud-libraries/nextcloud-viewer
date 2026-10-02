@@ -26,14 +26,13 @@ test.describe('Page title', () => {
 })
 
 test.describe('Full screen', () => {
-	test('is offered in the menu', async ({ page }) => {
+	test('is a button in the header, next to the sidebar', async ({ page }) => {
 		const viewer = new ViewerPage(page)
 		await viewer.open('photo.jpg')
 		await viewer.waitForOpen()
 
-		// It is a menu entry rather than an inline action: only the edit
-		// button sits in the header
-		await viewer.container.getByRole('button', { name: 'Actions' }).click()
-		await expect(page.getByRole('menuitem', { name: 'Full screen' })).toBeVisible()
+		// About the viewer rather than the file, so out of the menu
+		await expect(viewer.container.getByRole('button', { name: 'Full screen' })).toBeVisible()
+		await expect(viewer.container.getByRole('button', { name: 'Open sidebar' })).toBeVisible()
 	})
 })

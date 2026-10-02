@@ -1114,3 +1114,46 @@ describe('a neighbour changed elsewhere', () => {
 		expect(modalName()).toBe('holiday.jpg')
 	})
 })
+
+describe('the header actions shown as buttons', () => {
+	afterEach(() => {
+		Object.defineProperty(document.documentElement, 'clientWidth', { value: 1280, configurable: true })
+		window.dispatchEvent(new Event('resize'))
+	})
+
+	// Full screen and the sidebar are about the viewer rather than the file,
+	// and were one click further away than they need be, in the menu
+	it('are full screen and the sidebar, after rotate and edit where offered', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([makeHandler({ ...imageHandler(), canEdit: true })])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+
+		// Rotate, edit, full screen, open sidebar
+		expect(modalProps().inlineActions).toBe(4)
+		expect(wrapper.findAll('.nc-action-button-stub').slice(0, 4).map((button) => button.text()))
+			.toEqual(['Rotate left', 'Edit', 'Full screen', 'Open sidebar'])
+	})
+
+	it('leave out the sidebar where it is not offered', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/png' })
+		await vm.open([file], file, { enableSidebar: false })
+		await wrapper.vm.$nextTick()
+
+		expect(modalProps().inlineActions).toBe(1)
+	})
+
+	it('are only the file\'s own on a phone, where the header has no room', async () => {
+		Object.defineProperty(document.documentElement, 'clientWidth', { value: 400, configurable: true })
+		window.dispatchEvent(new Event('resize'))
+		const { vm, wrapper, modalProps } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/png' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		expect(modalProps().inlineActions).toBe(0)
+	})
+})

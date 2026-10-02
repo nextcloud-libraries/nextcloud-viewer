@@ -37,6 +37,7 @@ export const NcModalStub = defineComponent({
 		slideshowPaused: { type: Boolean, default: false },
 		slideshowRunning: { type: Boolean, default: false },
 		lightBackdrop: { type: Boolean, default: false },
+		inlineActions: { type: Number, default: 0 },
 	},
 	emits: ['next', 'previous', 'close', 'update:slideshowRunning'],
 	template: `
