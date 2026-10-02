@@ -826,6 +826,79 @@ describe('rotating and editing', () => {
 	})
 })
 
+describe('what the image editor is offered on', () => {
+	function editableImage() {
+		return makeHandler({ ...imageHandler(), canEdit: true })
+	}
+
+	/**
+	 * Open a file and let it show, then say whether Edit is offered.
+	 *
+	 * @param file - The file to open
+	 */
+	async function offersEditOn(file: ReturnType<typeof makeFile>) {
+		const { vm, wrapper } = mountViewer([editableImage()])
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		return wrapper.findAll('.nc-action-button-stub').some((button) => button.text() === 'Edit')
+	}
+
+	afterEach(() => {
+		delete (window as { _nc_initial_state?: unknown })._nc_initial_state
+		Object.defineProperty(document.documentElement, 'clientWidth', { value: 1280, configurable: true })
+		window.dispatchEvent(new Event('resize'))
+	})
+
+	it.each(['image/jpeg', 'image/png', 'image/webp'])('is %s, which it writes back as it came', async (mime) => {
+		expect(await offersEditOn(makeFile({ mime }))).toBe(true)
+	})
+
+	// Saved as PNG under the old name: a flattened animation, or PNG bytes
+	// in a file that says it is something else. HEIC is not even readable.
+	it.each(['image/gif', 'image/svg+xml', 'image/bmp', 'image/avif', 'image/heic'])('is not %s, which it would rewrite as PNG', async (mime) => {
+		expect(await offersEditOn(makeFile({ mime }))).toBe(false)
+	})
+
+	it('is not a file from a share that forbids downloading', async () => {
+		const file = makeFile({
+			mime: 'image/jpeg',
+			attributes: { 'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]) },
+		})
+		expect(await offersEditOn(file)).toBe(false)
+	})
+
+	it('is not a file on a phone, where the editor does not fit', async () => {
+		Object.defineProperty(document.documentElement, 'clientWidth', { value: 400, configurable: true })
+		window.dispatchEvent(new Event('resize'))
+		expect(await offersEditOn(makeFile({ mime: 'image/jpeg' }))).toBe(false)
+	})
+
+	it('is nothing where the admin turned off features that are not accessible', async () => {
+		(window as { _nc_initial_state?: Map<string, unknown> })._nc_initial_state = new Map([
+			['#initial-state-core-config', { 'enable_non-accessible_features': false }],
+		])
+		expect(await offersEditOn(makeFile({ mime: 'image/jpeg' }))).toBe(false)
+	})
+
+	it('is not a pair of files being compared, and neither is a turn', async () => {
+		const { vm, wrapper } = mountViewer([editableImage()])
+		const before = makeFile({ basename: 'before.jpg', mime: 'image/jpeg' })
+		const after = makeFile({ basename: 'after.jpg', mime: 'image/jpeg' })
+		await vm.compare(before, after)
+		await wrapper.vm.$nextTick()
+		for (const element of wrapper.findAll('oca-viewer-image')) {
+			element.element.dispatchEvent(new CustomEvent('loaded'))
+		}
+		await wrapper.vm.$nextTick()
+
+		const labels = wrapper.findAll('.nc-action-button-stub').map((button) => button.text())
+		expect(labels).not.toContain('Edit')
+		expect(labels).not.toContain('Rotate left')
+	})
+})
+
 describe('versions of one file', () => {
 	it('shows the current file again after one of its versions', async () => {
 		const { vm, wrapper } = mountViewer([imageHandler()])

@@ -230,6 +230,8 @@ import type { ViewerAPI, ViewerOptions } from '../viewer.ts'
 import { showError } from '@nextcloud/dialogs'
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { FileType, Permission } from '@nextcloud/files'
+import { loadState } from '@nextcloud/initial-state'
+import { useIsMobile } from '@nextcloud/vue/composables/useIsMobile'
 import debounce from 'debounce'
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, triggerRef, useTemplateRef, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
@@ -355,15 +357,47 @@ function handlerFor(file: IFile): IHandler | undefined {
 	return getHandlerForFile(file)
 }
 
+// Comparison context (compare API)
+const comparisonFile = ref<IFile>()
+const comparisonHandler = ref<IHandler>()
+const isComparing = computed(() => !!comparisonFile.value)
+
+/**
+ * The formats the image editor writes back as they came. Anything else would
+ * be saved as PNG under its old name: an animated GIF flattened, an SVG or a
+ * HEIC holding PNG bytes. Some it could not even read, as browsers do not
+ * decode HEIC or TIFF.
+ */
+const EDITABLE_MIMES = ['image/jpeg', 'image/png', 'image/webp']
+
+const isMobile = useIsMobile()
+
+// Admins can turn off what is not usable with assistive technology, which
+// the image editor is not
+const nonAccessibleFeatures = loadState<Record<string, unknown>>('core', 'config', {})['enable_non-accessible_features'] !== false
+
 /**
  * Whether the viewer offers to edit the current file.
  *
- * Both halves matter: the handler has to be able to edit its own file type,
- * and the file has to be one this user may write. Offering it on a file that
- * cannot be written means an edit that only fails on save.
+ * The handler has to edit its own file type, and the editor has to write the
+ * format back as it came. The file has to be one this user may write and
+ * download: offering it on a file that cannot be written means an edit that
+ * only fails on save, and on one that may not be downloaded an editor with
+ * nothing to load. Not while comparing two files, nor on a phone, where the
+ * editor does not fit, nor where an admin turned off features that are not
+ * accessible.
  */
-const canEdit = computed(() => currentHandler.value?.canEdit === true
-	&& ((currentFile.value?.permissions ?? Permission.NONE) & Permission.UPDATE) !== 0)
+const canEdit = computed(() => {
+	const file = currentFile.value
+	return currentHandler.value?.canEdit === true
+		&& file !== undefined
+		&& EDITABLE_MIMES.includes(file.mime ?? '')
+		&& ((file.permissions ?? Permission.NONE) & Permission.UPDATE) !== 0
+		&& canDownload(file)
+		&& !isComparing.value
+		&& !isMobile.value
+		&& nonAccessibleFeatures
+})
 
 // Turning the picture on screen, written back to the file shortly after.
 // The update a write announces is ours, and the turn is already on screen,
@@ -377,7 +411,8 @@ const { canRotate, rotateLeft, turns } = useRotation(currentFile, (node) => {
 // Rotating or editing a picture the user cannot see yet, or that failed to
 // show, would write changes to it blind
 const shown = computed(() => !loading.value && !errorString.value)
-const offerRotate = computed(() => canRotate.value && shown.value && !editing.value)
+// Neither while comparing: the turn would go to one side of the pair only
+const offerRotate = computed(() => canRotate.value && shown.value && !editing.value && !isComparing.value)
 const offerEdit = computed(() => canEdit.value && shown.value && !editing.value)
 // What the opener asked for, or nothing at all: every read of this falls
 // back to the default of that one option, and the service fills in the rest
@@ -394,11 +429,6 @@ const closeCallbacks = new Set<() => void>()
 // The sidebar resolves a file by its dav source, so it can only be offered
 // for a file the Files app can find there.
 const canOpenSidebar = computed(() => currentOptions.value.enableSidebar !== false)
-
-// Comparison context (compare API)
-const comparisonFile = ref<IFile>()
-const comparisonHandler = ref<IHandler>()
-const isComparing = computed(() => !!comparisonFile.value)
 
 // Files actions rendered in the viewer menu (download, delete, …), linked to
 // the Files actions and run with the view/folder forwarded by the opener.
