@@ -81,11 +81,11 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
 import { useViewerProps } from '../composables/useViewerProps.ts'
 import { logger } from '../services/logger.ts'
-import { preloadMedia, preloadPreview } from '../services/mediaPreloader.ts'
+import { preloadImage, preloadMedia, preloadPreview } from '../services/mediaPreloader.ts'
 import { canDownload } from '../utils/canDownload.ts'
 import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromFileId } from '../utils/livePhotoUtils.ts'
-import { getPreviewIfAny } from '../utils/previewUtils.ts'
+import { getLargestPreview, getPreviewIfAny } from '../utils/previewUtils.ts'
 
 defineOptions({
 	name: 'ViewerImages',
@@ -123,6 +123,36 @@ const loaded = ref(false)
 
 const height = ref(0)
 const width = ref(0)
+
+/**
+ * How far in a picture zooms, at the least: as far as it always did,
+ * whatever its resolution.
+ */
+const MIN_ZOOM_LIMIT = 5
+/**
+ * How many screen pixels one pixel of the picture may grow to. Past its
+ * native resolution there is nothing more to see, but text and line art
+ * are still easier to read a few times bigger.
+ */
+const PIXEL_ZOOM_LIMIT = 4
+
+// Whether what is shown is the server's preview, which a sharper one can
+// replace, rather than the file itself or a preview an app chose
+const shownFromPreview = ref(false)
+// The intrinsic width of the most detailed version of the picture shown
+const nativeWidth = ref(0)
+// The sharper preview fetched for zooming in, once it is on screen
+let detailSource: string | null = null
+let detailRequested = false
+let detailController: AbortController | null = null
+
+/**
+ * The furthest the picture zooms: a few screen pixels for each of its own,
+ * once its resolution is known, and never less than it always could.
+ */
+const zoomLimit = computed(() => width.value > 0
+	? Math.max(MIN_ZOOM_LIMIT, PIXEL_ZOOM_LIMIT * nativeWidth.value / width.value)
+	: MIN_ZOOM_LIMIT)
 
 // Computed properties
 const mime = computed(() => props.file.mime)
@@ -220,9 +250,14 @@ function showOwnedUrl(url: string): void {
 // two files can be shown under one name and it is the source that says
 // which bytes to fetch.
 watch(() => props.file.source, () => {
+	forgetDetail()
 	load()
 })
-watch(data, () => {
+watch(data, (source) => {
+	// The same picture, sharper: it is already on screen and loaded
+	if (source !== null && source === detailSource) {
+		return
+	}
 	loaded.value = false
 	catchUpIfLoaded()
 })
@@ -261,6 +296,7 @@ async function loadData() {
 	const controller = new AbortController()
 	inFlight = { controller, source: props.file.source }
 	const { signal } = controller
+	shownFromPreview.value = false
 	// A client-side source (e.g. a just-edited image) is shown as-is, no fetch.
 	if (props.localSource) {
 		data.value = props.localSource
@@ -283,9 +319,11 @@ async function loadData() {
 		// that may not is refused at the source too, so its preview is the
 		// only thing left to ask for, and only with a header an element
 		// cannot set on its own request.
-		showOwnedUrl(canDownload(props.file)
+		const allowed = canDownload(props.file)
+		showOwnedUrl(allowed
 			? await preloadMedia(props.file, signal)
 			: await preloadPreview(previewPath.value, signal))
+		shownFromPreview.value = !allowed && hasPreview.value && !previewUrl.value
 		return
 	}
 
@@ -302,6 +340,7 @@ async function loadData() {
 	}
 
 	data.value = previewPath.value
+	shownFromPreview.value = hasPreview.value && !previewUrl.value
 }
 
 /**
@@ -325,7 +364,80 @@ async function catchUpIfLoaded() {
  */
 function onDoneLoading() {
 	loaded.value = true
+	nativeWidth.value = Math.max(nativeWidth.value, image.value?.naturalWidth ?? 0)
+	// The same picture, sharper, in the box it already fills: refitted from
+	// its own size, rounding could move it by a pixel under the user's zoom
+	if (data.value !== null && data.value === detailSource) {
+		return
+	}
 	updateImageSize()
+}
+
+/**
+ * Fetch the most detailed preview of the picture, the first time it is
+ * zoomed into, and show it once it has arrived.
+ *
+ * The preview shown first is sized to the screen, so zooming into it only
+ * ever enlarges its pixels. Fetched on the first zoom rather than with the
+ * picture: rendering a large preview is work for the server, and most
+ * pictures are looked at without zooming at all.
+ */
+async function fetchDetail() {
+	if (detailRequested || !shownFromPreview.value) {
+		return
+	}
+	const url = getLargestPreview(props.file)
+	if (url === undefined) {
+		return
+	}
+	detailRequested = true
+	const controller = new AbortController()
+	detailController = controller
+	const { signal } = controller
+	// An object URL made here and not shown holds its blob until revoked
+	let unshown: string | null = null
+	try {
+		// A share that forbids downloading answers a preview only to the
+		// header the viewer sends, which an element cannot set itself
+		const source = canDownload(props.file) ? url : await preloadPreview(url, signal)
+		unshown = source === url ? null : source
+		const detailWidth = await preloadImage(source, signal)
+		if (signal.aborted) {
+			return
+		}
+		// The server never renders past the original, so this is as much
+		// as there is: the zoom may go that far even when it shows nothing new
+		nativeWidth.value = Math.max(nativeWidth.value, detailWidth)
+		if (detailWidth <= (image.value?.naturalWidth ?? 0)) {
+			return
+		}
+		detailSource = source
+		if (unshown === null) {
+			data.value = source
+		} else {
+			showOwnedUrl(source)
+			unshown = null
+		}
+	} catch (error) {
+		if (!signal.aborted) {
+			logger.debug(`Could not fetch a sharper preview of ${filename.value}`, { error })
+		}
+	} finally {
+		if (unshown !== null) {
+			URL.revokeObjectURL(unshown)
+		}
+	}
+}
+
+/**
+ * Drop the sharper preview of the file shown before.
+ */
+function forgetDetail() {
+	detailController?.abort()
+	detailController = null
+	detailSource = null
+	detailRequested = false
+	nativeWidth.value = 0
 }
 
 // The viewer hears 'loaded' as a DOM event on the custom element, and an
@@ -377,6 +489,7 @@ watch(turns, () => {
 
 onUnmounted(() => {
 	inFlight?.controller.abort()
+	detailController?.abort()
 	if (ownedUrl !== null) {
 		URL.revokeObjectURL(ownedUrl)
 		ownedUrl = null
@@ -437,6 +550,9 @@ function updateZoomAndShift(stableX: number, stableY: number, newZoomRatio: numb
 	const newShiftY = shiftY.value - scrollPercY * growY
 	updateShift(newShiftX, newShiftY, newZoomRatio)
 	zoomRatio.value = newZoomRatio
+	if (newZoomRatio > 1) {
+		fetchDetail()
+	}
 }
 
 /**
@@ -460,7 +576,7 @@ function distanceBetweenTouches(): number {
 function updateZoom(event: WheelEvent) {
 	const isZoomIn = event.deltaY < 0
 	const newZoomRatio = isZoomIn
-		? Math.min(zoomRatio.value * 1.1, 5) // prevent too big zoom
+		? Math.min(zoomRatio.value * 1.1, zoomLimit.value)
 		: Math.max(zoomRatio.value / 1.1, 1) // prevent too small zoom
 
 	// do not continue, img is back to its original state
@@ -578,8 +694,8 @@ function pointerMove(event: PointerEvent) {
 		// Calculate current distance between touches
 		const newDistance = distanceBetweenTouches()
 
-		// Calculate new zoom ratio - keep it between 1 and 5
-		const newZoomRatio = Math.min(Math.max(pinchStartZoomRatio.value * (newDistance / pinchDistance.value), 1), 5)
+		// Calculate new zoom ratio, between the fitted picture and the zoom limit
+		const newZoomRatio = Math.min(Math.max(pinchStartZoomRatio.value * (newDistance / pinchDistance.value), 1), zoomLimit.value)
 
 		// Calculate "stable" point - in the middle between touches
 		const t0 = pointerCache.value[0]
@@ -602,6 +718,7 @@ function onDblclick() {
 		resetZoom()
 	} else {
 		zoomRatio.value = 1.3
+		fetchDetail()
 	}
 }
 

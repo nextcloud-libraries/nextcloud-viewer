@@ -44,3 +44,27 @@ export async function preloadPreview(url: string, signal?: AbortSignal): Promise
 	})
 	return URL.createObjectURL(response.data as Blob)
 }
+
+/**
+ * Load and decode an image in the background, so an element shown it next
+ * paints it at once rather than going blank, or stalling a frame or two
+ * on a large picture, while it arrives.
+ *
+ * @param url the image URL to load
+ * @param signal aborts the load when the viewer moves to another file
+ * @return the image's intrinsic width
+ */
+export function preloadImage(url: string, signal?: AbortSignal): Promise<number> {
+	return new Promise((resolve, reject) => {
+		const image = new Image()
+		signal?.addEventListener('abort', () => {
+			image.src = ''
+			reject(signal.reason)
+		}, { once: true })
+		image.src = url
+		image.decode().then(
+			() => resolve(image.naturalWidth),
+			() => reject(new Error(`Could not load ${url}`)),
+		)
+	})
+}

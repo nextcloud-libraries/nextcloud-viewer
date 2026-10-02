@@ -11,7 +11,7 @@ import {
 	findLivePhotoPeerFromFileId,
 	findLivePhotoPeerFromName,
 } from '../lib/utils/livePhotoUtils.ts'
-import { getPreviewIfAny } from '../lib/utils/previewUtils.ts'
+import { getLargestPreview, getPreviewIfAny } from '../lib/utils/previewUtils.ts'
 import { makeFile } from './factories.ts'
 
 // generateUrl echoes the given path so we can assert on the built query string.
@@ -128,6 +128,20 @@ describe('previewUtils.getPreviewIfAny', () => {
 		const file = makeFile({ basename: 'a#b c?.jpg', attributes: { hasPreview: false } })
 		expect(getPreviewIfAny(file)).toBe(file.encodedSource)
 		expect(getPreviewIfAny(file)).not.toContain('#')
+	})
+
+	// The server caps it at the original and at its own preview limit, so
+	// this asks for whatever most it will give, whatever the screen is
+	it('asks for the largest preview past the size of the display', () => {
+		const url = getLargestPreview(makeFileWithAttributes({ hasPreview: true }))
+		expect(url).toContain('/core/preview?')
+		expect(url).toContain('x=8192')
+		expect(url).toContain('y=8192')
+	})
+
+	it('has no larger preview for a file without one, or with one an app chose', () => {
+		expect(getLargestPreview(makeFileWithAttributes({ hasPreview: false }))).toBeUndefined()
+		expect(getLargestPreview(makeFileWithAttributes({ previewUrl: '/direct/preview.png', hasPreview: true }))).toBeUndefined()
 	})
 })
 

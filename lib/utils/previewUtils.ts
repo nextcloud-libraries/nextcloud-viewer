@@ -25,6 +25,16 @@ interface AvailableSpace {
 const SIZE_STEP = 256
 
 /**
+ * The size asked for when the user zooms in for detail.
+ *
+ * The server renders no preview larger than the original, nor than its own
+ * `preview_max_x`/`preview_max_y` (4096 by default), so this gets the most
+ * detail it will give. The ceiling is for a server allowed more, as a
+ * bitmap past this many pixels is more than a browser handles comfortably.
+ */
+const LARGEST_PREVIEW = 8192
+
+/**
  * The pixel size to ask a preview for.
  *
  * As many pixels as the space it has to fill, and never more than the
@@ -64,6 +74,34 @@ export function getPreviewIfAny(file: IFile, available?: AvailableSpace): string
 	}
 
 	const { x, y } = previewSize(available)
+	// Encoded: this is handed to a media element as its `src`, and a name
+	// holding a `#` or a `?` would otherwise cut the URL short.
+	return serverPreview(file, x, y) ?? file.encodedSource
+}
+
+/**
+ * The most detailed preview the server will render of a file, to zoom into.
+ *
+ * Nothing for a file without a server preview, or with one an app chose
+ * (`previewUrl`), whose size is not ours to change.
+ *
+ * @param file - The file to resolve a preview URL for
+ */
+export function getLargestPreview(file: IFile): string | undefined {
+	if (file.attributes.previewUrl) {
+		return undefined
+	}
+	return serverPreview(file, LARGEST_PREVIEW, LARGEST_PREVIEW)
+}
+
+/**
+ * The URL of a server preview of a file, at most this many pixels on each side.
+ *
+ * @param file - The file to resolve a preview URL for
+ * @param x - The most pixels wide
+ * @param y - The most pixels high
+ */
+function serverPreview(file: IFile, x: number, y: number): string | undefined {
 	const searchParams = `fileId=${file.fileid}`
 		+ `&x=${x}`
 		+ `&y=${y}`
@@ -81,8 +119,5 @@ export function getPreviewIfAny(file: IFile, available?: AvailableSpace): string
 		}
 		return generateUrl(`/core/preview?${searchParams}`)
 	}
-
-	// Encoded: this is handed to a media element as its `src`, and a name
-	// holding a `#` or a `?` would otherwise cut the URL short.
-	return file.encodedSource
+	return undefined
 }

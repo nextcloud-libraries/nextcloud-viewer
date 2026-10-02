@@ -1,3 +1,4 @@
+import type { VueWrapper } from '@vue/test-utils'
 import type { Mock } from 'vitest'
 /**
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
@@ -15,6 +16,7 @@ import { makeFile } from '../factories.ts'
 vi.mock('../../lib/services/mediaPreloader.ts', () => ({
 	preloadMedia: vi.fn(async () => 'blob:mock-preloaded-media'),
 	preloadPreview: vi.fn(async () => 'blob:mock-preloaded-preview'),
+	preloadImage: vi.fn(async () => 0),
 }))
 
 // An svg is read and sanitized rather than handed to the element, so the
@@ -94,10 +96,11 @@ import Images from '../../lib/components/Images.vue'
 import Videos from '../../lib/components/Videos.vue'
 import { usePlyrPlayer } from '../../lib/composables/usePlyrPlayer.ts'
 import { logger } from '../../lib/services/logger.ts'
-import { preloadMedia, preloadPreview } from '../../lib/services/mediaPreloader.ts'
+import { preloadImage, preloadMedia, preloadPreview } from '../../lib/services/mediaPreloader.ts'
 
 const preloadMediaMock = vi.mocked(preloadMedia)
 const preloadPreviewMock = vi.mocked(preloadPreview)
+const preloadImageMock = vi.mocked(preloadImage)
 
 /**
  * Build the full ViewerProps set with sensible defaults for a mounted media component.
@@ -131,6 +134,7 @@ function mountImages(overrides: Partial<ViewerProps> = {}) {
 beforeEach(() => {
 	preloadMediaMock.mockClear()
 	preloadPreviewMock.mockClear()
+	preloadImageMock.mockReset()
 })
 
 describe('Images.vue', () => {
@@ -652,6 +656,131 @@ describe('Audios.vue (smoke)', () => {
 		await flushPromises()
 
 		expect(wrapper.find('audio').exists()).toBe(true)
+	})
+})
+
+describe('zooming into a picture', () => {
+	/**
+	 * Mount a picture shown from a 1000 pixel preview that fills the
+	 * viewer, the way a screen-sized preview does.
+	 *
+	 * @param attributes - The file's dav attributes
+	 */
+	async function mountPreviewed(attributes: Record<string, unknown> = { hasPreview: true }) {
+		const file = makeFile({ basename: 'comic.jpg', attributes })
+		const wrapper = mountImages({ file, files: [file] })
+		await flushPromises()
+		const image = wrapper.find('img').element as HTMLImageElement
+		Object.defineProperty(image, 'naturalWidth', { value: 1000, configurable: true })
+		Object.defineProperty(image, 'naturalHeight', { value: 1000, configurable: true })
+		await wrapper.find('img').trigger('load')
+		return { wrapper, file }
+	}
+
+	/**
+	 * Zoom in with the wheel, one notch at a time.
+	 *
+	 * @param wrapper - The mounted picture
+	 * @param notches - How many notches
+	 */
+	async function zoomIn(wrapper: VueWrapper, notches: number) {
+		for (let notch = 0; notch < notches; notch++) {
+			wrapper.find('img').element.dispatchEvent(new WheelEvent('wheel', { deltaY: -1, bubbles: true, cancelable: true }))
+			await flushPromises()
+		}
+	}
+
+	/** The width the picture is drawn at, in pixels */
+	const drawnWidth = (wrapper: VueWrapper) => Number.parseInt((wrapper.find('img').element as HTMLImageElement).style.width)
+
+	it('asks for its most detailed preview the first time it is zoomed into, and shows it', async () => {
+		preloadImageMock.mockResolvedValue(4000)
+		const { wrapper } = await mountPreviewed()
+		expect(preloadImageMock).not.toHaveBeenCalled()
+
+		await zoomIn(wrapper, 3)
+
+		expect(preloadImageMock).toHaveBeenCalledOnce()
+		const [url] = preloadImageMock.mock.calls[0]!
+		expect(url).toContain('x=8192')
+		expect(url).toContain('y=8192')
+		expect(wrapper.find('img').attributes('src')).toBe(url)
+	})
+
+	it('stays the size it was drawn at when the sharper one replaces it', async () => {
+		preloadImageMock.mockResolvedValue(4001)
+		const { wrapper } = await mountPreviewed()
+		await zoomIn(wrapper, 3)
+		const drawn = (wrapper.find('img').element as HTMLImageElement).style.cssText
+
+		// Not quite the same proportions once rounded: refitted from these,
+		// the picture would come out a pixel shorter under the user's zoom
+		const image = wrapper.find('img').element as HTMLImageElement
+		Object.defineProperty(image, 'naturalWidth', { value: 4001, configurable: true })
+		Object.defineProperty(image, 'naturalHeight', { value: 3999, configurable: true })
+		await wrapper.find('img').trigger('load')
+
+		expect(image.style.cssText).toBe(drawn)
+		expect(wrapper.emitted('loaded')).toHaveLength(1)
+	})
+
+	it('zooms in until a pixel of the picture is four on screen', async () => {
+		preloadImageMock.mockResolvedValue(4000)
+		const { wrapper } = await mountPreviewed()
+
+		await zoomIn(wrapper, 40)
+
+		// 4000 pixels across shown 1000 wide: 4 times to reach them, 16 to
+		// make each of them four
+		expect(drawnWidth(wrapper)).toBe(16000)
+	})
+
+	it('stops at five times for a picture the preview already shows in full', async () => {
+		// The server renders nothing past the original
+		preloadImageMock.mockResolvedValue(1000)
+		const { wrapper } = await mountPreviewed()
+		const preview = wrapper.find('img').attributes('src')
+
+		await zoomIn(wrapper, 40)
+
+		expect(drawnWidth(wrapper)).toBe(5000)
+		expect(wrapper.find('img').attributes('src')).toBe(preview)
+	})
+
+	it('keeps the picture it has when the sharper one does not come', async () => {
+		preloadImageMock.mockRejectedValue(new Error('Could not load'))
+		const { wrapper } = await mountPreviewed()
+		const preview = wrapper.find('img').attributes('src')
+
+		await zoomIn(wrapper, 40)
+
+		expect(wrapper.find('img').attributes('src')).toBe(preview)
+		expect(drawnWidth(wrapper)).toBe(5000)
+		expect(wrapper.emitted('errored')).toBeUndefined()
+	})
+
+	it('asks with the preview header on a share that forbids downloading', async () => {
+		preloadPreviewMock.mockResolvedValue('blob:detail')
+		preloadImageMock.mockResolvedValue(4000)
+		const { wrapper } = await mountPreviewed({
+			hasPreview: true,
+			'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]),
+		})
+
+		await zoomIn(wrapper, 1)
+
+		const [url] = preloadPreviewMock.mock.calls.at(-1)!
+		expect(url).toContain('x=8192')
+		expect(preloadImageMock).toHaveBeenCalledWith('blob:detail', expect.any(AbortSignal))
+		expect(wrapper.find('img').attributes('src')).toBe('blob:detail')
+	})
+
+	it('asks for nothing more when it shows the file itself', async () => {
+		const { wrapper } = await mountPreviewed({})
+
+		await zoomIn(wrapper, 3)
+
+		expect(preloadImageMock).not.toHaveBeenCalled()
 	})
 })
 
