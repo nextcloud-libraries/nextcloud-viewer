@@ -95,8 +95,10 @@ describe('what a handler is given', () => {
 		renders.length = 0
 		const f1 = makeFile({ mime: 'image/jpeg' })
 		const { vm, wrapper } = mountViewer([probeHandler()])
+		// In the page while closed, only hidden, as NcAppSidebar does
 		const sidebar = document.createElement('aside')
 		sidebar.className = 'app-sidebar'
+		sidebar.style.display = 'none'
 		sidebar.getBoundingClientRect = () => ({ left: 800 }) as DOMRect
 		document.body.append(sidebar)
 		const sidebarEvent = (event: string) => vi.mocked(subscribe).mock.calls.find((call) => call[0] === event)![1] as () => void
@@ -107,10 +109,12 @@ describe('what a handler is given', () => {
 			await flushPromises()
 			expect(lastRender().isSidebarShown).toBe(false)
 
+			sidebar.style.display = ''
 			sidebarEvent('files:sidebar:opened')()
 			await wrapper.vm.$nextTick()
 			expect(lastRender().isSidebarShown).toBe(true)
 
+			sidebar.style.display = 'none'
 			sidebarEvent('files:sidebar:closed')()
 			await wrapper.vm.$nextTick()
 			expect(lastRender().isSidebarShown).toBe(false)

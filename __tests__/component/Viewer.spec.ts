@@ -470,7 +470,9 @@ describe('Viewer compare()', () => {
 })
 
 describe('Viewer sidebar', () => {
-	it('emits viewer:sidebar:open with the current file source when the action is clicked', async () => {
+	// The whole node: the Files app looks it up by its source, and fetches it
+	// by its path when it is not in its store
+	it('emits viewer:sidebar:open with the current file when the action is clicked', async () => {
 		const { vm, wrapper } = mountViewer([imageHandler()])
 		const f1 = makeFile({ basename: 'a.jpg', mime: 'image/jpeg' })
 		await vm.open([f1], f1)
@@ -481,7 +483,7 @@ describe('Viewer sidebar', () => {
 			.find((button) => button.text().includes('Open sidebar'))
 		await sidebar!.trigger('click')
 
-		expect(emit).toHaveBeenCalledWith('viewer:sidebar:open', { source: f1.source })
+		expect(emit).toHaveBeenCalledWith('viewer:sidebar:open', f1)
 	})
 
 	/**
@@ -576,6 +578,74 @@ describe('Viewer sidebar', () => {
 		expect(observed()).toContain(sidebar)
 	})
 
+	// The Files app only announces its sidebar when it opens: open before
+	// the viewer, or restored from the URL with it, it is never announced
+	it('makes room for a sidebar already open, and has it show the file', async () => {
+		addSidebar(700)
+		const { vm, modalStyle } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+
+		await vm.open([file], file)
+		await flushPromises()
+
+		expect(modalStyle()).toContain('width: 700px')
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(true)
+		expect(emit).toHaveBeenCalledWith('viewer:sidebar:open', file)
+	})
+
+	it('has an open sidebar follow the file shown', async () => {
+		addSidebar(700)
+		const { vm, emitModal } = mountViewer([imageHandler()])
+		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
+		await vm.open([f1, f2], f1)
+		await flushPromises()
+
+		await emitModal('next')
+		await flushPromises()
+
+		expect(emit).toHaveBeenLastCalledWith('viewer:sidebar:open', f2)
+	})
+
+	it('leaves a closed sidebar closed', async () => {
+		const sidebar = addSidebar(700)
+		sidebar.style.display = 'none'
+		const { vm, modalStyle } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+
+		await vm.open([file], file)
+		await flushPromises()
+
+		expect(modalStyle() ?? '').not.toContain('width')
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
+		expect(emit).not.toHaveBeenCalledWith('viewer:sidebar:open', expect.anything())
+	})
+
+	it('makes room for an open sidebar it may not drive, without driving it', async () => {
+		addSidebar(700)
+		const { vm, modalStyle } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+
+		await vm.open([file], file, { enableSidebar: false })
+		await flushPromises()
+
+		expect(modalStyle()).toContain('width: 700px')
+		expect(emit).not.toHaveBeenCalledWith('viewer:sidebar:open', expect.anything())
+	})
+
+	it('gives the sidebar back its place on the page once closed', async () => {
+		addSidebar(700)
+		const { vm } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await flushPromises()
+
+		vm.close()
+		await flushPromises()
+
+		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
+	})
+
 	it('stops watching the sidebar once it is closed', async () => {
 		const sidebar = addSidebar(700)
 		const { vm, wrapper, modalStyle, unobserved } = mountViewer([imageHandler()])
@@ -583,11 +653,12 @@ describe('Viewer sidebar', () => {
 		await vm.open([file], file)
 		await wrapper.vm.$nextTick()
 		sidebarHandler('files:sidebar:opened')()
+		sidebar.style.display = 'none'
 		sidebarHandler('files:sidebar:closed')()
 		await wrapper.vm.$nextTick()
 
 		expect(unobserved()).toContain(sidebar)
-		expect(modalStyle()).toBeUndefined()
+		expect(modalStyle() ?? '').not.toContain('width')
 	})
 })
 
@@ -993,5 +1064,34 @@ describe('loading more files', () => {
 		await flushPromises()
 
 		expect(loadMore).not.toHaveBeenCalled()
+	})
+})
+
+describe('nodes from another copy of Vue', () => {
+	/**
+	 * A node as the Files app hands it over when it runs another copy of Vue
+	 * than the viewer: wrapped in that copy's reactivity, which answers for
+	 * its raw object the way any copy of Vue does.
+	 *
+	 * @param file - The node to wrap
+	 */
+	function fromAnotherVue<T extends object>(file: T): T {
+		return new Proxy(file, {
+			get: (target, key, receiver) => key === '__v_raw' ? target : Reflect.get(target, key, receiver),
+		})
+	}
+
+	it('still finds the file shown in its list, and steps on from it', async () => {
+		const { vm, wrapper, modalProps, modalName, emitModal } = mountViewer([imageHandler()])
+		const a = fromAnotherVue(makeFile({ basename: 'a.jpg', mime: 'image/jpeg' }))
+		const b = fromAnotherVue(makeFile({ basename: 'b.jpg', mime: 'image/jpeg' }))
+
+		await vm.open([a, b], a)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().hasNext).toBe(true)
+
+		await emitModal('next')
+		await wrapper.vm.$nextTick()
+		expect(modalName()).toBe('b.jpg')
 	})
 })

@@ -662,9 +662,24 @@ const modalName = computed(() => {
 	return currentFile.value?.displayname || ''
 })
 
+/**
+ * Where the file shown is in the list the viewer steps through.
+ *
+ * By source rather than by identity: setting `currentFile` unwraps a node to
+ * its raw object and wraps it in this copy's own reactivity, while the list
+ * keeps the proxies it was handed. When the opener runs another copy of Vue
+ * than the elected viewer, as the Files app does next to a viewer bundled
+ * by an app, the two are different objects for the same node, and the
+ * viewer found nothing to step to.
+ */
+function indexOfCurrent(): number {
+	const source = currentFile.value?.source
+	return source === undefined ? -1 : currentFileList.value.findIndex((file) => file.source === source)
+}
+
 const hasNext = computed(() => {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	if (currentIndex === -1) {
 		return false
 	}
@@ -685,7 +700,7 @@ const hasNext = computed(() => {
 })
 const hasPrevious = computed(() => {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	if (currentIndex === -1) {
 		return false
 	}
@@ -912,7 +927,7 @@ function onOpen() {
  * Uses the handler's optional preload function.
  */
 function preloadNeighbors() {
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	if (currentIndex === -1) {
 		return
 	}
@@ -1059,7 +1074,7 @@ function close() {
  */
 async function next() {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	let newIndex = currentIndex + 1
 
 	if (currentIndex === -1) {
@@ -1103,7 +1118,7 @@ let loadingMore = false
  */
 async function loadMoreAtEnd() {
 	const loadMore = currentOptions.value.loadMore
-	const isLast = currentFile.value !== undefined && currentFileList.value.at(-1) === currentFile.value
+	const isLast = currentFile.value !== undefined && indexOfCurrent() === currentFileList.value.length - 1
 	if (loadMore === undefined || !isLast || loadingMore) {
 		return
 	}
@@ -1126,7 +1141,7 @@ watch(currentFile, loadMoreAtEnd)
  */
 function previous() {
 	const canLoop = currentOptions.value.canLoop ?? true
-	const currentIndex = currentFileList.value.findIndex((f) => f === currentFile.value)
+	const currentIndex = indexOfCurrent()
 	let newIndex = currentIndex - 1
 
 	if (currentIndex === -1) {
@@ -1172,7 +1187,7 @@ function goTo(fileid: number) {
 		logger.warn('Cannot go to file, not in the current list', { fileid })
 		return
 	}
-	if (newFile === currentFile.value) {
+	if (newFile.source === currentFile.value?.source) {
 		return
 	}
 
@@ -1189,9 +1204,29 @@ function showSidebar() {
 		return
 	}
 
-	// The Files app sidebar store subscribes to this event and opens
-	// the sidebar for the file identified by its dav source.
-	emit('viewer:sidebar:open', { source: currentFile.value.source })
+	followInSidebar(currentFile.value)
+}
+
+/**
+ * Have the Files sidebar show a file.
+ *
+ * The whole node: the Files app finds it in its store by its source, and
+ * fetches it by its path when it is not there, as for a file opened from
+ * search, recent files or another app.
+ *
+ * @param file - The file to show in the sidebar
+ */
+function followInSidebar(file: IFile) {
+	emit('viewer:sidebar:open', file)
+}
+
+/**
+ * The Files sidebar, if it is on screen. It stays in the page while closed,
+ * only hidden.
+ */
+function visibleSidebar(): Element | null {
+	const sidebar = document.querySelector('aside.app-sidebar')
+	return sidebar !== null && getComputedStyle(sidebar).display !== 'none' ? sidebar : null
 }
 
 /** The sidebar the viewer is making room for, while it is open. */
@@ -1239,6 +1274,23 @@ function onAppSidebarClose() {
 	trapElements.value = []
 	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
 }
+
+// The Files app only says so when its sidebar opens. One already open when
+// the viewer opens, details and file restored from the URL together, or the
+// user paging with it open, have to be noticed here: room made for it, and
+// the file shown passed on, rather than the viewer lying under a sidebar
+// that still shows the file it was opened on
+watch(currentFile, (file) => {
+	if (file === undefined || visibleSidebar() === null) {
+		return
+	}
+	if (sidebarElement === null) {
+		onAppSidebarOpen()
+	}
+	if (canOpenSidebar.value) {
+		followInSidebar(file)
+	}
+}, { flush: 'post' })
 
 /**
  * The modal root, or null while the viewer shows no file.
