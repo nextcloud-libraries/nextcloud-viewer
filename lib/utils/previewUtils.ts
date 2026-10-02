@@ -115,7 +115,9 @@ function serverPreview(file: IFile, x: number, y: number): string | undefined {
 	if (file.attributes.hasPreview) {
 		// TODO: find a nicer standard way of doing this?
 		if (isPublicShare()) {
-			return generateUrl(`/apps/files_sharing/publicpreview/${getSharingToken()}?file=${encodePath(file.basename)}&${searchParams}`)
+			// The path inside the share: a folder share finds the file by
+			// it, and its name alone only matches one at the top of it
+			return generateUrl(`/apps/files_sharing/publicpreview/${getSharingToken()}?file=${encodePath(file.path)}&${searchParams}`)
 		}
 		return generateUrl(`/core/preview?${searchParams}`)
 	}
