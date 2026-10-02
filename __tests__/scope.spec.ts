@@ -89,6 +89,20 @@ describe('electing an implementation', () => {
 		expect(loaded).toEqual(['2.2.0'])
 	})
 
+	it('announces the winner', async () => {
+		const debug = vi.spyOn(logger, 'debug')
+		registerImplementation({ version: '2.1.0', load: async () => {} })
+		registerImplementation({ version: '2.2.0', load: async () => {} })
+
+		await loadImplementation()
+
+		expect(debug).toHaveBeenCalledWith(
+			'🗳️ The votes are in: 2.2.0 is elected viewer of this page (2 running: 2.1.0, 2.2.0)',
+			{ versions: ['2.1.0', '2.2.0'] },
+		)
+		debug.mockRestore()
+	})
+
 	it('loads once however many callers ask', async () => {
 		const load = vi.fn().mockResolvedValue(undefined)
 		registerImplementation({ version: '2.0.0', load })

@@ -162,6 +162,8 @@ export function loadImplementation(): Promise<unknown> {
 		if (best === undefined) {
 			throw new Error('No viewer implementation is available on this page')
 		}
+		const versions = scope.candidates.map((candidate) => candidate.version)
+		logger.debug(`🗳️ The votes are in: ${best.version} is elected viewer of this page (${versions.length} running: ${versions.join(', ')})`, { versions })
 		return best.load()
 	})().catch((error) => {
 		// A load that failed is not the answer for the rest of the page's
