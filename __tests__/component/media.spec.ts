@@ -693,3 +693,82 @@ describe('an image from a share that forbids downloading', () => {
 		expect(error.message).toBe(message)
 	})
 })
+
+describe('media that cannot be played', () => {
+	/**
+	 * Fire the element's error, the way the browser reports one.
+	 *
+	 * @param element - The media element
+	 * @param code - The MediaError code the element reports
+	 */
+	async function fail(element: HTMLMediaElement, code: number) {
+		Object.defineProperty(element, 'error', { value: { code }, configurable: true })
+		element.dispatchEvent(new Event('error'))
+		await flushPromises()
+	}
+
+	for (const [name, component, tag, mime] of [
+		['a video', Videos, 'video', 'video/mp4'],
+		['a sound', Audios, 'audio', 'audio/mpeg'],
+	] as const) {
+		describe(name, () => {
+			it('shows the bytes fetched by hand once the element fails', async () => {
+				preloadMediaMock.mockResolvedValueOnce('blob:fetched')
+				const file = makeFile({ basename: 'media.bin', mime })
+				const wrapper = mount(component, { props: makeProps({ file, files: [file] }) })
+				await flushPromises()
+
+				await fail(wrapper.find(tag).element as HTMLMediaElement, 4)
+
+				// The fallback used to land on a source the element did not
+				// bind, and the spinner stayed up for good (nextcloud/viewer#2930)
+				expect(wrapper.find(tag).attributes('src')).toBe('blob:fetched')
+				expect(wrapper.emitted('errored')).toBeUndefined()
+			})
+
+			it('says the browser cannot play the format when the fetched bytes fail too', async () => {
+				preloadMediaMock.mockResolvedValueOnce('blob:fetched')
+				const file = makeFile({ basename: 'media.bin', mime })
+				const wrapper = mount(component, { props: makeProps({ file, files: [file] }) })
+				await flushPromises()
+
+				await fail(wrapper.find(tag).element as HTMLMediaElement, 4)
+				await fail(wrapper.find(tag).element as HTMLMediaElement, 4)
+
+				const [[error]] = wrapper.emitted('errored') as [[Error]]
+				expect(error.message).toBe('Your browser cannot play this file format.')
+			})
+
+			it('keeps its source when playback fails after the element loaded', async () => {
+				const file = makeFile({ basename: 'media.bin', mime })
+				const wrapper = mount(component, { props: makeProps({ file, files: [file] }) })
+				await flushPromises()
+				const element = wrapper.find(tag).element as HTMLMediaElement
+				const source = element.getAttribute('src')
+				element.dispatchEvent(new Event('canplay'))
+
+				// What Firefox reports with no audio device to play on
+				// (MEDIA_ERR_DECODE, "OnMediaSinkAudioError")
+				await fail(element, 3)
+
+				expect(preloadMediaMock).not.toHaveBeenCalled()
+				expect(wrapper.find(tag).attributes('src')).toBe(source)
+				expect(wrapper.emitted('errored')).toBeUndefined()
+			})
+
+			it('keeps the plain message for any other failure', async () => {
+				preloadMediaMock.mockResolvedValueOnce('blob:fetched')
+				const file = makeFile({ basename: 'media.bin', mime })
+				const wrapper = mount(component, { props: makeProps({ file, files: [file] }) })
+				await flushPromises()
+
+				await fail(wrapper.find(tag).element as HTMLMediaElement, 4)
+				// MEDIA_ERR_NETWORK
+				await fail(wrapper.find(tag).element as HTMLMediaElement, 2)
+
+				const [[error]] = wrapper.emitted('errored') as [[Error]]
+				expect(error.message).toBe('Failed to load media.')
+			})
+		})
+	}
+})
