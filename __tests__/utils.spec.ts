@@ -114,7 +114,22 @@ describe('previewUtils.getPreviewIfAny', () => {
 		const file = makeFileWithAttributes({ hasPreview: true })
 		const url = getPreviewIfAny(file)
 		expect(url).toContain('/apps/files_sharing/publicpreview/share-token')
-		expect(url).toContain('file=photo.jpg')
+		expect(url).toContain('file=/photo.jpg')
+	})
+
+	// A folder share looks the file up by its path inside the share, and
+	// answers a 404 for the name of a file that is not at its top
+	it('names a file in a subfolder of a public share by its path in the share', () => {
+		vi.mocked(isPublicShare).mockReturnValue(true)
+		const file = new File({
+			id: 98,
+			source: 'https://cloud.example.com/public.php/dav/files/share-token/holiday/beach day.jpg',
+			root: '/files/share-token',
+			mime: 'image/jpeg',
+			owner: null,
+			attributes: { hasPreview: true },
+		})
+		expect(getPreviewIfAny(file)).toContain('file=/holiday/beach%20day.jpg&')
 	})
 
 	it('falls back to the file source when there is no preview', () => {
