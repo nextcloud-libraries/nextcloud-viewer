@@ -513,6 +513,70 @@ describe('Videos.vue (smoke)', () => {
 	})
 })
 
+describe('a video that has played to the end', () => {
+	// What a user puts beside a film to show before and after it plays:
+	// a picture of the same name in the same folder
+	async function mountWithPoster() {
+		const movie = makeFile({ basename: 'trailer.webm', mime: 'video/webm' })
+		const poster = makeFile({ basename: 'trailer.jpg', mime: 'image/jpeg' })
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, poster] }) })
+		await flushPromises()
+		const video = wrapper.find('video').element as HTMLVideoElement
+		video.load = vi.fn()
+		const player = wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player as { stop: Mock }
+		return { wrapper, video, player, poster }
+	}
+
+	it('shows the picture of the same name beside it as its poster', async () => {
+		const { wrapper, poster } = await mountWithPoster()
+
+		expect(wrapper.find('video').attributes('poster')).toBe(poster.encodedSource)
+	})
+
+	it('goes back to its poster without downloading the video again', async () => {
+		const { wrapper, video, player, poster } = await mountWithPoster()
+
+		await wrapper.find('video').trigger('ended')
+
+		// Stopped at the start is what puts plyr's poster back over it, and
+		// the bytes already buffered stay for the next play
+		expect(player.stop).toHaveBeenCalledOnce()
+		expect(video.load).not.toHaveBeenCalled()
+		expect(wrapper.find('video').attributes('poster')).toBe(poster.encodedSource)
+	})
+
+	it('says so, rather than throw, when it has neither a player nor a media element', () => {
+		const error = vi.spyOn(logger, 'error').mockImplementation(() => {})
+		let donePlaying!: () => void
+		const Host = defineComponent({
+			setup() {
+				const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+				// No template refs, so neither plyr nor the element ever arrive
+				donePlaying = usePlyrPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never).donePlaying
+				return () => h('div')
+			},
+		})
+		mount(Host)
+
+		expect(() => donePlaying()).not.toThrow()
+		expect(error).toHaveBeenCalledWith('Media element not found in donePlaying')
+		error.mockRestore()
+	})
+
+	it('rewinds by itself when there is no player yet', async () => {
+		const { wrapper, video } = await mountWithPoster()
+		wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player = undefined
+		video.pause = vi.fn()
+		video.currentTime = 12
+
+		await wrapper.find('video').trigger('ended')
+
+		expect(video.pause).toHaveBeenCalledOnce()
+		expect(video.currentTime).toBe(0)
+		expect(video.load).not.toHaveBeenCalled()
+	})
+})
+
 describe('media reporting that it plays', () => {
 	it.each([
 		['Videos', Videos, 'video', 'clip.mp4', 'video/mp4'],

@@ -67,6 +67,9 @@ const fixtures: Fixture[] = [
 	{ name: 'sound.m4a', mime: 'audio/mp4' },
 	{ name: 'sound.aac', mime: 'audio/aac' },
 	{ name: 'clip.webm', mime: 'video/webm' },
+	// A video with a picture of the same name beside it, its poster
+	{ name: 'trailer.webm', mime: 'video/webm' },
+	{ name: 'trailer.jpg', mime: 'image/jpeg' },
 ]
 
 /** Where the fixtures are served from, shaped like a WebDAV path */

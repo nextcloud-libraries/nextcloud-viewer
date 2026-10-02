@@ -40,7 +40,10 @@ test.describe('Audio', () => {
 				const state = await audio.evaluate((element: HTMLAudioElement) => ({
 					readyState: element.readyState,
 					duration: element.duration,
-					error: element.error?.code ?? null,
+					// Firefox on a machine with no audio device, as on CI, fails
+					// to play any sound it has loaded, and says so: that is the
+					// machine, not the file, and the viewer leaves it be
+					error: element.error?.message.includes('OnMediaSinkAudioError') ? null : (element.error?.code ?? null),
 				}))
 				expect(state.error).toBeNull()
 				expect(state.readyState).toBeGreaterThan(0)

@@ -84,19 +84,27 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	}
 
 	/**
-	 * Reset video after playing to show poster again
+	 * Go back to the start once the media has played, showing its poster again.
+	 *
+	 * Rewound and paused rather than reloaded: plyr shows the poster over a
+	 * player stopped at the start, and what the element already buffered is
+	 * kept. Reloading it brought the poster back too, but every replay then
+	 * downloaded the whole file again (nextcloud/viewer#2585).
 	 */
 	function donePlaying() {
-		const media = forAudio ? audio : video
-		// Should not happen™
-		if (!media.value) {
-			logger.error('Media element not found in donePlaying')
+		if (player.value) {
+			player.value.stop()
 			return
 		}
 
-		// reset and show poster after play
-		media.value.autoplay = false
-		media.value.load()
+		const media = (forAudio ? audio : video).value
+		// Should not happen™
+		if (!media) {
+			logger.error('Media element not found in donePlaying')
+			return
+		}
+		media.pause()
+		media.currentTime = 0
 	}
 
 	/**

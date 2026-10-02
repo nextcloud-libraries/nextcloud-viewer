@@ -33,6 +33,8 @@ const MEDIA = [
 	'sound.m4a',
 	'sound.aac',
 	'clip.webm',
+	'trailer.webm',
+	'trailer.jpg',
 ]
 
 // No group, so the sheet music only pages among itself
