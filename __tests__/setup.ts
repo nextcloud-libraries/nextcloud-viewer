@@ -18,6 +18,11 @@ type NcGlobal = typeof globalThis & {
 URL.createObjectURL ??= () => 'blob:test'
 URL.revokeObjectURL ??= () => {}
 
+// jsdom lays nothing out, so the page is 0 pixels wide, which
+// @nextcloud/vue reads as a phone when its module is evaluated. A desktop
+// window, unless a test narrows it on purpose
+Object.defineProperty(document.documentElement, 'clientWidth', { value: 1280, configurable: true })
+
 // plyr reads it while its module is evaluated
 window.matchMedia ??= (query: string) => ({
 	matches: false,
