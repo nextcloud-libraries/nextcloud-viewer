@@ -825,3 +825,33 @@ describe('rotating and editing', () => {
 		expect(offered(wrapper)).toEqual([])
 	})
 })
+
+describe('versions of one file', () => {
+	it('shows the current file again after one of its versions', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const current = makeFile({ basename: 'a.jpg', mime: 'image/jpeg' })
+		// Every version of a file shares its id, and only its source differs
+		const version = makeFile({ id: current.fileid, basename: '1737542400', mime: 'image/jpeg' })
+		const element = () => wrapper.find('oca-viewer-image')
+		const loaded = async () => {
+			element().element.dispatchEvent(new CustomEvent('loaded'))
+			await wrapper.vm.$nextTick()
+		}
+
+		await vm.open([current], current)
+		await wrapper.vm.$nextTick()
+		await loaded()
+		await vm.open([version], version)
+		await wrapper.vm.$nextTick()
+		const shownVersion = element().element
+		await loaded()
+
+		await vm.open([current], current)
+		await wrapper.vm.$nextTick()
+
+		// A fresh element for the current file, loading it, rather than the
+		// one still showing the version
+		expect(element().element).not.toBe(shownVersion)
+		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+	})
+})

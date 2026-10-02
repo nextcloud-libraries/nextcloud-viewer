@@ -485,6 +485,17 @@ describe('the editing option', () => {
 		expect(localSource()).toBeUndefined()
 	})
 
+	it('does not show them on an older version of the file', async () => {
+		const { vm, file, localSource } = await saveAnEdit()
+		// Every version of a file shares its id, and only its source differs
+		const version = makeFile({ id: file.fileid, basename: '1737542400' })
+
+		await vm.open([version], version)
+		await flushPromises()
+
+		expect(localSource()).toBeUndefined()
+	})
+
 	it('tells the opener whenever editing changes, and once more on close', async () => {
 		const onEditingChange = vi.fn()
 		const { vm, wrapper } = mountViewer([imageHandler({ canEdit: true })])
