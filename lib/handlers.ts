@@ -58,9 +58,13 @@ export interface IHandler {
 	 * opening a file to allow the handler to be faster when navigating.
 	 *
 	 * @param node - The node to preload data for
+	 * @param space - The space the viewer shows files in, in CSS pixels, for
+	 *   a handler whose request depends on it, like a preview's size
+	 * @param space.width - Its width
+	 * @param space.height - Its height
 	 * @return A promise that resolves when the data is preloaded
 	 */
-	preload?: (node: IFile) => Promise<void>
+	preload?: (node: IFile, space?: { width: number, height: number }) => Promise<void>
 
 	/**
 	 * Viewer modal theme (one of 'dark', 'light', 'default')

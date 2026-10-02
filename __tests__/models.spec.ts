@@ -58,6 +58,10 @@ describe('handler groups', () => {
 		// Two versions of a picture side by side show what changed
 		expect(handlerById('images').canCompare).toBe(true)
 		expect(handlerById('videos').canCompare).toBeUndefined()
+		// Ready when the user steps to them, as the old viewer kept them mounted
+		expect(handlerById('images').preload).toBeTypeOf('function')
+		expect(handlerById('videos').preload).toBeTypeOf('function')
+		expect(handlerById('audios').preload).toBeTypeOf('function')
 	})
 })
 

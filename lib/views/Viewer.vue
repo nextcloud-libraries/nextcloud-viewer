@@ -579,6 +579,12 @@ function onNodeDeleted(node: INode) {
  * @param node - The updated node
  */
 function onNodeUpdated(node: INode) {
+	// A neighbour renamed or changed elsewhere is swapped in, or stepping to
+	// it would show it from the node it had when the viewer opened
+	if (node.type === FileType.File && node.fileid !== undefined && node.fileid !== currentFile.value?.fileid) {
+		currentFileList.value = currentFileList.value.map((file) => file.fileid === node.fileid ? node as IFile : file)
+	}
+
 	// The save the viewer did itself is already on screen, from the blob the
 	// editor handed over, so that one update is not worth a refetch. Only
 	// that one: a change from anywhere else supersedes what is shown, and
@@ -944,7 +950,7 @@ function preloadNeighbors() {
 		}
 		// Wrapped so a preload that throws synchronously, or returns no promise,
 		// is a logged failure of the handler and not of the open
-		Promise.resolve().then(() => handler.preload!(node)).catch((error) => {
+		Promise.resolve().then(() => handler.preload!(node, { width: width.value, height: height.value })).catch((error) => {
 			logger.debug('Failed to preload neighbor file', { node, error })
 		})
 	}
