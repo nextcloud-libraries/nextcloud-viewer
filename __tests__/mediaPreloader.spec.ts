@@ -6,9 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const axiosGet = vi.hoisted(() => vi.fn())
 vi.mock('@nextcloud/axios', () => ({ default: { get: axiosGet } }))
-vi.mock('@nextcloud/files/dav', () => ({ getClient: () => ({ getFileContents: vi.fn() }) }))
 
-const { preloadImage, preloadPreview } = await import('../lib/services/mediaPreloader.ts')
+import { makeFile } from './factories.ts'
+
+const { preloadImage, preloadMedia, preloadPreview } = await import('../lib/services/mediaPreloader.ts')
 
 describe('preloadPreview', () => {
 	beforeEach(() => {
@@ -99,5 +100,26 @@ describe('preloadImage', () => {
 		controller.abort(new Error('moved on'))
 
 		await expect(loading).rejects.toThrow('moved on')
+	})
+})
+
+describe('preloadMedia', () => {
+	beforeEach(() => {
+		axiosGet.mockReset()
+		axiosGet.mockResolvedValue({ data: new Blob(['x'], { type: 'video/mp4' }) })
+		vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:media')
+	})
+
+	afterEach(() => {
+		vi.restoreAllMocks()
+	})
+
+	// Its source is already the full URL: the dav client put its own root in
+	// front of it again, and the request never reached the file
+	it('fetches the file from its own URL, as it is', async () => {
+		const file = makeFile({ basename: 'clip #1.mp4', mime: 'video/mp4' })
+
+		expect(await preloadMedia(file)).toBe('blob:media')
+		expect(axiosGet).toHaveBeenCalledWith(file.encodedSource, expect.objectContaining({ responseType: 'blob' }))
 	})
 })
