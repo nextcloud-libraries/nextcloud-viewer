@@ -789,8 +789,16 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 	// the provided file and the list of files
 	if (!file) {
 		file = files[0]
-	} else if (!files.includes(file)) {
-		files = [file, ...files]
+	} else {
+		// By source: a caller that looked the file up on its own, or a
+		// folder listed for it, holds another object for the same file, and
+		// it would have been listed twice
+		const listed = files.find((node) => node.source === file!.source)
+		if (listed) {
+			file = listed
+		} else {
+			files = [file, ...files]
+		}
 	}
 
 	// Last check, we need to have something to open

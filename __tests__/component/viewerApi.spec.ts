@@ -203,6 +203,24 @@ describe('openFolder()', () => {
 		expect(modalProps().hasNext).toBe(false)
 	})
 
+	// A caller that looked the file up on its own, as the OCA.Viewer shim
+	// does by path, holds another object for it than the listing
+	it('opens the listed file for one looked up on its own, rather than listing it twice', async () => {
+		const { vm, modalName, modalProps } = mountViewer([imageHandler()])
+		const a = makeFile({ id: 1, basename: 'a.jpg' })
+		const b = makeFile({ id: 2, basename: 'b.jpg' })
+		folderContent.mockResolvedValueOnce([a, b])
+		const lookedUp = makeFile({ id: 2, basename: 'b.jpg' })
+
+		await vm.openFolder(makeFolder(), lookedUp, { canLoop: false })
+		await flushPromises()
+
+		expect(modalName()).toBe('b.jpg')
+		// Last of two, not first of three
+		expect(modalProps().hasPrevious).toBe(true)
+		expect(modalProps().hasNext).toBe(false)
+	})
+
 	it('opens the first viewable file when none is requested', async () => {
 		const { vm, modalName } = mountViewer([imageHandler()])
 		folderContent.mockResolvedValueOnce([makeFile({ basename: 'only.jpg' })])
