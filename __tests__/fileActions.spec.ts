@@ -118,6 +118,16 @@ describe('registerHandler validation', () => {
 			.toThrow('Handler tagName must not start or end with a hyphen (-)')
 	})
 
+	it('takes a tagName starting with an app id that has an underscore', () => {
+		expect(() => registerHandler(makeHandler({ id: 'pdf', tagName: 'files_pdfviewer-viewer-handler' })))
+			.not.toThrow()
+	})
+
+	it('throws on a tagName with any other character', () => {
+		expect(() => registerHandler(makeHandler({ tagName: 'oca-viewer.pdf' })))
+			.toThrow('Handler tagName must only contain lowercase letters, numbers, underscores (_) and hyphens (-)')
+	})
+
 	it('throws on a tagName ending with a hyphen', () => {
 		expect(() => registerHandler(makeHandler({ tagName: 'oca-viewer-' })))
 			.toThrow('Handler tagName must not start or end with a hyphen (-)')

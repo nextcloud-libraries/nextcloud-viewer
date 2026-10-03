@@ -2,6 +2,8 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import type { IHandler } from '../handlers.ts'
+
 import { logger } from '../services/logger.ts'
 
 /**
@@ -22,4 +24,30 @@ export function defineCustomElementOnce(tagName: string, constructor: CustomElem
 	}
 
 	window.customElements.define(tagName, constructor)
+}
+
+/** The handlers being initialized, by tag, so each one is initialized once however often it is asked for */
+const initializing = new Map<string, Promise<void>>()
+
+/**
+ * Make sure a handler's element is defined, initializing the handler first if it has to.
+ *
+ * Resolves at once for an element that is defined already, or for a
+ * handler without `onInit()`, which defines its element itself. An
+ * `onInit()` that fails is forgotten, so the next open tries again.
+ *
+ * @param handler - The handler whose element is about to be rendered
+ */
+export function initHandlerElement(handler: IHandler): Promise<void> {
+	if (handler.onInit === undefined || window.customElements.get(handler.tagName) !== undefined) {
+		return Promise.resolve()
+	}
+
+	let pending = initializing.get(handler.tagName)
+	if (pending === undefined) {
+		pending = handler.onInit().then(() => window.customElements.whenDefined(handler.tagName)).then(() => undefined)
+		initializing.set(handler.tagName, pending)
+		pending.catch(() => initializing.delete(handler.tagName))
+	}
+	return pending
 }

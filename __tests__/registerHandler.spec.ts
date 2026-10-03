@@ -40,3 +40,13 @@ describe('registering a handler whose id is taken', () => {
 		expect(warn).not.toHaveBeenCalled()
 	})
 })
+
+describe('a handler that defines its element in onInit()', () => {
+	it('is refused when onInit is not a function', () => {
+		expect(() => registerHandler(makeHandler({
+			id: 'not-an-init',
+			tagName: 'oca-viewer-not-an-init',
+			onInit: 'later' as never,
+		}))).toThrow('Handler onInit must be a function if provided')
+	})
+})

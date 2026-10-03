@@ -37,7 +37,19 @@ export interface IHandler {
 	iconSvgInline?: string
 
 	/**
-	 * The custom element tag name to use for this handler.
+	 * The tag name of the custom element that shows the file.
+	 *
+	 * The element must be defined under this name with
+	 * `CustomElementRegistry.define()`, either when the handler is registered
+	 * or within the `onInit` callback (preferred, as it keeps the view out of
+	 * the script that runs on every page). With `onInit`, the viewer waits for
+	 * the element to be defined (`customElements.whenDefined()`) before
+	 * rendering it.
+	 *
+	 * Custom elements share one registry for the whole page, so to avoid name
+	 * clashes the name has to start with your app id (e.g. `your_app`). In
+	 * addition to the custom element naming rules (lowercase, with a hyphen),
+	 * a good name would be `your_app-viewer-handler`.
 	 */
 	tagName: string
 
@@ -68,6 +80,18 @@ export interface IHandler {
 	 * @return A promise that resolves when the data is preloaded
 	 */
 	preload?: (node: IFile, space?: { width: number, height: number }) => Promise<void>
+
+	/**
+	 * Called the first time the viewer needs the element, to define it
+	 * (`customElements.define()` with `tagName`).
+	 *
+	 * The viewer waits for the returned promise and for the element to be
+	 * defined (`customElements.whenDefined()`) before rendering it, so the
+	 * view and everything it imports stay out of the registration script
+	 * that runs on every page. Leave it out when the element is already
+	 * defined by the time the viewer opens.
+	 */
+	onInit?: () => Promise<void>
 
 	/**
 	 * Viewer modal theme (one of 'dark', 'light', 'default')
@@ -365,6 +389,10 @@ function validateHandler(handler: IHandler): void {
 		throw new Error('Handler preload must be a function if provided')
 	}
 
+	if (handler.onInit && typeof handler.onInit !== 'function') {
+		throw new Error('Handler onInit must be a function if provided')
+	}
+
 	if (handler.theme && !['dark', 'light', 'default'].includes(handler.theme)) {
 		throw new Error("Handler theme must be one of 'dark', 'light', 'default' if provided")
 	}
@@ -390,7 +418,7 @@ function validateCustomElementName(tagName: string): void {
 	if (tagName.startsWith('-') || tagName.endsWith('-')) {
 		throw new Error('Handler tagName must not start or end with a hyphen (-)')
 	}
-	if (!/^[a-z][a-z0-9-]*$/.test(tagName)) {
-		throw new Error('Handler tagName must only contain lowercase letters, numbers, and hyphens (-)')
+	if (!/^[a-z][a-z0-9_-]*$/.test(tagName)) {
+		throw new Error('Handler tagName must only contain lowercase letters, numbers, underscores (_) and hyphens (-)')
 	}
 }
