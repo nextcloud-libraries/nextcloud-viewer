@@ -5,17 +5,20 @@
 import type { IFile, IFileAction, INode } from '@nextcloud/files'
 
 import FileSvg from '@mdi/svg/svg/file.svg?raw'
+import MotionPlaySvg from '@mdi/svg/svg/motion-play-outline.svg?raw'
 import OpenInAppSvg from '@mdi/svg/svg/open-in-app.svg?raw'
 import { DefaultType, FileType, getFileActions, Permission, registerFileAction } from '@nextcloud/files'
 import { scope } from './scope.ts'
 import { logger } from './services/logger.ts'
-import { openWithHistory } from './utils/history.ts'
+import { openViewer, openWithHistory } from './utils/history.ts'
 import { t } from './utils/l10n.ts'
 
 /** Default click-to-open action id */
 const ACTION_VIEWER = 'viewer-open'
 /** Parent "Open with …" selector menu id */
 const ACTION_VIEWER_MENU = 'viewer-open-with'
+// Starts with the menu's prefix, so the viewer leaves it out of its own header
+const ACTION_SLIDESHOW = 'viewer-open-slideshow'
 
 export interface IHandler {
 	/**
@@ -190,6 +193,32 @@ function countEnabledHandlers(nodes: INode[], min: number): boolean {
 }
 
 /**
+ * Start a slideshow of the files selected in the Files list, which plays the
+ * videos among them to their end. Only for a selection of two files or more
+ * that can all be viewed: a single file has nothing to step to, and the
+ * viewer could not show the rest.
+ */
+const slideshowAction: IFileAction = {
+	id: ACTION_SLIDESHOW,
+	displayName: () => t('Start slideshow'),
+	iconSvgInline: () => MotionPlaySvg,
+	order: -999,
+
+	enabled: ({ nodes }) => nodes.length > 1 && nodes.every((node) => countEnabledHandlers([node], 1)),
+	// Only ever offered for a selection
+	async exec() {
+		return null
+	},
+	async execBatch({ nodes, view, folder }) {
+		// Not through the Files history: a selection is nothing a URL can
+		// bring back, and putting each file stepped to in the URL has the
+		// Files app open the viewer again on the whole folder
+		openViewer(nodes as IFile[], nodes[0] as IFile, { view, folder, startSlideshow: true })
+		return nodes.map(() => null)
+	},
+}
+
+/**
  * Default action, triggered on file click. Opens the viewer with the first
  * matching handler. Hidden from the actions menu to avoid cluttering it, but
  * it is what makes any viewable file open on a single click, regardless of how
@@ -240,6 +269,18 @@ const openWithViewerAction: IFileAction = {
 export function registerHandler(handler: IHandler): void {
 	validateHandler(handler)
 
+	// The shared actions, each by its own id: a copy of an older version may
+	// have registered the ones it knew of, and a newer one still adds those it
+	// did not. Ahead of the check below, as that copy has usually registered
+	// the default handlers too, which this one then leaves to it.
+	const registeredActions = new Set(getFileActions().map((action) => action.id))
+	for (const action of [defaultViewerAction, openWithViewerAction, slideshowAction]) {
+		if (!registeredActions.has(action.id)) {
+			registerFileAction(action)
+			logger.info('Registered viewer file action', { id: action.id })
+		}
+	}
+
 	scope.handlers ??= new Map<string, IHandler>()
 	const registered = scope.handlers.get(handler.id)
 	if (registered !== undefined) {
@@ -284,15 +325,6 @@ export function registerHandler(handler: IHandler): void {
 			return null
 		},
 	})
-
-	// Register the shared actions only once.
-	const actions = getFileActions()
-	if (!actions.find((action) => action.id === ACTION_VIEWER)) {
-		registerFileAction(defaultViewerAction)
-		registerFileAction(openWithViewerAction)
-
-		logger.info('Registered viewer file actions', { id: ACTION_VIEWER, menu: ACTION_VIEWER_MENU })
-	}
 }
 
 /**

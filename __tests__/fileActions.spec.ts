@@ -241,3 +241,46 @@ describe('per-handler child action', () => {
 		expect(viewer.open).toHaveBeenCalledWith([file], file, { view: VIEW, folder: FOLDER }, undefined)
 	})
 })
+
+describe('the slideshow of a selection', () => {
+	const ACTION_SLIDESHOW = 'viewer-open-slideshow'
+	const images = () => makeHandler({ id: 'images', group: 'media', enabled: (nodes) => nodes.every((node) => node.mime?.startsWith('image/')) })
+
+	it('is offered for a selection of two files or more that can all be viewed', () => {
+		registerHandler(images())
+		const a = makeFile({ mime: 'image/jpeg' })
+		const b = makeFile({ mime: 'image/png' })
+
+		expect(action(ACTION_SLIDESHOW)!.enabled!(ctx([a, b]))).toBe(true)
+		// Nothing to step to
+		expect(action(ACTION_SLIDESHOW)!.enabled!(ctx([a]))).toBe(false)
+		// The viewer could not show the rest
+		expect(action(ACTION_SLIDESHOW)!.enabled!(ctx([a, makeFile({ mime: 'application/zip' })]))).toBe(false)
+		expect(action(ACTION_SLIDESHOW)!.enabled!(ctx([a, makeFolder()]))).toBe(false)
+	})
+
+	// The server's copy may be older, and have registered only the actions
+	// it knew of before this copy's handlers arrive
+	it('is registered next to the actions and handlers an older copy registered', () => {
+		// What an older copy left on the page: the default handlers, and the
+		// actions it knew of
+		registerHandler(images())
+		registered.length = 0
+		registered.push({ id: ACTION_VIEWER } as FileAction, { id: ACTION_VIEWER_MENU } as FileAction)
+
+		registerHandler(images())
+
+		expect(action(ACTION_SLIDESHOW)).toBeDefined()
+		expect(registered.filter((a) => a.id === ACTION_VIEWER)).toHaveLength(1)
+	})
+
+	it('opens the viewer on the selection with the slideshow running', async () => {
+		registerHandler(images())
+		const a = makeFile({ mime: 'image/jpeg' })
+		const b = makeFile({ mime: 'image/png' })
+
+		await action(ACTION_SLIDESHOW)!.execBatch!(ctx([a, b]))
+
+		expect(viewer.open).toHaveBeenCalledWith([a, b], a, expect.objectContaining({ startSlideshow: true }), undefined)
+	})
+})
