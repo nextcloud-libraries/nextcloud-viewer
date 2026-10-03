@@ -1350,6 +1350,27 @@ describe('the viewer\'s own Download and Delete', () => {
 		})
 	})
 
+	it('go full screen on F, and back', async () => {
+		const request = vi.fn(async () => {})
+		const exit = vi.fn(async () => {})
+		document.documentElement.requestFullscreen = request
+		document.exitFullscreen = exit
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+
+		const press = () => document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'f', bubbles: true, cancelable: true }))
+		press()
+		expect(request).toHaveBeenCalledOnce()
+
+		Object.defineProperty(document, 'fullscreenElement', { value: document.documentElement, configurable: true })
+		press()
+		await flushPromises()
+		expect(exit).toHaveBeenCalledOnce()
+		Object.defineProperty(document, 'fullscreenElement', { value: null, configurable: true })
+	})
+
 	it('leave the page alone while nothing is shown', () => {
 		mountViewer([imageHandler()])
 

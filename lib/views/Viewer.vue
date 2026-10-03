@@ -571,6 +571,15 @@ useHotKey('e', (event) => {
 		editing.value = true
 	}
 }, { ctrl: true, allowInModal: true })
+// F for full screen, as the old Gallery had it (nextcloud/viewer#406). A
+// plain key, which useHotKey leaves alone while typing in a field
+useHotKey('f', (event) => {
+	if (currentFile.value === undefined || editing.value) {
+		return
+	}
+	event.preventDefault()
+	toggleFullScreen()
+}, { allowInModal: true })
 
 // The parent action whose submenu is currently open in the menu, if any.
 const openedSubmenu = ref<IFileAction | null>(null)
