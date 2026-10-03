@@ -1157,3 +1157,28 @@ describe('the header actions shown as buttons', () => {
 		expect(modalProps().inlineActions).toBe(0)
 	})
 })
+
+describe('stepping to another file', () => {
+	// A load like opening one: no spinner left the file half loaded on
+	// screen, and a slideshow counted the load against its delay
+	it('waits for it to load, as when opening one', async () => {
+		const { vm, wrapper, emitModal, modalProps } = mountViewer([imageHandler()])
+		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
+		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+
+		await emitModal('next')
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(true)
+		expect(modalProps().slideshowPaused).toBe(true)
+
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
+		expect(wrapper.find('.viewer__loading').exists()).toBe(false)
+		expect(modalProps().slideshowPaused).toBe(false)
+	})
+})

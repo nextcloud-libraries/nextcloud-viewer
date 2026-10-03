@@ -22,7 +22,7 @@
 		:lightBackdrop="lightBackdrop"
 		:name="modalName"
 		:show="!!currentFile || !!errorString"
-		:slideshowPaused="editing || playing"
+		:slideshowPaused="slideshowPaused"
 		:spreadNavigation="true"
 		:style="{ width: isSidebarShown ? `${sidebarPosition}px` : null }"
 		class="viewer__modal"
@@ -415,6 +415,13 @@ const shown = computed(() => !loading.value && !errorString.value)
 const offerRotate = computed(() => canRotate.value && shown.value && !editing.value && !isComparing.value)
 const offerEdit = computed(() => canEdit.value && shown.value && !editing.value)
 
+// The slideshow holds while the file shown is not there yet, rather than
+// counting its loading time against the delay: a video slow to start was
+// skipped before it ever played, and a slow picture shown for less than
+// the delay. It also holds while editing, and while media plays, so a video
+// is watched to its end (nextcloud/viewer#39)
+const slideshowPaused = computed(() => editing.value || playing.value || loading.value)
+
 // What the opener asked for, or nothing at all: every read of this falls
 // back to the default of that one option, and the service fills in the rest
 // for a caller that passes no options (see defaultViewerOptions).
@@ -570,8 +577,7 @@ function onNodeDeleted(node: INode) {
 	// the deleted file was at the end (i.e. fall back to the previous file).
 	const wasLast = index >= currentFileList.value.length
 	const newFile = currentFileList.value[Math.min(index, currentFileList.value.length - 1)] as IFile
-	currentHandler.value = handlerFor(newFile)
-	currentFile.value = newFile
+	showFile(newFile)
 	// Told like any move to another file: the Files app takes the file out
 	// of its URL when it is deleted, and puts the one shown back in from
 	// here, or a reload does not reopen it and closing does not unwind
@@ -678,6 +684,29 @@ const modalName = computed(() => {
 	}
 	return currentFile.value?.displayname || ''
 })
+
+/**
+ * Show another file of the list, and wait for it as for any file opened.
+ *
+ * Stepping to a file is a load like opening one. Without this the file came
+ * up half loaded with no spinner, "Still loading…" never showed, and a
+ * slideshow counted the load against its delay, so a video slow to start was
+ * skipped before it played (nextcloud/viewer#39).
+ *
+ * @param file - The file to show
+ */
+function showFile(file: IFile) {
+	const isShown = file.source === currentFile.value?.source
+	currentHandler.value = handlerFor(file)
+	currentFile.value = file
+	// The same file keeps its element, which says nothing new
+	if (isShown) {
+		return
+	}
+	errorString.value = null
+	loading.value = true
+	pendingLoads.value = 1
+}
 
 /**
  * Where the file shown is in the list the viewer steps through.
@@ -1117,8 +1146,7 @@ async function next() {
 		return
 	}
 
-	currentHandler.value = handlerFor(newFile)
-	currentFile.value = newFile
+	showFile(newFile)
 	currentOptions.value.onNext?.(newFile)
 	preloadNeighbors()
 }
@@ -1184,8 +1212,7 @@ function previous() {
 		return
 	}
 
-	currentHandler.value = handlerFor(newFile)
-	currentFile.value = newFile
+	showFile(newFile)
 	currentOptions.value.onPrev?.(newFile)
 
 	preloadNeighbors()
@@ -1208,8 +1235,7 @@ function goTo(fileid: number) {
 		return
 	}
 
-	currentHandler.value = handlerFor(newFile)
-	currentFile.value = newFile
+	showFile(newFile)
 	preloadNeighbors()
 }
 

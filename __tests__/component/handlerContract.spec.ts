@@ -369,6 +369,10 @@ describe('a handler playing media', () => {
 		await vm.open([f1, f2], f1, { startSlideshow: true })
 		await wrapper.vm.$nextTick()
 		await flushPromises()
+		// Held while the file loads, so loading does not eat the delay
+		expect(modalProps().slideshowPaused).toBe(true)
+		emitFromProbe!('loaded')
+		await wrapper.vm.$nextTick()
 		expect(modalProps().slideshowPaused).toBe(false)
 
 		// What Videos.vue emits as the video plays and ends
@@ -398,6 +402,8 @@ describe('a handler playing media', () => {
 		// The video left with its handler, and nothing on the image plays
 		await emitModal('next')
 		await flushPromises()
+		emitFromProbe!('loaded')
+		await wrapper.vm.$nextTick()
 		expect(modalProps().slideshowPaused).toBe(false)
 	})
 })
