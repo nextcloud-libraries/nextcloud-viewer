@@ -40,10 +40,10 @@ test.describe('Previews', () => {
 		// cannot be downloaded, and serves it when the request says it comes
 		// from the viewer. An element cannot set that header on its own
 		// request, so a refusal here has to be answered by fetching it.
-		const headers: Array<string | undefined> = []
+		const requests: Array<{ fileId: string | null, header: string | undefined }> = []
 		await page.route('**/core/preview*', async (route) => {
 			const header = route.request().headers()['x-nc-preview']
-			headers.push(header)
+			requests.push({ fileId: new URL(route.request().url()).searchParams.get('fileId'), header })
 			if (header !== 'true') {
 				await route.fulfill({ status: 403, contentType: 'text/plain', body: 'Forbidden' })
 				return
@@ -67,8 +67,11 @@ test.describe('Previews', () => {
 			expect(decoded.width).toBeGreaterThan(0)
 		}).toPass({ timeout: 10_000 })
 
-		// Refused once as the element asked, then asked for again with the header
-		expect(headers).toEqual([undefined, 'true'])
+		// Refused once as the element asked, then asked for again with the
+		// header. Only this file's: the viewer also fetches the previews of
+		// the files next to it, ahead of the user stepping to them
+		const restricted = requests.find(({ header }) => header === 'true')?.fileId
+		expect(requests.filter(({ fileId }) => fileId === restricted).map(({ header }) => header)).toEqual([undefined, 'true'])
 	})
 
 	test('loads the file itself when there is no preview', async ({ page }) => {
