@@ -32,7 +32,7 @@ import { t } from './l10n.ts'
  * @param options - The viewer options
  * @param handlerId - Optional handler to force
  */
-function openViewer(contents: IFile[], file: IFile, options: ViewerOptions, handlerId?: string): void {
+export function openViewer(contents: IFile[], file: IFile, options: ViewerOptions, handlerId?: string): void {
 	getViewer().open(contents, file, options, handlerId).catch(async (error) => {
 		logger.error('Could not open the viewer', { error })
 		// Loaded on demand: this is the one path that needs it, and the
