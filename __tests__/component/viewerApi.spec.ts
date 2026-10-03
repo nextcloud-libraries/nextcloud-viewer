@@ -416,6 +416,9 @@ describe('the editing option', () => {
 		await vm.open([file], file, { editing: true })
 		await wrapper.vm.$nextTick()
 
+		// Shown, so nothing but editing could hold the slideshow
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
 		expect(modalProps().slideshowPaused).toBe(false)
 	})
 
@@ -426,6 +429,9 @@ describe('the editing option', () => {
 		await vm.open([file], file, { editing: true })
 		await wrapper.vm.$nextTick()
 
+		// Shown, so nothing but editing could hold the slideshow
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+		await wrapper.vm.$nextTick()
 		expect(modalProps().slideshowPaused).toBe(false)
 	})
 
