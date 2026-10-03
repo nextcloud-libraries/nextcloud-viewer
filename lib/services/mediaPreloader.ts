@@ -6,18 +6,18 @@
 /* eslint-disable jsdoc/require-jsdoc */
 
 import type { IFile } from '@nextcloud/files'
-import type { ResponseDataDetailed, WebDAVClient } from 'webdav'
 
 import axios from '@nextcloud/axios'
-import { getClient } from '@nextcloud/files/dav'
 
-// Manually load a WebDAV media from its filename, then expose the received Blob as an object URL.
+// Manually load a WebDAV media from its source, then expose the received Blob as an object URL.
 // This is needed for E2EE files that will error when loading them directly from the HTML element's src attribute.
 // Can be removed if we ever move the E2EE proxy to a service worker.
+// From its own URL: the dav client prefixes its root to whatever it is
+// given, and a node's source is already the full URL, so the request went
+// to the root twice over and every fallback failed.
 export async function preloadMedia(file: IFile, signal?: AbortSignal): Promise<string> {
-	const client = getClient() as WebDAVClient
-	const response = await client.getFileContents(file.source, { details: true, signal }) as ResponseDataDetailed<ArrayBuffer>
-	return URL.createObjectURL(new Blob([response.data], { type: response.headers['content-type'] }))
+	const response = await axios.get(file.encodedSource, { responseType: 'blob', signal })
+	return URL.createObjectURL(response.data as Blob)
 }
 
 /**
