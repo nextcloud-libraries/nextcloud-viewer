@@ -76,6 +76,29 @@
 				{{ t('Open sidebar') }}
 			</NcActionButton>
 
+			<!-- The viewer's own, for an opener that gives the Files actions
+			     nothing to run in -->
+			<template v-if="!hasFilesContext">
+				<NcActionButton
+					v-if="canDownloadFile"
+					closeAfterClick
+					@click="downloadFile(currentFile!)">
+					<template #icon>
+						<DownloadIcon :size="20" />
+					</template>
+					{{ t('Download') }}
+				</NcActionButton>
+				<NcActionButton
+					v-if="canDeleteFile"
+					closeAfterClick
+					@click="deleteFile(currentFile!)">
+					<template #icon>
+						<TrashCanOutlineIcon :size="20" />
+					</template>
+					{{ t('Delete') }}
+				</NcActionButton>
+			</template>
+
 			<!-- Files actions available for the current file (download, delete, …).
 			     Top-level actions, unless a submenu (e.g. "Set reminder") is open. -->
 			<template v-if="!openedSubmenu">
@@ -229,10 +252,12 @@ import type { ComponentPublicInstance } from 'vue'
 import type { IHandler } from '../handlers.ts'
 import type { ViewerAPI, ViewerOptions } from '../viewer.ts'
 
+import axios from '@nextcloud/axios'
 import { showError } from '@nextcloud/dialogs'
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { FileType, Permission } from '@nextcloud/files'
 import { loadState } from '@nextcloud/initial-state'
+import { useHotKey } from '@nextcloud/vue/composables/useHotKey'
 import { useIsMobile } from '@nextcloud/vue/composables/useIsMobile'
 import debounce from 'debounce'
 import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, triggerRef, useTemplateRef, watch } from 'vue'
@@ -246,11 +271,13 @@ import NcModal from '@nextcloud/vue/components/NcModal'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import ChevronLeft from 'vue-material-design-icons/ChevronLeft.vue'
 import DockRight from 'vue-material-design-icons/DockRight.vue'
+import DownloadIcon from 'vue-material-design-icons/Download.vue'
 import FileAlertOutlineIcon from 'vue-material-design-icons/FileAlertOutline.vue'
 import FullscreenIcon from 'vue-material-design-icons/Fullscreen.vue'
 import FullscreenExitIcon from 'vue-material-design-icons/FullscreenExit.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
 import RotateLeftIcon from 'vue-material-design-icons/RotateLeft.vue'
+import TrashCanOutlineIcon from 'vue-material-design-icons/TrashCanOutline.vue'
 import { useRotation } from '../composables/useRotation.ts'
 import { useViewerActions } from '../composables/useViewerActions.ts'
 import { getHandlers, isHandlerEnabled } from '../handlers.ts'
@@ -501,12 +528,116 @@ watch([currentHandler, comparisonHandler], (handlers) => {
 
 // Files actions rendered in the viewer menu (download, delete, …), linked to
 // the Files actions and run with the view/folder forwarded by the opener.
-const { actions: fileActions, enabledSubmenuActions, isValidMenu, actionLabel, actionIcon, execAction } = useViewerActions(
+const { actions: fileActions, enabledSubmenuActions, hasContext: hasFilesContext, isValidMenu, actionLabel, actionIcon, execAction } = useViewerActions(
 	() => currentFile.value as IFile | undefined,
 	() => currentFileList.value as IFile[],
 	() => currentOptions.value.view as IView | undefined,
 	() => currentOptions.value.folder as IFolder | undefined,
 )
+
+// The Files actions need the view and folder the opener was in, which only
+// the Files app passes. Opened from anywhere else (Photos, Talk, the
+// versions tab, an app's own page), the viewer offers its own Download and
+// Delete, as it always did
+const canDownloadFile = computed(() => currentFile.value !== undefined
+	&& !isComparing.value
+	&& (currentFile.value.permissions & Permission.READ) !== 0
+	&& canDownload(currentFile.value))
+const canDeleteFile = computed(() => currentFile.value !== undefined
+	&& !isComparing.value
+	&& (currentFile.value.permissions & Permission.DELETE) !== 0)
+
+/**
+ * Download a file through the browser.
+ *
+ * @param file - The file shown
+ */
+function downloadFile(file: IFile) {
+	const link = document.createElement('a')
+	link.href = file.encodedSource
+	link.download = file.basename
+	document.body.append(link)
+	link.click()
+	link.remove()
+}
+
+/**
+ * Delete a file. Announced like a deletion from the Files app, which is what
+ * moves the viewer on to the next file, or closes it after the last.
+ *
+ * @param file - The file shown
+ */
+async function deleteFile(file: IFile) {
+	try {
+		await axios.delete(file.encodedSource)
+		emit('files:node:deleted', file)
+	} catch (error) {
+		logger.error('Could not delete the file', { file, error })
+		showError(t('Could not delete "{name}"', { name: file.displayname }))
+	}
+}
+
+/**
+ * The Files action with that id, if the opener gave the Files actions their
+ * context and it is offered for the file shown.
+ *
+ * @param id - The action id, as the Files app registers it
+ */
+function filesAction(id: string): IFileAction | undefined {
+	return hasFilesContext.value ? fileActions.value.find((action) => action.id === id) : undefined
+}
+
+// The old viewer's shortcuts, through the Files actions where the opener
+// gave them their context: they know what the viewer does not, a received
+// share left rather than deleted, the confirmations Files asks for. The
+// viewer's own only where there are none. Registered for the whole page,
+// so they only act, and only keep the browser from saving the page, while
+// a file is shown
+useHotKey('s', (event) => {
+	if (currentFile.value === undefined || editing.value) {
+		return
+	}
+	event.preventDefault()
+	const action = filesAction('download')
+	if (action !== undefined) {
+		execAction(action)
+	} else if (canDownloadFile.value) {
+		downloadFile(currentFile.value)
+	}
+}, { ctrl: true, allowInModal: true })
+useHotKey('Delete', (event) => {
+	if (currentFile.value === undefined || editing.value) {
+		return
+	}
+	const action = filesAction('delete')
+	if (action === undefined && !canDeleteFile.value) {
+		return
+	}
+	event.preventDefault()
+	if (action !== undefined) {
+		execAction(action)
+	} else {
+		deleteFile(currentFile.value)
+	}
+}, { ctrl: true, allowInModal: true })
+useHotKey('e', (event) => {
+	if (currentFile.value === undefined || editing.value) {
+		return
+	}
+	event.preventDefault()
+	if (offerEdit.value) {
+		editing.value = true
+	}
+}, { ctrl: true, allowInModal: true })
+// F for full screen, as the old Gallery had it (nextcloud/viewer#406). A
+// plain key, which useHotKey leaves alone while typing in a field
+useHotKey('f', (event) => {
+	if (currentFile.value === undefined || editing.value) {
+		return
+	}
+	event.preventDefault()
+	toggleFullScreen()
+}, { allowInModal: true })
 
 // The parent action whose submenu is currently open in the menu, if any.
 const openedSubmenu = ref<IFileAction | null>(null)

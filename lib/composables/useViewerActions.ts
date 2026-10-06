@@ -148,5 +148,8 @@ export function useViewerActions(
 		}
 	}
 
-	return { actions, enabledSubmenuActions, isValidMenu, actionLabel, actionIcon, execAction }
+	// Whether the opener gave the Files actions the view and folder they run in
+	const hasContext = computed(() => context.value !== null)
+
+	return { actions, enabledSubmenuActions, hasContext, isValidMenu, actionLabel, actionIcon, execAction }
 }
