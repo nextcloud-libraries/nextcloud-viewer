@@ -6,6 +6,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.16
+
+### Added
+
+- A video shows at its size as soon as that is known, from its server preview,
+  or from the few bytes of an mp4 or mov that hold it, with its poster while it
+  buffers. The slideshow holds until it can play (#114, #104)
+
+### Fixed
+
+- Preloading the next or previous video no longer reads all of it: an mp4
+  with its index at the end had the browser fetch the whole file. Box headers
+  are read to find the index, and a sound's metadata is only read when its
+  index comes first. Nothing is preloaded with data saver on
+  (#114, nextcloud/viewer#2284)
+- The files next to the one shown are preloaded once it has loaded, rather
+  than competing with it (#114)
+- An update of the file shown that carries the version already on screen no
+  longer remounts its element: Text rebuilt its editor on each of its own
+  saves (#119)
+
 ## 2.0.0-beta.15
 
 ### Added
