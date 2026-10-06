@@ -17,6 +17,7 @@ vi.mock('../../lib/services/mediaPreloader.ts', () => ({
 	preloadMedia: vi.fn(async () => 'blob:mock-preloaded-media'),
 	preloadPreview: vi.fn(async () => 'blob:mock-preloaded-preview'),
 	preloadImage: vi.fn(async () => 0),
+	preloadImageSize: vi.fn(async () => ({ width: 640, height: 360 })),
 }))
 
 // An svg is read and sanitized rather than handed to the element, so the
@@ -607,6 +608,86 @@ describe('a video that has played to the end', () => {
 		expect(video.pause).toHaveBeenCalledOnce()
 		expect(video.currentTime).toBe(0)
 		expect(video.load).not.toHaveBeenCalled()
+	})
+})
+
+describe('a video before it can play', () => {
+	/**
+	 * Mount a video, with a preview of its own unless told otherwise.
+	 *
+	 * @param options - The file's attributes, and the files beside it
+	 * @param options.hasPreview - Whether the server has a preview of it
+	 * @param options.beside - Other files in the same list
+	 */
+	async function mountVideo({ hasPreview = true, beside = [] as ReturnType<typeof makeFile>[] } = {}) {
+		const movie = makeFile({ basename: 'clip.mp4', mime: 'video/mp4', attributes: { hasPreview } })
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, ...beside] }) })
+		await flushPromises()
+		return wrapper
+	}
+
+	it('shows its own preview as its poster when nothing is beside it', async () => {
+		const wrapper = await mountVideo()
+
+		expect(wrapper.find('video').attributes('poster')).toContain('/core/preview')
+	})
+
+	it('shows the picture of the same name rather than its preview', async () => {
+		const picture = makeFile({ basename: 'clip.jpg', mime: 'image/jpeg' })
+		const wrapper = await mountVideo({ beside: [picture] })
+
+		expect(wrapper.find('video').attributes('poster')).toBe(picture.encodedSource)
+	})
+
+	// A slow video showed nothing but the spinner until it could play, and
+	// the slideshow skipped it with its poster alone (nextcloud/viewer#39)
+	it('shows the player at the size of its preview, and holds the slideshow until it can play', async () => {
+		const wrapper = await mountVideo()
+
+		expect(wrapper.emitted('loaded')).toHaveLength(1)
+		expect(wrapper.emitted('update:playing')).toEqual([[true]])
+		expect(wrapper.find('video').attributes('style')).toContain('width: 640px')
+		expect(wrapper.find('video').attributes('style')).toContain('height: 360px')
+
+		// Ready, but paused: a browser that refuses to autoplay does not
+		// hold the slideshow for good
+		await wrapper.find('video').trigger('canplay')
+		expect(wrapper.emitted('update:playing')).toEqual([[true], [false]])
+		expect(wrapper.emitted('loaded')).toHaveLength(1)
+	})
+
+	it('shows the player once its metadata gives its size, when it has no preview', async () => {
+		const wrapper = await mountVideo({ hasPreview: false })
+		expect(wrapper.emitted('loaded')).toBeUndefined()
+
+		await wrapper.find('video').trigger('loadedmetadata')
+
+		expect(wrapper.emitted('loaded')).toHaveLength(1)
+		expect(wrapper.emitted('update:playing')).toEqual([[true]])
+	})
+
+	it('lets the slideshow go on when the video cannot be played', async () => {
+		const wrapper = await mountVideo()
+
+		// The first failure fetches the file by hand, the second gives up
+		await wrapper.find('video').trigger('error')
+		await flushPromises()
+		await wrapper.find('video').trigger('error')
+		await flushPromises()
+
+		expect(wrapper.emitted('update:playing')).toEqual([[true], [false]])
+		expect(wrapper.emitted('errored')).toHaveLength(1)
+	})
+
+	it('says it has loaded only once, however often it can play', async () => {
+		const file = makeFile({ basename: 'song.mp3', mime: 'audio/mpeg' })
+		const wrapper = mount(Audios, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+
+		await wrapper.find('audio').trigger('canplay')
+		await wrapper.find('audio').trigger('canplay')
+
+		expect(wrapper.emitted('loaded')).toHaveLength(1)
 	})
 })
 

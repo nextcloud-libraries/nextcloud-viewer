@@ -70,6 +70,8 @@ const fixtures: Fixture[] = [
 	// A video with a picture of the same name beside it, its poster
 	{ name: 'trailer.webm', mime: 'video/webm' },
 	{ name: 'trailer.jpg', mime: 'image/jpeg' },
+	// A video the server has a preview of, last so the others keep their ids
+	...(withPreviews ? [{ name: 'previewed.webm', mime: 'video/webm', hasPreview: true }] : []),
 ]
 
 /** Where the fixtures are served from, shaped like a WebDAV path */

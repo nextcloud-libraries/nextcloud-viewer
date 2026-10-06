@@ -46,6 +46,16 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		playable = false
 	})
 
+	// Whether the viewer was told it can show the player, and whether the
+	// slideshow is held meanwhile for the media to start. Kept across the
+	// fallback, which only changes the source the same file plays from
+	let shown = false
+	let holding = false
+	watch(() => props.file.source, () => {
+		shown = false
+		holding = false
+	})
+
 	const options = computed(() => {
 		return {
 			autoplay: true,
@@ -75,7 +85,48 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	function doneLoading() {
 		playable = true
 		relabelSpeed()
-		emit('loaded')
+		show()
+		release()
+	}
+
+	/**
+	 * Tell the viewer, once, that the player can be shown.
+	 */
+	function show() {
+		if (!shown) {
+			shown = true
+			emit('loaded')
+		}
+	}
+
+	/**
+	 * Show the player before the media can play, once its size is known, and
+	 * hold the slideshow meanwhile: a slow video would otherwise be skipped
+	 * with only its poster shown (nextcloud/viewer#39).
+	 */
+	function showBeforePlayable() {
+		if (shown) {
+			return
+		}
+		holding = true
+		emit('update:playing', true)
+		show()
+	}
+
+	/**
+	 * Let the slideshow go on once the media can play or has failed, unless
+	 * it is playing. A browser that refuses to autoplay leaves it paused,
+	 * and the slideshow then moves on as it did before.
+	 */
+	function release() {
+		if (!holding) {
+			return
+		}
+		holding = false
+		const media = (forAudio ? audio : video).value
+		if (!media || media.paused) {
+			emit('update:playing', false)
+		}
 	}
 
 	/**
@@ -141,6 +192,7 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 			// An end-to-end encrypted file fails the same way until its bytes
 			// are fetched, so the format is only to blame once they have been
 			const code = (event?.target as HTMLMediaElement | null)?.error?.code
+			release()
 			emit('errored', new Error(code === MEDIA_ERR_SRC_NOT_SUPPORTED
 				? t('Your browser cannot play this file format.')
 				: t('Failed to load media.')))
@@ -156,6 +208,7 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 			// The fallback fetch failed too: surface the error instead of staying
 			// stuck on the loading spinner.
 			logger.error(`Fallback fetch of ${filename.value} failed`, { error })
+			release()
 			emit('errored', new Error(t('Failed to load media.')))
 		}
 	}
@@ -274,6 +327,7 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		onPause,
 		onPlay,
 		options,
+		showBeforePlayable,
 		// The source the element must show: the fallback replaces it here
 		src,
 		video,

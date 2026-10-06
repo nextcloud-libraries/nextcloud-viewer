@@ -80,6 +80,24 @@ export function getPreviewIfAny(file: IFile, available?: AvailableSpace): string
 }
 
 /**
+ * The server's preview of a file, at the size it would be shown in.
+ *
+ * Nothing for a file without one, nor for a preview an app chose
+ * (`previewUrl`): only the server's keeps the file's own proportions
+ * (`a=true`), which is what a video is sized from before it has loaded.
+ *
+ * @param file - The file to resolve a preview URL for
+ * @param available - The space it will be shown in
+ */
+export function getServerPreview(file: IFile, available?: AvailableSpace): string | undefined {
+	if (file.attributes.previewUrl) {
+		return undefined
+	}
+	const { x, y } = previewSize(available)
+	return serverPreview(file, x, y)
+}
+
+/**
  * The most detailed preview the server will render of a file, to zoom into.
  *
  * Nothing for a file without a server preview, or with one an app chose

@@ -19,7 +19,7 @@
 				ref="video"
 				:autoplay="true"
 				:playsinline="true"
-				:poster="livePhotoPath"
+				:poster="poster"
 				:src="src"
 				:style="{
 					height: height + 'px',
@@ -49,12 +49,14 @@
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
 import VuePlyr from '@skjnldsv/vue-plyr'
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { usePlyrPlayer } from '../composables/usePlyrPlayer.ts'
 import { logger } from '../services/logger.ts'
+import { preloadImageSize } from '../services/mediaPreloader.ts'
+import { canDownload } from '../utils/canDownload.ts'
 import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromName } from '../utils/livePhotoUtils.ts'
-import { getPreviewIfAny } from '../utils/previewUtils.ts'
+import { getPreviewIfAny, getServerPreview } from '../utils/previewUtils.ts'
 
 defineOptions({
 	name: 'ViewerVideos',
@@ -71,6 +73,7 @@ const {
 	onPause,
 	onPlay,
 	options,
+	showBeforePlayable,
 	src,
 } = usePlyrPlayer(false, props, emit)
 
@@ -89,14 +92,48 @@ const livePhotoPath = computed(() => {
 	return getPreviewIfAny(peerFile, { width: props.maxWidth, height: props.maxHeight })
 })
 
+// The server's preview of the video, taken at the size it opened in so a
+// resize does not fetch it again, and the size of that preview
+const videoPreview = ref<string>()
+const previewSize = ref<{ width: number, height: number }>()
+let previewLoad: AbortController | undefined
+
+// The picture of the same name beside the video when there is one: it is
+// what people put there to be shown. The video's own preview otherwise.
+const poster = computed(() => livePhotoPath.value ?? videoPreview.value)
+
+watch(() => props.file.source, () => {
+	previewLoad?.abort()
+	previewSize.value = undefined
+	videoPreview.value = canDownload(props.file)
+		? getServerPreview(props.file, { width: props.maxWidth, height: props.maxHeight })
+		: undefined
+	if (videoPreview.value === undefined) {
+		return
+	}
+	previewLoad = new AbortController()
+	preloadImageSize(videoPreview.value, previewLoad.signal).then((size) => {
+		previewSize.value = size
+		updateVideoSize()
+		showBeforePlayable()
+	}).catch(() => {
+		// Nothing lost: the metadata sizes the player instead
+	})
+}, { immediate: true })
+
+onBeforeUnmount(() => previewLoad?.abort())
+
 /**
  * Update the video size based on the max height and width props
  * We need to keep the aspect ratio of the video
  * and fit it within the max height and width.
  */
 function updateVideoSize() {
-	const videoHeight = video?.value?.videoHeight
-	const videoWidth = video?.value?.videoWidth
+	// The video itself once it has its metadata, its preview until then: the
+	// preview keeps its proportions, and is no larger than the video or
+	// than the space asked for
+	const videoHeight = video?.value?.videoHeight || previewSize.value?.height
+	const videoWidth = video?.value?.videoWidth || previewSize.value?.width
 	if (!videoHeight || !videoWidth) {
 		return
 	}
@@ -117,6 +154,7 @@ function updateVideoSize() {
 function onLoadedMetadata() {
 	logger.debug('Video metadata loaded, updating size', { filename: props.file.basename })
 	updateVideoSize()
+	showBeforePlayable()
 }
 </script>
 

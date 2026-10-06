@@ -54,7 +54,18 @@ export async function preloadPreview(url: string, signal?: AbortSignal): Promise
  * @param signal aborts the load when the viewer moves to another file
  * @return the image's intrinsic width
  */
-export function preloadImage(url: string, signal?: AbortSignal): Promise<number> {
+export async function preloadImage(url: string, signal?: AbortSignal): Promise<number> {
+	return (await preloadImageSize(url, signal)).width
+}
+
+/**
+ * Load an image in the background and tell its intrinsic size.
+ *
+ * @param url the image URL to load
+ * @param signal aborts the load when the viewer moves to another file
+ * @return the image's intrinsic width and height
+ */
+export function preloadImageSize(url: string, signal?: AbortSignal): Promise<{ width: number, height: number }> {
 	return new Promise((resolve, reject) => {
 		const image = new Image()
 		signal?.addEventListener('abort', () => {
@@ -63,7 +74,7 @@ export function preloadImage(url: string, signal?: AbortSignal): Promise<number>
 		}, { once: true })
 		image.src = url
 		image.decode().then(
-			() => resolve(image.naturalWidth),
+			() => resolve({ width: image.naturalWidth, height: image.naturalHeight }),
 			() => reject(new Error(`Could not load ${url}`)),
 		)
 	})
