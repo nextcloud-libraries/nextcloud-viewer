@@ -11,6 +11,13 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 vi.mock('@nextcloud/event-bus')
 // Avoid the real DAV client being created on module import.
 vi.mock('../../lib/services/dav.ts', () => ({ fetchFolderContent: vi.fn(async () => []) }))
+// The real editor draws on a canvas, which the DOM here cannot do
+vi.mock('@nextcloud/image-editor', async () => {
+	const { defineComponent } = await import('vue')
+	return {
+		ImageEditor: defineComponent({ name: 'LibImageEditor', template: '<div class="image-editor-stub"><textarea /></div>' }),
+	}
+})
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { registerFileAction } from '@nextcloud/files'
@@ -904,6 +911,39 @@ describe('rotating and editing', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(offered(wrapper)).toEqual(['Rotate left', 'Edit'])
+	})
+
+	// The editor is drawn over the modal, outside it, and the modal keeps the
+	// focus inside itself and what it is told about: typing into the editor's
+	// text field went to the modal's slideshow button (nextcloud/viewer#3335)
+	it('lets the editor have the focus while it is open', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([editableImage()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
+
+		vm.setEditing(true)
+		// The editor is a chunk of its own, loaded on first use
+		const editor = await vi.waitFor(() => {
+			const element = document.querySelector('.image-editor-stub')
+			expect(element).not.toBeNull()
+			return element
+		})
+		expect(modalProps().additionalTrapElements).toEqual([editor])
+
+		// Beside a sidebar already trusted with it
+		const sidebar = document.createElement('aside')
+		sidebar.className = 'app-sidebar'
+		document.body.append(sidebar)
+		const opened = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:sidebar:opened')![1] as () => void
+		opened()
+		await wrapper.vm.$nextTick()
+		expect(modalProps().additionalTrapElements).toEqual([sidebar, editor])
+
+		vm.setEditing(false)
+		await flushPromises()
+		expect(modalProps().additionalTrapElements).toEqual([sidebar])
 	})
 
 	it('are not offered for a file that failed to show', async () => {
