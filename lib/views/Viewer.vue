@@ -285,6 +285,8 @@ const pendingLoads = ref(0)
 let neighboursDue = false
 // Bumped to force the current handler to remount (e.g. after an edit save).
 const reloadKey = ref(0)
+// The version of the file shown that its element was mounted with
+let shownVersion: string | undefined
 
 /** How long a load runs before the viewer says it is still at it */
 const SLOW_LOADING_MS = 5000
@@ -343,6 +345,9 @@ const SIDEBAR_FULLSCREEN_CLASS = 'viewer--sidebar-fullscreen'
 
 // Current context
 const currentFile = ref<IFile>()
+watch(() => currentFile.value?.source, () => {
+	shownVersion = currentFile.value?.attributes?.etag
+})
 const currentFileList = ref<IFile[]>([])
 const currentHandler = ref<IHandler>()
 
@@ -656,6 +661,14 @@ function onNodeUpdated(node: INode) {
 		return
 	}
 	if (currentFile.value !== undefined && node.fileid === currentFile.value.fileid) {
+		// The version already shown, as Text announces each of its own saves:
+		// nothing new to show, and remounting would rebuild the editor under
+		// the user, mid-sentence
+		const version = node.attributes?.etag
+		if (version !== undefined && version === shownVersion) {
+			return
+		}
+		shownVersion = version
 		releaseEditedSource(currentFile.value.source)
 		reloadKey.value++
 	}

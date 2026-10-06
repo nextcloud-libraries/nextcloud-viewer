@@ -1160,6 +1160,36 @@ describe('a neighbour changed elsewhere', () => {
 	})
 })
 
+describe('the file shown, updated', () => {
+	/**
+	 * Open a file, then announce an update of it.
+	 *
+	 * @param etag - The version the update carries
+	 */
+	async function update(etag: string) {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ basename: 'notes.jpg', mime: 'image/jpeg', attributes: { etag: 'v1' } })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		const before = wrapper.find('oca-viewer-image').element
+
+		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
+		updated(makeFile({ id: file.fileid, basename: 'notes.jpg', mime: 'image/jpeg', attributes: { etag } }))
+		await wrapper.vm.$nextTick()
+		return wrapper.find('oca-viewer-image').element === before
+	}
+
+	// Text announces each of its own saves: rebuilding the editor for one
+	// lost the user's place, mid-sentence
+	it('keeps its element for the version already shown', async () => {
+		expect(await update('v1')).toBe(true)
+	})
+
+	it('shows another version afresh', async () => {
+		expect(await update('v2')).toBe(false)
+	})
+})
+
 describe('the header actions shown as buttons', () => {
 	afterEach(() => {
 		Object.defineProperty(document.documentElement, 'clientWidth', { value: 1280, configurable: true })
