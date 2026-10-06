@@ -4,7 +4,7 @@
 -->
 
 <template>
-	<!-- eslint-disable vue/no-unused-refs -- plyr/audio refs are consumed by usePlyrPlayer via useTemplateRef -->
+	<!-- eslint-disable vue/no-unused-refs -- the plyr ref is consumed by usePlyrAdapter, the media one by useMediaPlayer, via useTemplateRef -->
 	<!-- Plyr currently replaces the parent. Wrapping to prevent this
 	https://github.com/redxtech/vue-plyr/issues/259 -->
 	<div>
@@ -38,7 +38,8 @@
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
 import VuePlyr from '@skjnldsv/vue-plyr'
-import { usePlyrPlayer } from '../composables/usePlyrPlayer.ts'
+import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
+import { usePlyrAdapter } from '../composables/usePlyrAdapter.ts'
 import { t } from '../utils/l10n.ts'
 
 defineOptions({
@@ -48,15 +49,15 @@ defineOptions({
 const props = defineProps<ViewerProps>()
 const emit = defineEmits<ViewerEmits>()
 
+const { options, ...player } = usePlyrAdapter(true)
 const {
 	onFail,
 	donePlaying,
 	doneLoading,
 	onPause,
 	onPlay,
-	options,
 	src,
-} = usePlyrPlayer(true, props, emit)
+} = useMediaPlayer(true, props, emit, player)
 
 </script>
 

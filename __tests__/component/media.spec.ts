@@ -29,7 +29,7 @@ vi.mock('../../lib/utils/isoMedia.ts', () => ({ probeFile }))
 const axiosGet = vi.hoisted(() => vi.fn(async () => ({ data: '<svg/>' })))
 vi.mock('@nextcloud/axios', () => ({ default: { get: axiosGet } }))
 
-// imagePath is evaluated at module load of usePlyrPlayer (blank.mp4). Keep the
+// imagePath is evaluated at module load of useMediaPlayer (blank.mp4). Keep the
 // rest of the router real; only pin the two URL helpers so tests never depend on
 // the OC bootstrap globals.
 vi.mock('@nextcloud/router', async (importOriginal) => ({
@@ -99,7 +99,8 @@ vi.mock('@skjnldsv/vue-plyr', async () => {
 import Audios from '../../lib/components/Audios.vue'
 import Images from '../../lib/components/Images.vue'
 import Videos from '../../lib/components/Videos.vue'
-import { usePlyrPlayer } from '../../lib/composables/usePlyrPlayer.ts'
+import { useMediaPlayer } from '../../lib/composables/useMediaPlayer.ts'
+import { usePlyrAdapter } from '../../lib/composables/usePlyrAdapter.ts'
 import { logger } from '../../lib/services/logger.ts'
 import { preloadImage, preloadMedia, preloadPreview } from '../../lib/services/mediaPreloader.ts'
 
@@ -590,7 +591,7 @@ describe('a video that has played to the end', () => {
 			setup() {
 				const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
 				// No template refs, so neither plyr nor the element ever arrive
-				donePlaying = usePlyrPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never).donePlaying
+				donePlaying = useMediaPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never, usePlyrAdapter(false)).donePlaying
 				return () => h('div')
 			},
 		})
@@ -837,7 +838,7 @@ describe('a player torn down early', () => {
 		const Host = defineComponent({
 			setup() {
 				const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
-				usePlyrPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never)
+				useMediaPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never, usePlyrAdapter(false))
 				// No `plyr` ref in the template, so the player never arrives
 				return () => h('div')
 			},

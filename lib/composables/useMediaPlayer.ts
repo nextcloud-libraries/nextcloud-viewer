@@ -3,16 +3,14 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-import type Plyr from 'plyr'
 import type { EmitFn } from 'vue'
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
-import { computed, onBeforeUnmount, onUpdated, ref, useTemplateRef, watch } from 'vue'
+import { onBeforeUnmount, onUpdated, ref, useTemplateRef, watch } from 'vue'
 import blankVideo from '../img/blank.mp4'
 import { logger } from '../services/logger.ts'
 import { preloadMedia } from '../services/mediaPreloader.ts'
 import { t } from '../utils/l10n.ts'
-import { localizeSpeedLabels, plyrTranslations } from '../utils/plyrTranslations.ts'
 import { useViewerProps } from './useViewerProps.ts'
 
 /** Marks the page furniture the viewer hides around a full screen player */
@@ -21,18 +19,31 @@ const HIDDEN_FULLSCREEN_CLASS = 'viewer__hidden-fullscreen'
 /** `MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED`, which not every environment defines */
 const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
 
+/** What the media player needs of the library drawing the controls */
+export interface MediaPlayerAdapter {
+	/** Called once the media can play */
+	ready(): void
+	/** Go back to the start, paused, with the poster over it. False when there is no player yet */
+	stop(): boolean
+	/** Be told of every change of full screen, however it came about */
+	onFullscreenChange(callback: (fullscreen: boolean) => void): void
+	/** The controls, which the pointer can be over, or none if not drawn yet */
+	controls(): Element[]
+	/** Take the player down with the component */
+	destroy(): void
+}
+
 /**
- * Composable to setup a Plyr player instance.
+ * Composable to play a media file in the viewer.
  *
  * @param forAudio Whether the player is used for audio files
  * @param props The viewer component props (filename, source, etc.)
  * @param emit The component emit function for viewer events
+ * @param player The library drawing the controls
  */
-export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitFn<ViewerEmits>) {
+export function useMediaPlayer(forAudio: boolean, props: ViewerProps, emit: EmitFn<ViewerEmits>, player: MediaPlayerAdapter) {
 	const { filename, src } = useViewerProps(props)
 
-	const plyr = useTemplateRef<{ player: Plyr, $el: HTMLElement }>('plyr')
-	const player = computed<Plyr | undefined>(() => plyr.value?.player as Plyr | undefined)
 	const video = useTemplateRef<HTMLVideoElement>('video')
 	const audio = useTemplateRef<HTMLAudioElement>('audio')
 
@@ -56,35 +67,12 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		holding = false
 	})
 
-	const options = computed(() => {
-		return {
-			autoplay: true,
-			// Plyr labels its own controls, in English, unless given these
-			i18n: plyrTranslations,
-			// Used to reset the video streams https://github.com/sampotts/plyr#javascript-1
-			blankVideo,
-			controls: [
-				'play-large',
-				'play',
-				'progress',
-				'current-time',
-				'mute',
-				'volume',
-				...forAudio ? ['settings'] : ['captions', 'settings', 'fullscreen'],
-			],
-			loadSprite: false,
-			fullscreen: {
-				iosNative: true,
-			},
-		}
-	})
-
 	/**
 	 * Tell Viewer that the video is ready to be shown
 	 */
 	function doneLoading() {
 		playable = true
-		relabelSpeed()
+		player.ready()
 		show()
 		release()
 	}
@@ -130,30 +118,15 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	}
 
 	/**
-	 * Relabel the speed menu in the user's locale.
-	 *
-	 * It is built from numbers plyr formats itself, which its i18n does not
-	 * reach: once the controls exist, and again after every change of speed,
-	 * as plyr writes the chosen one back as it formats it (`1.5×` in German).
-	 */
-	function relabelSpeed() {
-		const root = (forAudio ? audio : video).value?.closest('.plyr')
-		if (root) {
-			localizeSpeedLabels(root)
-		}
-	}
-
-	/**
 	 * Go back to the start once the media has played, showing its poster again.
 	 *
-	 * Rewound and paused rather than reloaded: plyr shows the poster over a
-	 * player stopped at the start, and what the element already buffered is
-	 * kept. Reloading it brought the poster back too, but every replay then
+	 * Rewound and paused rather than reloaded: the player shows the poster
+	 * over media stopped at the start, and what the element already buffered
+	 * is kept. Reloading it brought the poster back too, but every replay then
 	 * downloaded the whole file again (nextcloud/viewer#2585).
 	 */
 	function donePlaying() {
-		if (player.value) {
-			player.value.stop()
+		if (player.stop()) {
 			return
 		}
 
@@ -228,22 +201,11 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		}
 	}
 
-	const onEnterFullscreen = () => setPageHidden(true)
-	const onExitFullscreen = () => setPageHidden(false)
-
-	// What plyr says about its own full screen, rather than a count of clicks
-	// on the button: the user also leaves full screen with Escape or the
-	// browser's own control, and a count is then one behind for good, leaving
-	// the header hidden on a page that is not full screen any more. And its
-	// changes of speed, which put back the label in plyr's own formatting.
-	watch(player, (instance, previous) => {
-		previous?.off('enterfullscreen', onEnterFullscreen)
-		previous?.off('exitfullscreen', onExitFullscreen)
-		previous?.off('ratechange', relabelSpeed)
-		instance?.on('enterfullscreen', onEnterFullscreen)
-		instance?.on('exitfullscreen', onExitFullscreen)
-		instance?.on('ratechange', relabelSpeed)
-	}, { immediate: true })
+	// What the player says about its own full screen, rather than a count of
+	// clicks on the button: the user also leaves full screen with Escape or
+	// the browser's own control, and a count is then one behind for good,
+	// leaving the header hidden on a page that is not full screen any more.
+	player.onFullscreenChange(setPageHidden)
 
 	// Stable handler references so listeners can be removed again and are never
 	// bound more than once, even though onUpdated may run many times.
@@ -253,16 +215,6 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	// So the viewer's slideshow waits for the media instead of moving on mid-play
 	const onPlay = () => emit('update:playing', true)
 	const onPause = () => emit('update:playing', false)
-
-	/**
-	 * Get the current plyr control items, or an empty array if not ready.
-	 */
-	function getPlyrControls(): Element[] {
-		if (!plyr.value?.player || !plyr.value.$el) {
-			return []
-		}
-		return Array.from(plyr.value.$el.querySelectorAll('.plyr__controls__item'))
-	}
 
 	/** The controls the listeners are on, so they go on once. */
 	let boundControls: Element[] = []
@@ -282,26 +234,26 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 	// the dom until after the component (Videos) is mounted,
 	// using the mounted() hook will leave us with an empty array
 	onUpdated(() => {
-		const plyrControls = getPlyrControls()
-		if (plyrControls.length === 0) {
-			logger.warn('Plyr player not initialized yet')
+		const controls = player.controls()
+		if (controls.length === 0) {
+			logger.warn('Media player not initialized yet')
 			return
 		}
 
 		// Every prop the viewer hands over runs this, a resize a great many
 		// times over, and the controls are the same elements throughout:
-		// leave them alone unless plyr has actually rebuilt them.
-		if (plyrControls.length === boundControls.length && plyrControls.every((control, index) => control === boundControls[index])) {
+		// leave them alone unless the player has actually rebuilt them.
+		if (controls.length === boundControls.length && controls.every((control, index) => control === boundControls[index])) {
 			return
 		}
 		unbindControls()
 
 		// Prevent swiping to the next/previous item when scrubbing the timeline or changing volume.
-		plyrControls.forEach((control) => {
+		controls.forEach((control) => {
 			control.addEventListener('mouseenter', disableSwipe)
 			control.addEventListener('mouseleave', enableSwipe)
 		})
-		boundControls = plyrControls
+		boundControls = controls
 	})
 
 	onBeforeUnmount(() => {
@@ -314,10 +266,7 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		// Force stop any ongoing request
 		logger.debug('Closing media stream', { filename: props.file.basename })
 		video?.value?.pause?.()
-		// Guarded: a component torn down before plyr got as far as a player,
-		// which a quick close is enough for, has nothing to stop
-		player.value?.stop()
-		player.value?.destroy()
+		player.destroy()
 	})
 
 	return {
@@ -326,7 +275,6 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 		onFail,
 		onPause,
 		onPlay,
-		options,
 		showBeforePlayable,
 		// The source the element must show: the fallback replaces it here
 		src,
