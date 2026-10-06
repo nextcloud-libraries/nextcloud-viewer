@@ -200,6 +200,7 @@
 	     custom element) so its close/save events reach the viewer directly. -->
 	<ImageEditor
 		v-if="editing && currentFile && canEdit"
+		ref="imageEditor"
 		:file="currentFile"
 		@saved="onEditSaved"
 		@close="editing = false" />
@@ -224,6 +225,7 @@
 <script setup lang="ts">
 import type { IFile, IFolder, INode, IView } from '@nextcloud/files'
 import type { IFileAction } from '@nextcloud/files'
+import type { ComponentPublicInstance } from 'vue'
 import type { IHandler } from '../handlers.ts'
 import type { ViewerAPI, ViewerOptions } from '../viewer.ts'
 
@@ -327,7 +329,13 @@ const playing = ref(false)
 // Sidebar handling
 const sidebarPosition = ref(0)
 const isSidebarShown = computed(() => sidebarPosition.value > 0)
-const trapElements = ref<HTMLElement[]>([])
+const trapSidebar = ref<HTMLElement | null>(null)
+// The editor is drawn over the modal rather than inside it, and the modal's
+// focus trap would otherwise take every focus back: the editor's text field
+// could never be typed in, and a key meant for it reached the modal instead.
+const imageEditor = useTemplateRef<ComponentPublicInstance>('imageEditor')
+const trapElements = computed(() => [trapSidebar.value, imageEditor.value?.$el as HTMLElement | undefined]
+	.filter((element): element is HTMLElement => element instanceof HTMLElement))
 /** Body class that expands the Files sidebar to full height next to the viewer. */
 const SIDEBAR_FULLSCREEN_CLASS = 'viewer--sidebar-fullscreen'
 
@@ -1335,7 +1343,7 @@ function measureSidebar() {
 function onAppSidebarOpen() {
 	sidebarElement = document.querySelector('aside.app-sidebar')
 	if (sidebarElement) {
-		trapElements.value = [sidebarElement as HTMLElement]
+		trapSidebar.value = sidebarElement as HTMLElement
 		measureSidebar()
 		// The sidebar is resizable by hand, and the viewer has to follow it
 		// there too, not only when the window itself changes
@@ -1358,7 +1366,7 @@ function onAppSidebarClose() {
 		sidebarElement = null
 	}
 	sidebarPosition.value = 0
-	trapElements.value = []
+	trapSidebar.value = null
 	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
 }
 
