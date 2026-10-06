@@ -147,6 +147,7 @@
 		<!-- Error message -->
 		<NcEmptyContent
 			v-else-if="errorString"
+			class="viewer__error"
 			:name="errorString"
 			:description="t('We were unable to display the requested file.')">
 			<template #icon>
@@ -1734,17 +1735,26 @@ defineExpose<ViewerAPI>({
 
 <style scoped lang="scss">
 .viewer__modal {
-	// The backdrop is dark whatever theme the server runs, so what sits on
-	// it has to come from the dark palette too. Without this the header
-	// inherits the light theme's #222 and lands at 1.3:1 against black,
-	// which is a title nobody can read. A handler that asked for a light
-	// backdrop keeps the theme's own colours.
+	// The backdrop is dark whatever theme the server runs, so what the
+	// viewer itself puts on it has to come from the dark palette too.
+	// Without this the header inherits the light theme's #222 and lands at
+	// 1.3:1 against black, which is a title nobody can read. Only the
+	// viewer's own parts: a handler's content keeps the theme's colours, or
+	// a document shown by Text turns dark under a light theme. A handler
+	// that asked for a light backdrop keeps them everywhere.
 	&:not(.modal-mask--light) {
-		--color-main-text: #ffffff;
-		--color-text-maxcontrast: #d8d8d8;
-		--color-main-background: #171717;
+		:deep(.modal-header),
+		:deep(.prev),
+		:deep(.next),
+		:deep(.modal-container__close),
+		.viewer__loading,
+		.viewer__error {
+			--color-main-text: #ffffff;
+			--color-text-maxcontrast: #d8d8d8;
+			--color-main-background: #171717;
 
-		color: var(--color-main-text);
+			color: var(--color-main-text);
+		}
 	}
 
 	:deep(.modal-container__content) {
