@@ -186,12 +186,37 @@ describe('probeIsoMedia', () => {
 		expect(served.bytes).toBeLessThanOrEqual(4096 + 16 * 1024)
 	})
 
+	it('gives up on a file that ends where its index should start', async () => {
+		const data = box('mdat', new Uint8Array(100))
+		const served = serve(ftyp.length + data.length, [[0, ftyp], [ftyp.length, data]])
+
+		expect(await probeIsoMedia('/cut.mp4')).toBeUndefined()
+		// The server says the range is past the end, rather than an error
+		expect(served.reads).toHaveLength(2)
+	})
+
+	it('gives up on a track header cut short by the end of the file', async () => {
+		const index = moov(tkhd(640, 480))
+		// Up to the middle of the header's matrix
+		const cut = index.subarray(0, index.length - 30)
+		serve(ftyp.length + cut.length, [[0, ftyp], [ftyp.length, cut]])
+
+		expect(await probeIsoMedia('/cut.mp4')).toEqual({ indexFirst: true })
+	})
+
 	it.each([
 		['is not an iso media file', [[0, box('RIFF', new Uint8Array(100))]]],
+		['has a box shorter than its own header', [[0, ftyp], [ftyp.length, new Uint8Array([0, 0, 0, 4, ...'free'].map((c) => typeof c === 'string' ? c.charCodeAt(0) : c))]]],
 		['ends before its index', [[0, ftyp], [ftyp.length, box('mdat', new Uint8Array(100))]]],
 		['has data running to its end', [[0, ftyp], [ftyp.length, new Uint8Array([0, 0, 0, 0, ...'mdat'].map((c) => typeof c === 'string' ? c.charCodeAt(0) : c))]]],
 	] as [string, [number, Uint8Array][]][])('gives up on a file that %s', async (_name, parts) => {
 		serve(10_000, parts)
+
+		expect(await probeIsoMedia('/odd.mp4')).toBeUndefined()
+	})
+
+	it('gives up on a 64-bit box header cut by the end of the file', async () => {
+		serve(ftyp.length + 12, [[0, ftyp], [ftyp.length, largeBoxHeader('mdat', 1000).subarray(0, 12)]])
 
 		expect(await probeIsoMedia('/odd.mp4')).toBeUndefined()
 	})
@@ -226,6 +251,20 @@ describe('probeFile', () => {
 
 		await probeFile(makeFile({ id: file.fileid, basename: 'once.mp4', mime: 'video/mp4', attributes: { etag: 'b' } }))
 		expect(served.reads).toHaveLength(2)
+	})
+
+	it('keeps the probes of the latest files only', async () => {
+		const served = serve(ftyp.length, [[0, ftyp]])
+		const first = makeFile({ basename: 'first.mp4', mime: 'video/mp4' })
+
+		await probeFile(first)
+		for (let i = 0; i < 50; i++) {
+			await probeFile(makeFile({ basename: `other-${i}.mp4`, mime: 'video/mp4' }))
+		}
+		const reads = served.reads.length
+		await probeFile(first)
+
+		expect(served.reads.length).toBeGreaterThan(reads)
 	})
 
 	it('reads nothing of a format that is not laid out in boxes', async () => {
