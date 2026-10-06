@@ -1,0 +1,119 @@
+# SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# The mutation tests, on what a pull request changes: whether its tests
+# check the logic it touches, rather than only run it. Report only, in the
+# job summary: chasing a score produces padded assertions.
+
+name: Mutation tests (pull request)
+
+on:
+  pull_request:
+    paths:
+      - 'lib/**'
+      - '__tests__/**'
+      - 'stryker.config.json'
+      - 'build/mutation-*.mjs'
+      - '.github/workflows/mutation*.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-pr-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    name: mutation-tests-pr
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Find what to mutate
+        id: scope
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          changed=$(git diff --name-only "origin/$BASE_REF...HEAD")
+          tests=$(echo "$changed" | grep -E '^__tests__/.*\.spec\.ts$' | xargs || true)
+          if echo "$changed" | grep -qE '^(stryker\.config\.json|build/mutation-|\.github/workflows/mutation)'; then
+            # The setup itself changed: run all of it, as the weekly run would
+            echo "mode=all" >> "$GITHUB_OUTPUT"
+          else
+            files=$(echo "$changed" | node build/mutation-scope.mjs)
+            if [ -n "$files" ]; then
+              echo "mode=files" >> "$GITHUB_OUTPUT"
+              echo "files=$files" >> "$GITHUB_OUTPUT"
+            elif [ -n "$tests" ]; then
+              # Tests alone may check any of the logic
+              echo "mode=all" >> "$GITHUB_OUTPUT"
+            else
+              echo "mode=none" >> "$GITHUB_OUTPUT"
+              echo 'Nothing to audit: no change to the mutated logic or to its tests.' >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+          echo "tests=$tests" >> "$GITHUB_OUTPUT"
+
+      - name: Read package.json
+        if: steps.scope.outputs.mode != 'none'
+        uses: nextcloud-libraries/parse-package-engines-action@122ae05d4257008180a514e1ddeb0c1b9d094bdd # v0.1.0
+        id: versions
+
+      - name: Set up node
+        if: steps.scope.outputs.mode != 'none'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ steps.versions.outputs.node-version }}
+
+      - name: Set up npm
+        if: steps.scope.outputs.mode != 'none'
+        run: npm i -g 'npm@${{ steps.versions.outputs.package-manager-version }}'
+
+      - name: Install dependencies
+        if: steps.scope.outputs.mode != 'none'
+        run: npm ci
+
+      - name: Run mutation tests
+        if: steps.scope.outputs.mode != 'none'
+        env:
+          MODE: ${{ steps.scope.outputs.mode }}
+          FILES: ${{ steps.scope.outputs.files }}
+        run: |
+          if [ "$MODE" = "files" ]; then
+            npx stryker run --mutate "$FILES"
+          else
+            npm run test:mutation
+          fi
+
+      - name: Upload report
+        if: always() && steps.scope.outputs.mode != 'none'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-report
+          path: mutation-report/
+          retention-days: 7
+
+      - name: Summarize
+        if: steps.scope.outputs.mode != 'none'
+        env:
+          MODE: ${{ steps.scope.outputs.mode }}
+          TESTS: ${{ steps.scope.outputs.tests }}
+        run: |
+          # The changes no test caught are worth listing for the files the
+          # pull request changed, not for all of the logic
+          if [ "$MODE" = "files" ]; then
+            export LIST_SURVIVORS=1
+          fi
+          # Its own tests, when it has any: another test may check the
+          # changed code's callers rather than the code itself
+          if [ -n "$TESTS" ]; then
+            export ONLY_TESTS="$TESTS"
+          fi
+          node build/mutation-report.mjs >> "$GITHUB_STEP_SUMMARY"
