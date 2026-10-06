@@ -53,9 +53,9 @@ export function registerVideoHandler() {
 		group: 'media',
 
 		// Ready to play when the user steps to it, as the old viewer had it
-		preload: async (node) => {
-			const { preloadNeighbourMetadata } = await import('../utils/neighbours.ts')
-			await preloadNeighbourMetadata(node)
+		preload: async (node, space) => {
+			const { preloadNeighbourVideo } = await import('../utils/neighbours.ts')
+			await preloadNeighbourVideo(node, space)
 		},
 
 		enabled: (nodes) => {

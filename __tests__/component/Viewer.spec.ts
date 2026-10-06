@@ -398,7 +398,7 @@ describe('Viewer loadMore', () => {
 })
 
 describe('Viewer preload', () => {
-	it('preloads both neighbours of the opened file', async () => {
+	it('preloads both neighbours of the opened file, once it has loaded', async () => {
 		const preload = vi.fn(async () => {})
 		const handler = makeHandler({
 			id: 'image',
@@ -414,6 +414,11 @@ describe('Viewer preload', () => {
 
 		// Open in the middle so both neighbours exist.
 		await vm.open([f1, f2, f3], f2)
+		await wrapper.vm.$nextTick()
+
+		// The file shown has its requests to itself first
+		expect(preload).not.toHaveBeenCalled()
+		wrapper.find('oca-viewer-image').element.dispatchEvent(new CustomEvent('loaded'))
 		await wrapper.vm.$nextTick()
 
 		expect(preload).toHaveBeenCalledTimes(2)

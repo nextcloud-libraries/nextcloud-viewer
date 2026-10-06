@@ -281,6 +281,8 @@ const errorString = ref<string | null>(null)
 // Number of handler components still loading before the spinner is hidden.
 // 1 for a normal open, 2 while comparing two files side by side.
 const pendingLoads = ref(0)
+// Whether the files next to the one shown are to be preloaded once it has loaded
+let neighboursDue = false
 // Bumped to force the current handler to remount (e.g. after an edit save).
 const reloadKey = ref(0)
 
@@ -1025,6 +1027,13 @@ function onOpen() {
  * Uses the handler's optional preload function.
  */
 function preloadNeighbors() {
+	// Not while the file shown is still coming: its own requests go first
+	if (loading.value) {
+		neighboursDue = true
+		return
+	}
+	neighboursDue = false
+
 	const currentIndex = indexOfCurrent()
 	if (currentIndex === -1) {
 		return
@@ -1057,6 +1066,9 @@ function onLoad() {
 	pendingLoads.value = Math.max(0, pendingLoads.value - 1)
 	if (pendingLoads.value === 0) {
 		loading.value = false
+		if (neighboursDue) {
+			preloadNeighbors()
+		}
 	}
 }
 
@@ -1160,6 +1172,7 @@ function close() {
 	slideshowRunning.value = false
 	playing.value = false
 	pendingLoads.value = 0
+	neighboursDue = false
 	openedSubmenu.value = null
 	folderListing?.abort()
 	clearEditedSources()

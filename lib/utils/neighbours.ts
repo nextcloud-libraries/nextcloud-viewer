@@ -5,8 +5,10 @@
 
 import type { IFile } from '@nextcloud/files'
 
+import { preloadImageSize } from '../services/mediaPreloader.ts'
 import { canDownload } from './canDownload.ts'
-import { getPreviewIfAny } from './previewUtils.ts'
+import { ISO_MEDIA_MIMES, probeFile } from './isoMedia.ts'
+import { getPreviewIfAny, getServerPreview } from './previewUtils.ts'
 
 /** The space a file is shown in, in CSS pixels */
 interface AvailableSpace {
@@ -62,4 +64,62 @@ export function preloadNeighbourMetadata(file: IFile): Promise<void> {
 		media.addEventListener('error', done, { once: true })
 		media.src = file.encodedSource
 	})
+}
+
+/**
+ * Whether the user asked the browser to spare their data.
+ */
+function savesData(): boolean {
+	return (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData === true
+}
+
+/**
+ * Get a neighbouring video ready for when the user steps to it: its
+ * preview, which is its poster and its size, or else its size read from
+ * the few bytes of an mp4 that hold it. Other formats keep their metadata
+ * up front, where the browser reads it in passing.
+ *
+ * @param file - The neighbouring video
+ * @param space - The space it will be shown in
+ */
+export async function preloadNeighbourVideo(file: IFile, space?: AvailableSpace): Promise<void> {
+	if (savesData() || isEncrypted(file)) {
+		return
+	}
+	const preview = canDownload(file) ? getServerPreview(file, space) : undefined
+	if (preview) {
+		await preloadImageSize(preview)
+		return
+	}
+	if (ISO_MEDIA_MIMES.includes(file.mime ?? '')) {
+		await probeFile(file)
+		return
+	}
+	await preloadNeighbourMetadata(file)
+}
+
+/**
+ * Get a neighbouring sound's metadata, unless the browser would have to
+ * read the whole of an m4a to find it.
+ *
+ * @param file - The neighbouring sound
+ */
+export async function preloadNeighbourAudio(file: IFile): Promise<void> {
+	if (savesData() || isEncrypted(file)) {
+		return
+	}
+	if (ISO_MEDIA_MIMES.includes(file.mime ?? '') && (await probeFile(file))?.indexFirst !== true) {
+		return
+	}
+	await preloadNeighbourMetadata(file)
+}
+
+/**
+ * Whether a file is end-to-end encrypted, whose bytes say nothing until
+ * they are decrypted.
+ *
+ * @param file - The file
+ */
+function isEncrypted(file: IFile): boolean {
+	return Boolean(file.attributes?.['e2ee-is-encrypted'])
 }

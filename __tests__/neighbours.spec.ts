@@ -3,8 +3,23 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { preloadNeighbourMetadata, preloadNeighbourPreview } from '../lib/utils/neighbours.ts'
-import { getPreviewIfAny } from '../lib/utils/previewUtils.ts'
+
+const preloadImageSize = vi.hoisted(() => vi.fn(async () => ({ width: 640, height: 360 })))
+vi.mock('../lib/services/mediaPreloader.ts', () => ({ preloadImageSize }))
+const probeFile = vi.hoisted(() => vi.fn(async (): Promise<{ indexFirst: boolean } | undefined> => ({ indexFirst: true })))
+vi.mock('../lib/utils/isoMedia.ts', async (importOriginal) => ({
+	// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest importOriginal idiom
+	...await importOriginal<typeof import('../lib/utils/isoMedia.ts')>(),
+	probeFile,
+}))
+
+import {
+	preloadNeighbourAudio,
+	preloadNeighbourMetadata,
+	preloadNeighbourPreview,
+	preloadNeighbourVideo,
+} from '../lib/utils/neighbours.ts'
+import { getPreviewIfAny, getServerPreview } from '../lib/utils/previewUtils.ts'
 import { makeFile } from './factories.ts'
 
 /**
@@ -27,7 +42,19 @@ function keepCreated<K extends keyof HTMLElementTagNameMap>(tag: K): HTMLElement
 
 afterEach(() => {
 	vi.restoreAllMocks()
+	vi.unstubAllGlobals()
+	preloadImageSize.mockClear()
+	probeFile.mockClear()
 })
+
+/**
+ * Whether the browser is asked to spare data.
+ *
+ * @param saveData - What the connection says
+ */
+function stubSaveData(saveData: boolean) {
+	vi.stubGlobal('navigator', { ...navigator, connection: { saveData } })
+}
 
 describe('preloadNeighbourPreview', () => {
 	const space = { width: 800, height: 600 }
@@ -72,5 +99,87 @@ describe('preloadNeighbourMetadata', () => {
 		await preloading
 
 		expect(video!.hasAttribute('src')).toBe(false)
+	})
+})
+
+describe('preloadNeighbourVideo', () => {
+	const space = { width: 800, height: 600 }
+
+	it('fetches the preview, which is its poster and its size, and none of the video', async () => {
+		const created = keepCreated('video')
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4', attributes: { hasPreview: true } })
+
+		await preloadNeighbourVideo(file, space)
+
+		expect(preloadImageSize).toHaveBeenCalledWith(getServerPreview(file, space))
+		expect(probeFile).not.toHaveBeenCalled()
+		expect(created).toEqual([])
+	})
+
+	it('reads the size of an mp4 without a preview from its header, not its metadata', async () => {
+		const created = keepCreated('video')
+		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
+
+		await preloadNeighbourVideo(file, space)
+
+		expect(probeFile).toHaveBeenCalledWith(file)
+		expect(created).toEqual([])
+	})
+
+	it('reads the metadata of a format that keeps it up front', async () => {
+		const created = keepCreated('video')
+
+		const preloading = preloadNeighbourVideo(makeFile({ basename: 'clip.webm', mime: 'video/webm' }), space)
+		created[0]!.dispatchEvent(new Event('loadedmetadata'))
+		await preloading
+
+		expect(probeFile).not.toHaveBeenCalled()
+	})
+
+	it.each([
+		['with data saver on', () => stubSaveData(true), {}],
+		['when it is end-to-end encrypted', () => {}, { 'e2ee-is-encrypted': 1 }],
+	])('does nothing %s', async (_name, setup, attributes) => {
+		setup()
+		const created = keepCreated('video')
+
+		await preloadNeighbourVideo(makeFile({ basename: 'clip.mp4', mime: 'video/mp4', attributes: { hasPreview: true, ...attributes } }), space)
+
+		expect(preloadImageSize).not.toHaveBeenCalled()
+		expect(probeFile).not.toHaveBeenCalled()
+		expect(created).toEqual([])
+	})
+})
+
+describe('preloadNeighbourAudio', () => {
+	it('reads the metadata of a sound that keeps it up front', async () => {
+		const created = keepCreated('video')
+
+		const preloading = preloadNeighbourAudio(makeFile({ basename: 'song.mp3', mime: 'audio/mpeg' }))
+		created[0]!.dispatchEvent(new Event('loadedmetadata'))
+		await preloading
+
+		expect(probeFile).not.toHaveBeenCalled()
+	})
+
+	it('reads the metadata of an m4a with its index first', async () => {
+		const created = keepCreated('video')
+
+		const preloading = preloadNeighbourAudio(makeFile({ basename: 'song.m4a', mime: 'audio/mp4' }))
+		await vi.waitFor(() => expect(created).toHaveLength(1))
+		created[0]!.dispatchEvent(new Event('loadedmetadata'))
+		await preloading
+	})
+
+	it.each([
+		['its index is at the end', { indexFirst: false }],
+		['it could not be told where its index is', undefined],
+	])('leaves alone an m4a when %s', async (_name, probe) => {
+		probeFile.mockResolvedValueOnce(probe)
+		const created = keepCreated('video')
+
+		await preloadNeighbourAudio(makeFile({ basename: 'song.m4a', mime: 'audio/mp4' }))
+
+		expect(created).toEqual([])
 	})
 })
