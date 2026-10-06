@@ -679,6 +679,50 @@ describe('a video before it can play', () => {
 		expect(wrapper.find('video').attributes('style')).toContain('height: 640px')
 	})
 
+	it('shows the player once, when its metadata comes after its preview', async () => {
+		const wrapper = await mountVideo()
+
+		await wrapper.find('video').trigger('loadedmetadata')
+
+		expect(wrapper.emitted('loaded')).toHaveLength(1)
+		expect(wrapper.emitted('update:playing')).toEqual([[true]])
+	})
+
+	it('keeps the slideshow held when the video is already playing as it can play', async () => {
+		const wrapper = await mountVideo()
+		Object.defineProperty(wrapper.find('video').element, 'paused', { value: false })
+
+		await wrapper.find('video').trigger('canplay')
+
+		expect(wrapper.emitted('update:playing')).toEqual([[true]])
+	})
+
+	it('reads nothing ahead for a video from a share that forbids downloading', async () => {
+		probeFile.mockClear()
+		const movie = makeFile({
+			basename: 'clip.mp4',
+			mime: 'video/mp4',
+			attributes: { hasPreview: true, 'share-attributes': JSON.stringify([{ scope: 'permissions', key: 'download', value: false }]) },
+		})
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie] }) })
+		await flushPromises()
+
+		expect(wrapper.find('video').attributes('poster')).toBeUndefined()
+		expect(probeFile).not.toHaveBeenCalled()
+		expect(wrapper.emitted('loaded')).toBeUndefined()
+	})
+
+	it('lets the slideshow go on when the video cannot be fetched by hand either', async () => {
+		preloadMediaMock.mockRejectedValueOnce(new Error('403'))
+		const wrapper = await mountVideo()
+
+		await wrapper.find('video').trigger('error')
+		await flushPromises()
+
+		expect(wrapper.emitted('update:playing')).toEqual([[true], [false]])
+		expect(wrapper.emitted('errored')).toHaveLength(1)
+	})
+
 	it('lets the slideshow go on when the video cannot be played', async () => {
 		const wrapper = await mountVideo()
 

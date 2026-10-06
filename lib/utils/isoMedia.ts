@@ -52,7 +52,7 @@ class RangeReader {
 	private chunks: { offset: number, bytes: Uint8Array }[] = []
 	private reads = 0
 
-	constructor(private readonly url: string, private readonly signal?: AbortSignal) {}
+	constructor(private readonly url: string) {}
 
 	/**
 	 * The bytes at an offset, read from the file when not already read.
@@ -80,7 +80,6 @@ class RangeReader {
 			throw new Error('Too many reads')
 		}
 		const controller = new AbortController()
-		this.signal?.addEventListener('abort', () => controller.abort(), { once: true })
 		try {
 			// fetch rather than axios: the read is cut short by hand should a
 			// server send more than asked for, and a GET needs no request token
@@ -149,15 +148,14 @@ async function boxAt(reader: RangeReader, offset: number): Promise<Box | undefin
  *
  * @param reader - The file
  * @param start - Where the first box starts
- * @param end - Where the boxes end, the end of the file if not given
+ * @param end - Where the boxes end
  * @param type - The type to find
- * @param stopAt - Types that end the search when found first
  */
-async function findBox(reader: RangeReader, start: number, end: number, type: string, stopAt: string[] = []): Promise<Box | undefined> {
+async function findBox(reader: RangeReader, start: number, end: number, type: string): Promise<Box | undefined> {
 	let offset = start
 	while (offset + 8 <= end) {
 		const box = await boxAt(reader, offset)
-		if (box === undefined || stopAt.includes(box.type)) {
+		if (box === undefined) {
 			return undefined
 		}
 		if (box.type === type) {
@@ -208,10 +206,9 @@ async function trackSize(reader: RangeReader, tkhd: Box): Promise<{ width: numbe
  * boxes to step over.
  *
  * @param url - The file
- * @param signal - Cancels the reads
  */
-export async function probeIsoMedia(url: string, signal?: AbortSignal): Promise<IsoMediaProbe | undefined> {
-	const reader = new RangeReader(url, signal)
+export async function probeIsoMedia(url: string): Promise<IsoMediaProbe | undefined> {
+	const reader = new RangeReader(url)
 	try {
 		const ftyp = await boxAt(reader, 0)
 		if (ftyp?.type !== 'ftyp') {

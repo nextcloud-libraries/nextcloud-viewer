@@ -162,6 +162,15 @@ describe('preloadNeighbourAudio', () => {
 		expect(probeFile).not.toHaveBeenCalled()
 	})
 
+	it('does nothing with data saver on', async () => {
+		stubSaveData(true)
+		const created = keepCreated('video')
+
+		await preloadNeighbourAudio(makeFile({ basename: 'song.mp3', mime: 'audio/mpeg' }))
+
+		expect(created).toEqual([])
+	})
+
 	it('reads the metadata of an m4a with its index first', async () => {
 		const created = keepCreated('video')
 
