@@ -46,7 +46,7 @@
 		"test:e2e:server": "playwright test --config playwright.server.config.ts",
 		"test:mutation": "stryker run",
 		"test:watch": "vitest watch",
-		"typecheck": "vue-tsc --noEmit -p tsconfig.check.json",
+		"typecheck": "vue-tsc --noEmit -p __tests__/tsconfig.json",
 		"watch": "vite --mode development build --watch"
 	},
 	"dependencies": {
