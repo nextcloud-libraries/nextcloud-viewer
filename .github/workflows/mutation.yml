@@ -1,0 +1,109 @@
+# SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+# Audits the tests rather than the code: it changes the logic in small ways
+# and reruns the tests, then lists the tests that run that code but fail on
+# none of the changes. Report only, no threshold: chasing a score produces
+# padded assertions.
+
+name: Mutation tests
+
+on:
+  schedule:
+    # Mondays, early
+    - cron: '0 4 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-tests
+  cancel-in-progress: true
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    name: mutation-tests
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read package.json
+        uses: nextcloud-libraries/parse-package-engines-action@122ae05d4257008180a514e1ddeb0c1b9d094bdd # v0.1.0
+        id: versions
+
+      - name: Set up node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ steps.versions.outputs.node-version }}
+
+      - name: Set up npm
+        run: npm i -g 'npm@${{ steps.versions.outputs.package-manager-version }}'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run mutation tests
+        run: npm run test:mutation
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: mutation-report
+          path: mutation-report/
+          retention-days: 30
+
+      - name: List the tests that check nothing
+        id: report
+        run: |
+          node build/mutation-report.mjs > mutation-summary.md
+          cat mutation-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Tell the code owners
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UNCHECKED: ${{ steps.report.outputs.unchecked }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title='Tests that check nothing, found by the mutation tests'
+          issue=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+
+          if [ "$UNCHECKED" = "0" ]; then
+            if [ -n "$issue" ]; then
+              gh issue close "$issue" --comment "The latest run finds none: $RUN_URL"
+            fi
+            exit 0
+          fi
+
+          # The owners of everything, from the CODEOWNERS file if there is one
+          owners=$(grep -hE '^\*[[:space:]]' .github/CODEOWNERS CODEOWNERS 2>/dev/null | head -1 | cut -d' ' -f2- | xargs || true)
+          {
+            cat mutation-summary.md
+            echo
+            echo "Report: $RUN_URL (the \`mutation-report\` artifact has the full HTML report)."
+          } > issue-body.md
+
+          if [ -z "$issue" ]; then
+            if [ -n "$owners" ]; then
+              printf '\ncc %s\n' "$owners" >> issue-body.md
+            fi
+            gh issue create --title "$title" --body-file issue-body.md
+            exit 0
+          fi
+
+          # Pinged again only when the list changed
+          previous=$(gh issue view "$issue" --json body --jq .body | grep -E '^- `' || true)
+          current=$(grep -E '^- `' mutation-summary.md || true)
+          gh issue edit "$issue" --body-file issue-body.md
+          if [ "$previous" != "$current" ]; then
+            gh issue comment "$issue" --body "The list changed in the latest run. ${owners:+cc $owners}"
+          fi

@@ -9,13 +9,18 @@
 	},
 	"reporters": [
 		"html",
+		"json",
 		"clear-text",
 		"progress"
 	],
 	"htmlReporter": {
 		"fileName": "mutation-report/index.html"
 	},
+	"jsonReporter": {
+		"fileName": "mutation-report/mutation.json"
+	},
 	"coverageAnalysis": "perTest",
+	"disableBail": true,
 	"mutate": [
 		"lib/*.ts",
 		"lib/utils/**/*.ts",
