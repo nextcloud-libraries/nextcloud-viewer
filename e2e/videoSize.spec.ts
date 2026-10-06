@@ -32,9 +32,36 @@ test.describe('A video slow to load', () => {
 		await viewer.open('previewed.webm', 'previews')
 		await viewer.waitForOpen()
 
-		await expect(viewer.container.locator('.plyr__poster')).toHaveAttribute('style', /core\/preview/)
-		const box = (await viewer.container.locator('video').boundingBox())!
+		// Its poster is on the element; plyr copies it onto its own layer in
+		// its own time, which Firefox puts off while the video is held
+		const video = viewer.container.locator('video')
+		await expect(video).toHaveAttribute('poster', /core\/preview/)
+		const box = (await video.boundingBox())!
 		expect(box.width / box.height).toBeCloseTo(320 / 480, 1)
+
+		release()
+	})
+
+	test('shows its player at once without a preview, at the size its header gives', async ({ page }) => {
+		// Only the few bytes the viewer reads for the size get through: the
+		// element's own requests are held until the end of the test
+		let release!: () => void
+		const held = new Promise<void>((resolve) => {
+			release = resolve
+		})
+		await page.route('**/video.mp4', async (route) => {
+			if (route.request().headers().range !== 'bytes=0-4095') {
+				await held
+			}
+			await route.continue()
+		})
+
+		const viewer = new ViewerPage(page)
+		await viewer.open('video.mp4')
+		await viewer.waitForOpen()
+
+		const box = (await viewer.container.locator('video').boundingBox())!
+		expect(box.width / box.height).toBeCloseTo(640 / 360, 1)
 
 		release()
 	})

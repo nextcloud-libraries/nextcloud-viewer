@@ -20,6 +20,10 @@ vi.mock('../../lib/services/mediaPreloader.ts', () => ({
 	preloadImageSize: vi.fn(async () => ({ width: 640, height: 360 })),
 }))
 
+// What a video's header says of its size, nothing unless a test says so
+const probeFile = vi.hoisted(() => vi.fn(async (): Promise<{ indexFirst: boolean, size?: { width: number, height: number } } | undefined> => undefined))
+vi.mock('../../lib/utils/isoMedia.ts', () => ({ probeFile }))
+
 // An svg is read and sanitized rather than handed to the element, so the
 // only request Images makes by itself is that one.
 const axiosGet = vi.hoisted(() => vi.fn(async () => ({ data: '<svg/>' })))
@@ -664,6 +668,15 @@ describe('a video before it can play', () => {
 
 		expect(wrapper.emitted('loaded')).toHaveLength(1)
 		expect(wrapper.emitted('update:playing')).toEqual([[true]])
+	})
+
+	it('shows the player at the size its header gives, when it has no preview', async () => {
+		probeFile.mockResolvedValueOnce({ indexFirst: false, size: { width: 360, height: 640 } })
+		const wrapper = await mountVideo({ hasPreview: false })
+
+		expect(wrapper.emitted('loaded')).toHaveLength(1)
+		expect(wrapper.find('video').attributes('style')).toContain('width: 360px')
+		expect(wrapper.find('video').attributes('style')).toContain('height: 640px')
 	})
 
 	it('lets the slideshow go on when the video cannot be played', async () => {

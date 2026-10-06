@@ -54,6 +54,7 @@ import { usePlyrPlayer } from '../composables/usePlyrPlayer.ts'
 import { logger } from '../services/logger.ts'
 import { preloadImageSize } from '../services/mediaPreloader.ts'
 import { canDownload } from '../utils/canDownload.ts'
+import { probeFile } from '../utils/isoMedia.ts'
 import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromName } from '../utils/livePhotoUtils.ts'
 import { getPreviewIfAny, getServerPreview } from '../utils/previewUtils.ts'
@@ -93,30 +94,42 @@ const livePhotoPath = computed(() => {
 })
 
 // The server's preview of the video, taken at the size it opened in so a
-// resize does not fetch it again, and the size of that preview
+// resize does not fetch it again, and the video's size before it has its
+// metadata: that of its preview, or the one read from its header
 const videoPreview = ref<string>()
-const previewSize = ref<{ width: number, height: number }>()
+const knownSize = ref<{ width: number, height: number }>()
 let previewLoad: AbortController | undefined
 
 // The picture of the same name beside the video when there is one: it is
 // what people put there to be shown. The video's own preview otherwise.
 const poster = computed(() => livePhotoPath.value ?? videoPreview.value)
 
-watch(() => props.file.source, () => {
+watch(() => props.file.source, (source) => {
 	previewLoad?.abort()
-	previewSize.value = undefined
-	videoPreview.value = canDownload(props.file)
-		? getServerPreview(props.file, { width: props.maxWidth, height: props.maxHeight })
-		: undefined
+	knownSize.value = undefined
+	if (!canDownload(props.file) || props.file.attributes?.['e2ee-is-encrypted']) {
+		videoPreview.value = undefined
+		return
+	}
+	videoPreview.value = getServerPreview(props.file, { width: props.maxWidth, height: props.maxHeight })
+
+	// Size the player from what was found, if the file shown is still this one
+	const sizeFrom = (size?: { width: number, height: number }) => {
+		if (size === undefined || source !== props.file.source) {
+			return
+		}
+		knownSize.value = size
+		updateVideoSize()
+		showBeforePlayable()
+	}
+
 	if (videoPreview.value === undefined) {
+		// Nothing lost if this finds nothing: the metadata sizes the player
+		probeFile(props.file).then((probe) => sizeFrom(probe?.size))
 		return
 	}
 	previewLoad = new AbortController()
-	preloadImageSize(videoPreview.value, previewLoad.signal).then((size) => {
-		previewSize.value = size
-		updateVideoSize()
-		showBeforePlayable()
-	}).catch(() => {
+	preloadImageSize(videoPreview.value, previewLoad.signal).then(sizeFrom).catch(() => {
 		// Nothing lost: the metadata sizes the player instead
 	})
 }, { immediate: true })
@@ -129,11 +142,11 @@ onBeforeUnmount(() => previewLoad?.abort())
  * and fit it within the max height and width.
  */
 function updateVideoSize() {
-	// The video itself once it has its metadata, its preview until then: the
-	// preview keeps its proportions, and is no larger than the video or
-	// than the space asked for
-	const videoHeight = video?.value?.videoHeight || previewSize.value?.height
-	const videoWidth = video?.value?.videoWidth || previewSize.value?.width
+	// The video itself once it has its metadata, what was known of it until
+	// then: its header's size, or its preview's, which keeps its proportions
+	// and is no larger than the video or than the space asked for
+	const videoHeight = video?.value?.videoHeight || knownSize.value?.height
+	const videoWidth = video?.value?.videoWidth || knownSize.value?.width
 	if (!videoHeight || !videoWidth) {
 		return
 	}
