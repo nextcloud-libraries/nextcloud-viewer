@@ -39,68 +39,92 @@ vi.mock('@nextcloud/router', async (importOriginal) => ({
 	generateUrl: (url: string) => url,
 }))
 
-// plyr is heavy and DOM-driven; stub the class the composable references by type.
-vi.mock('plyr', () => ({
-	default: class PlyrStub {
-		on = vi.fn()
-		once = vi.fn()
-		off = vi.fn()
-		destroy = vi.fn()
-		stop = vi.fn()
-		play = vi.fn()
-		pause = vi.fn()
-	},
-}))
+// The skins are Video.js markup, which jsdom cannot play: a stand-in keeps
+// what the viewer relies on, the media in a container that takes the
+// player's size, and a bar of controls the pointer can be over.
+vi.mock('../../lib/components/videojs/VideoSkin.vue', async () => mockSkin('VideoSkinStub'))
+vi.mock('../../lib/components/videojs/AudioSkin.vue', async () => mockSkin('AudioSkinStub'))
 
-// @skjnldsv/vue-plyr wraps plyr in a Vue component. Replace it with a passthrough
-// that renders its default slot (so the inner <video>/<audio> still mounts) and
-// exposes a `player` object so the composable's lifecycle hooks never throw.
-const localizeSpeedLabels = vi.fn()
-vi.mock('../../lib/utils/plyrTranslations.ts', async (importOriginal) => ({
-	// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest importOriginal idiom
-	...await importOriginal<typeof import('../../lib/utils/plyrTranslations.ts')>(),
-	localizeSpeedLabels: (root: ParentNode) => localizeSpeedLabels(root),
-}))
-
-vi.mock('@skjnldsv/vue-plyr', async () => {
+/**
+ * A skin stand-in, named so a test can find it and read what it is given.
+ *
+ * @param name - The component name
+ */
+async function mockSkin(name: string) {
 	const { defineComponent, h } = await import('vue')
 	return {
 		default: defineComponent({
-			name: 'VuePlyrStub',
-			// Declared so a test can read what the component hands plyr
-			props: { options: { type: Object, default: () => ({}) } },
-			data() {
-				return {
-					player: {
-						on: vi.fn(),
-						off: vi.fn(),
-						once: vi.fn(),
-						stop: vi.fn(),
-						destroy: vi.fn(),
-						play: vi.fn(),
-					},
-				}
-			},
+			name,
+			props: { stopped: Boolean, rate: { type: Number, default: 1 } },
 			render() {
-				// plyr wraps the media in a .plyr root, which the composable
-				// looks for, and hangs its controls off it
-				return h('div', { class: 'plyr vue-plyr-stub' }, [
-					h('div', { class: 'plyr__controls' }, [
-						h('button', { class: 'plyr__controls__item', 'data-plyr': 'play' }),
-						h('button', { class: 'plyr__controls__item', 'data-plyr': 'fullscreen' }),
-					]),
+				return h('media-container', { class: 'media-skin' }, [
 					this.$slots.default?.(),
+					h('media-controls-content', [h('button', { class: 'media-button' })]),
 				])
 			},
 		}),
 	}
-})
+}
+
+/** What the tests drive of a Video.js player store */
+interface FakeStore {
+	paused: boolean
+	isFullscreen: boolean
+	playbackRate: number
+	target: object | undefined
+	pause: Mock
+	seek: Mock
+	subscribe(callback: () => void): () => void
+	/** Change the state and tell the subscribers, as the player does */
+	set(patch: Partial<Pick<FakeStore, 'paused' | 'isFullscreen' | 'playbackRate' | 'target'>>): void
+}
+
+/**
+ * A store attached to its media, playing nothing yet.
+ */
+function makeStore(): FakeStore {
+	const subscribers = new Set<() => void>()
+	return {
+		paused: true,
+		isFullscreen: false,
+		playbackRate: 1,
+		target: {},
+		pause: vi.fn(),
+		seek: vi.fn(async () => 0),
+		subscribe(callback) {
+			subscribers.add(callback)
+			return () => subscribers.delete(callback)
+		},
+		set(patch) {
+			Object.assign(this, patch)
+			subscribers.forEach((callback) => callback())
+		},
+	}
+}
+
+// The player elements, each with a store of its own
+for (const tag of ['video-player', 'audio-player']) {
+	if (!customElements.get(tag)) {
+		customElements.define(tag, class extends HTMLElement {
+			store = makeStore()
+		})
+	}
+}
+
+/**
+ * The store of the player a wrapper renders.
+ *
+ * @param wrapper - The mounted Videos or Audios
+ */
+function storeOf(wrapper: VueWrapper): FakeStore {
+	return (wrapper.find('video-player, audio-player').element as HTMLElement & { store: FakeStore }).store
+}
 
 import Audios from '../../lib/components/Audios.vue'
 import Images from '../../lib/components/Images.vue'
 import Videos from '../../lib/components/Videos.vue'
 import { useMediaPlayer } from '../../lib/composables/useMediaPlayer.ts'
-import { usePlyrAdapter } from '../../lib/composables/usePlyrAdapter.ts'
+import { useVideojsAdapter } from '../../lib/composables/useVideojsAdapter.ts'
 import { logger } from '../../lib/services/logger.ts'
 import { preloadImage, preloadMedia, preloadPreview } from '../../lib/services/mediaPreloader.ts'
 
@@ -492,37 +516,6 @@ describe('the pointers on an image', () => {
 })
 
 describe('Videos.vue (smoke)', () => {
-	// The speed menu is built from numbers plyr formats itself, which its own
-	// i18n never reaches, so it is relabelled once the controls exist
-	it('relabels the speed menu once the media is ready', async () => {
-		localizeSpeedLabels.mockClear()
-		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
-		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
-		await flushPromises()
-
-		await wrapper.find('video').trigger('canplay')
-		await flushPromises()
-
-		expect(localizeSpeedLabels).toHaveBeenCalledOnce()
-		expect(wrapper.emitted('loaded')).toBeTruthy()
-	})
-
-	// plyr writes the chosen speed back in its own formatting, `1.5×` where
-	// the user reads `1,5×`
-	it('relabels the speed menu again after a change of speed', async () => {
-		localizeSpeedLabels.mockClear()
-		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
-		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
-		await flushPromises()
-		await wrapper.find('video').trigger('canplay')
-		const player = wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player as { on: Mock }
-		const onRateChange = player.on.mock.calls.find(([event]) => event === 'ratechange')?.[1] as () => void
-
-		onRateChange()
-
-		expect(localizeSpeedLabels).toHaveBeenCalledTimes(2)
-	})
-
 	it.each([
 		['a small clip at its own size', 320, 240, '320px', '240px'],
 		['a large one shrunk to fit', 3200, 2400, '1000px', '750px'],
@@ -536,19 +529,9 @@ describe('Videos.vue (smoke)', () => {
 
 		await wrapper.find('video').trigger('loadedmetadata')
 
-		expect(video.style.width).toBe(width)
-		expect(video.style.height).toBe(height)
-	})
-
-	// Plyr labels its own controls in English unless it is handed these
-	it('hands plyr the translated control labels', async () => {
-		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
-		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }) })
-		await flushPromises()
-
-		const options = wrapper.findComponent({ name: 'VuePlyrStub' }).props('options') as { i18n?: Record<string, string> }
-		expect(options.i18n).toBeDefined()
-		expect(options.i18n).toHaveProperty('play')
+		const skin = wrapper.find('media-container').element as HTMLElement
+		expect(skin.style.width).toBe(width)
+		expect(skin.style.height).toBe(height)
 	})
 })
 
@@ -562,8 +545,7 @@ describe('a video that has played to the end', () => {
 		await flushPromises()
 		const video = wrapper.find('video').element as HTMLVideoElement
 		video.load = vi.fn()
-		const player = wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player as { stop: Mock }
-		return { wrapper, video, player, poster }
+		return { wrapper, video, store: storeOf(wrapper), poster }
 	}
 
 	it('shows the picture of the same name beside it as its poster', async () => {
@@ -573,15 +555,28 @@ describe('a video that has played to the end', () => {
 	})
 
 	it('goes back to its poster without downloading the video again', async () => {
-		const { wrapper, video, player, poster } = await mountWithPoster()
+		const { wrapper, video, store, poster } = await mountWithPoster()
 
 		await wrapper.find('video').trigger('ended')
 
-		// Stopped at the start is what puts plyr's poster back over it, and
-		// the bytes already buffered stay for the next play
-		expect(player.stop).toHaveBeenCalledOnce()
+		// Back at the start, paused, with the poster over it, and the bytes
+		// already buffered stay for the next play
+		expect(store.pause).toHaveBeenCalledOnce()
+		expect(store.seek).toHaveBeenCalledWith(0)
+		expect(wrapper.findComponent({ name: 'VideoSkinStub' }).props('stopped')).toBe(true)
 		expect(video.load).not.toHaveBeenCalled()
 		expect(wrapper.find('video').attributes('poster')).toBe(poster.encodedSource)
+	})
+
+	// Video.js only shows a poster until playback starts
+	it('takes the poster away again once it plays', async () => {
+		const { wrapper, store } = await mountWithPoster()
+		await wrapper.find('video').trigger('ended')
+
+		store.set({ paused: false })
+		await nextTick()
+
+		expect(wrapper.findComponent({ name: 'VideoSkinStub' }).props('stopped')).toBe(false)
 	})
 
 	it('says so, rather than throw, when it has neither a player nor a media element', () => {
@@ -590,8 +585,8 @@ describe('a video that has played to the end', () => {
 		const Host = defineComponent({
 			setup() {
 				const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
-				// No template refs, so neither plyr nor the element ever arrive
-				donePlaying = useMediaPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never, usePlyrAdapter(false)).donePlaying
+				// No template refs, so neither the player nor the element ever arrive
+				donePlaying = useMediaPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never, useVideojsAdapter()).donePlaying
 				return () => h('div')
 			},
 		})
@@ -602,9 +597,9 @@ describe('a video that has played to the end', () => {
 		error.mockRestore()
 	})
 
-	it('rewinds by itself when there is no player yet', async () => {
-		const { wrapper, video } = await mountWithPoster()
-		wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player = undefined
+	it('rewinds by itself when the player has not reached it yet', async () => {
+		const { wrapper, video, store } = await mountWithPoster()
+		store.target = undefined
 		video.pause = vi.fn()
 		video.currentTime = 12
 
@@ -651,8 +646,8 @@ describe('a video before it can play', () => {
 
 		expect(wrapper.emitted('loaded')).toHaveLength(1)
 		expect(wrapper.emitted('update:playing')).toEqual([[true]])
-		expect(wrapper.find('video').attributes('style')).toContain('width: 640px')
-		expect(wrapper.find('video').attributes('style')).toContain('height: 360px')
+		expect(wrapper.find('media-container').attributes('style')).toContain('width: 640px')
+		expect(wrapper.find('media-container').attributes('style')).toContain('height: 360px')
 
 		// Ready, but paused: a browser that refuses to autoplay does not
 		// hold the slideshow for good
@@ -676,8 +671,8 @@ describe('a video before it can play', () => {
 		const wrapper = await mountVideo({ hasPreview: false })
 
 		expect(wrapper.emitted('loaded')).toHaveLength(1)
-		expect(wrapper.find('video').attributes('style')).toContain('width: 360px')
-		expect(wrapper.find('video').attributes('style')).toContain('height: 640px')
+		expect(wrapper.find('media-container').attributes('style')).toContain('width: 360px')
+		expect(wrapper.find('media-container').attributes('style')).toContain('height: 640px')
 	})
 
 	it('shows the player once, when its metadata comes after its preview', async () => {
@@ -779,13 +774,9 @@ describe('the page around a full screen player', () => {
 		const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
 		const wrapper = mount(Videos, { props: makeProps({ file, files: [file] }), attachTo: document.body })
 		await flushPromises()
-		const player = wrapper.findComponent({ name: 'VuePlyrStub' }).vm.player as { on: Mock }
-		/** Run whatever the composable registered for one of plyr's own events */
-		const fire = (event: string) => {
-			const call = player.on.mock.calls.find(([name]) => name === event)
-			expect(call, `nothing listens for ${event}`).toBeDefined()
-			;(call![1] as () => void)()
-		}
+		const store = storeOf(wrapper)
+		/** Have the player say it entered or left full screen */
+		const fire = (event: 'enterfullscreen' | 'exitfullscreen') => store.set({ isFullscreen: event === 'enterfullscreen' })
 		return { wrapper, fire }
 	}
 
@@ -833,13 +824,13 @@ describe('the page around a full screen player', () => {
 
 describe('a player torn down early', () => {
 	// Closing the viewer straight after opening it unmounts the component
-	// before plyr has a player to stop
+	// before the player is there
 	it('unmounts without a player to stop', () => {
 		const Host = defineComponent({
 			setup() {
 				const file = makeFile({ basename: 'clip.mp4', mime: 'video/mp4' })
-				useMediaPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never, usePlyrAdapter(false))
-				// No `plyr` ref in the template, so the player never arrives
+				useMediaPlayer(false, makeProps({ file, files: [file] }), (() => {}) as never, useVideojsAdapter())
+				// No `player` ref in the template, so the player never arrives
 				return () => h('div')
 			},
 		})
@@ -849,7 +840,7 @@ describe('a player torn down early', () => {
 	})
 })
 
-describe('the listeners on the plyr controls', () => {
+describe('the listeners on the player controls', () => {
 	// Every prop the viewer hands over runs the update hook, and a resize
 	// runs it a great many times over. The controls are the same elements.
 	it('go on once, not on every update', async () => {
@@ -860,14 +851,14 @@ describe('the listeners on the plyr controls', () => {
 		// The viewer resizes the handler by handing it new bounds, and the
 		// first of those is what the controls are bound on
 		await wrapper.setProps({ maxWidth: 900 })
-		const controls = wrapper.findAll('.plyr__controls__item').map((control) => control.element)
+		const controls = wrapper.findAll('media-controls-content').map((control) => control.element)
 		const bind = controls.map((control) => vi.spyOn(control, 'addEventListener'))
 
 		await wrapper.setProps({ maxWidth: 800 })
 		await wrapper.setProps({ maxWidth: 700 })
 
-		expect(controls).toHaveLength(2)
-		expect(bind.map((spy) => spy.mock.calls.length)).toEqual([0, 0])
+		expect(controls).toHaveLength(1)
+		expect(bind.map((spy) => spy.mock.calls.length)).toEqual([0])
 	})
 
 	it('come off when the player goes away', async () => {
@@ -876,7 +867,7 @@ describe('the listeners on the plyr controls', () => {
 		await flushPromises()
 		await wrapper.setProps({ maxWidth: 900 })
 
-		const controls = wrapper.findAll('.plyr__controls__item').map((control) => control.element)
+		const controls = wrapper.findAll('media-controls-content').map((control) => control.element)
 		const unbind = controls.map((control) => vi.spyOn(control, 'removeEventListener'))
 
 		wrapper.unmount()
@@ -892,6 +883,18 @@ describe('Audios.vue (smoke)', () => {
 		await flushPromises()
 
 		expect(wrapper.find('audio').exists()).toBe(true)
+	})
+
+	// The speed button writes the rate itself, in the user's locale
+	it('hands the speed button the rate the player plays at', async () => {
+		const file = makeFile({ basename: 'song.mp3', mime: 'audio/mpeg' })
+		const wrapper = mount(Audios, { props: makeProps({ file, files: [file] }) })
+		await flushPromises()
+
+		storeOf(wrapper).set({ playbackRate: 1.5 })
+		await nextTick()
+
+		expect(wrapper.findComponent({ name: 'AudioSkinStub' }).props('rate')).toBe(1.5)
 	})
 })
 

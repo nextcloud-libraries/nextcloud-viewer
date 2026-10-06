@@ -4,60 +4,56 @@
 -->
 
 <template>
-	<!-- eslint-disable vue/no-unused-refs -- the plyr ref is consumed by usePlyrAdapter, the media one by useMediaPlayer, via useTemplateRef -->
-	<!-- Plyr currently replaces the parent. Wrapping to prevent this
-	https://github.com/redxtech/vue-plyr/issues/259 -->
-	<div>
-		<VuePlyr
-			ref="plyr"
-			:options="options"
-			:style="{
-				height: height + 'px',
-				width: width + 'px',
-			}">
-			<video
-				ref="video"
-				:autoplay="true"
-				:playsinline="true"
-				:poster="poster"
-				:src="src"
+	<!-- eslint-disable vue/no-unused-refs -- the player ref is consumed by useVideojsAdapter, the video one by useMediaPlayer, via useTemplateRef -->
+	<media-i18n :lang="playerLanguage">
+		<video-player ref="player" :poster="poster">
+			<VideoSkin
+				:stopped="stopped"
 				:style="{
 					height: height + 'px',
 					width: width + 'px',
-				}"
-				preload="metadata"
-				@error.capture.prevent.stop="onFail"
-				@ended="donePlaying"
-				@pause="onPause"
-				@play="onPlay"
-				@canplay="doneLoading"
-				@loadedmetadata="onLoadedMetadata">
+				}">
+				<video
+					ref="video"
+					:autoplay="true"
+					:playsinline="true"
+					:poster="poster"
+					:src="src"
+					preload="metadata"
+					@error.capture.prevent.stop="onFail"
+					@ended="donePlaying"
+					@pause="onPause"
+					@play="onPlay"
+					@canplay="doneLoading"
+					@loadedmetadata="onLoadedMetadata">
 
-				<!-- Omitting `type` on purpose because most of the
-					browsers auto detect the appropriate codec.
-					Having it set force the browser to comply to
-					the provided mime instead of detecting a potential
-					compatibility. -->
+					<!-- Omitting `type` on purpose because most of the
+						browsers auto detect the appropriate codec.
+						Having it set force the browser to comply to
+						the provided mime instead of detecting a potential
+						compatibility. -->
 
-				{{ t('Your browser does not support videos.') }}
-			</video>
-		</VuePlyr>
-	</div>
+					{{ t('Your browser does not support videos.') }}
+				</video>
+			</VideoSkin>
+		</video-player>
+	</media-i18n>
 </template>
 
 <script setup lang="ts">
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
-import VuePlyr from '@skjnldsv/vue-plyr'
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import VideoSkin from './videojs/VideoSkin.vue'
 import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
-import { usePlyrAdapter } from '../composables/usePlyrAdapter.ts'
+import { useVideojsAdapter } from '../composables/useVideojsAdapter.ts'
 import { logger } from '../services/logger.ts'
 import { preloadImageSize } from '../services/mediaPreloader.ts'
 import { canDownload } from '../utils/canDownload.ts'
 import { probeFile } from '../utils/isoMedia.ts'
 import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromName } from '../utils/livePhotoUtils.ts'
+import { playerLanguage } from '../utils/playerTranslations.ts'
 import { getPreviewIfAny, getServerPreview } from '../utils/previewUtils.ts'
 
 defineOptions({
@@ -67,7 +63,7 @@ defineOptions({
 const props = defineProps<ViewerProps>()
 const emit = defineEmits<ViewerEmits>()
 
-const { options, ...player } = usePlyrAdapter(false)
+const { stopped, ...adapter } = useVideojsAdapter()
 const {
 	video,
 	onFail,
@@ -77,7 +73,7 @@ const {
 	onPlay,
 	showBeforePlayable,
 	src,
-} = useMediaPlayer(false, props, emit, player)
+} = useMediaPlayer(false, props, emit, adapter)
 
 const height = ref(0)
 const width = ref(0)
@@ -173,51 +169,18 @@ function onLoadedMetadata() {
 </script>
 
 <style scoped lang="scss">
-video {
+.media-skin {
 	/* over arrows in tiny screens */
 	z-index: 20050;
 	align-self: center;
-	max-width: 100%;
-	max-height: 100% !important;
-	background-color: black;
-
 	justify-self: center;
-}
-
-:deep() {
-	.plyr:-webkit-full-screen video {
-		width: 100% !important;
-		height: 100% !important;
-	}
-	.plyr:fullscreen video {
-		width: 100% !important;
-		height: 100% !important;
-	}
-	.plyr__progress__container {
-		flex: 1 1;
-	}
-
-	.plyr {
-		// stylelint-disable-next-line no-invalid-position-at-import-rule -- scoped scss partial
-		@import '../mixins/Plyr.scss';
-
-		// Override server font style
-		button {
-			color: white;
-
-			&:hover,
-			&:focus {
-				color: var(--color-primary-element-text);
-				background-color: var(--color-primary-element);
-			}
-		}
-	}
+	max-width: 100%;
+	max-height: 100%;
+	background-color: black;
 }
 </style>
 
 <style lang="scss">
-@import '@skjnldsv/vue-plyr/dist/vue-plyr.css';
-
 // Fullscreen styles to hide header and footer
 // when in fullscreen mode
 main.viewer__hidden-fullscreen {

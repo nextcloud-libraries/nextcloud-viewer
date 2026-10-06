@@ -21,16 +21,12 @@ const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
 
 /** What the media player needs of the library drawing the controls */
 export interface MediaPlayerAdapter {
-	/** Called once the media can play */
-	ready(): void
 	/** Go back to the start, paused, with the poster over it. False when there is no player yet */
 	stop(): boolean
 	/** Be told of every change of full screen, however it came about */
 	onFullscreenChange(callback: (fullscreen: boolean) => void): void
 	/** The controls, which the pointer can be over, or none if not drawn yet */
 	controls(): Element[]
-	/** Take the player down with the component */
-	destroy(): void
 }
 
 /**
@@ -72,7 +68,6 @@ export function useMediaPlayer(forAudio: boolean, props: ViewerProps, emit: Emit
 	 */
 	function doneLoading() {
 		playable = true
-		player.ready()
 		show()
 		release()
 	}
@@ -266,7 +261,6 @@ export function useMediaPlayer(forAudio: boolean, props: ViewerProps, emit: Emit
 		// Force stop any ongoing request
 		logger.debug('Closing media stream', { filename: props.file.basename })
 		video?.value?.pause?.()
-		player.destroy()
 	})
 
 	return {

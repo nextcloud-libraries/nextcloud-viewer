@@ -32,7 +32,7 @@ test.describe('A video slow to load', () => {
 		await viewer.open('previewed.webm', 'previews')
 		await viewer.waitForOpen()
 
-		// Its poster is on the element; plyr copies it onto its own layer in
+		// Its poster is on the element; the player copies it onto its own layer in
 		// its own time, which Firefox puts off while the video is held
 		const video = viewer.container.locator('video')
 		await expect(video).toHaveAttribute('poster', /core\/preview/)

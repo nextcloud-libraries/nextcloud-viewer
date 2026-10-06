@@ -26,10 +26,9 @@ test.describe('A video with a poster beside it', () => {
 		await viewer.open('trailer.webm')
 		await viewer.waitForOpen()
 
-		const player = viewer.container.locator('.plyr')
-		const poster = player.locator('.plyr__poster')
-		await expect(player).toHaveClass(/plyr__poster-enabled/)
-		await expect(poster).toHaveAttribute('style', /trailer\.jpg/)
+		const player = viewer.container.locator('media-container')
+		const poster = player.locator('.media-poster-image')
+		await expect(poster).toHaveAttribute('src', /trailer\.jpg/)
 
 		// Played through to the end, muted so no autoplay policy stands in the way
 		const video = viewer.container.locator('video').first()
@@ -41,9 +40,9 @@ test.describe('A video with a poster beside it', () => {
 			await ended
 		})
 
-		// Back at the start and paused, which is what puts plyr's poster on top
-		await expect(player).toHaveClass(/plyr--stopped/)
-		await expect(poster).toHaveCSS('opacity', '1')
+		// Back at the start and paused, with the poster on top again
+		await expect(player).toHaveClass(/viewer-media--stopped/)
+		await expect(player.locator('media-poster')).toHaveCSS('opacity', '1')
 		const downloads = requests.length
 
 		// Playing it again comes from what was already buffered
@@ -52,7 +51,7 @@ test.describe('A video with a poster beside it', () => {
 			await element.play()
 			await ended
 		})
-		await expect(poster).toHaveCSS('opacity', '1')
+		await expect(player.locator('media-poster')).toHaveCSS('opacity', '1')
 		expect(requests).toHaveLength(downloads)
 	})
 })

@@ -23,25 +23,6 @@ declare module 'vue-material-design-icons/*.vue' {
 	export default component
 }
 
-// The plyr export is broken, let's fix it here
-declare module 'plyr' {
-	// Import the *type* from the real declaration file
-	import type PlyrType from 'plyr/src/js/plyr.d.ts'
-	// Import the *value* (class implementation) from the JS file
-	import type PlyrImpl from 'plyr/src/js/plyr.js'
-
-	const Plyr: typeof PlyrImpl & typeof PlyrType
-	export default Plyr
-}
-
-// The plyr Vue wrapper ships no types
-declare module '@skjnldsv/vue-plyr' {
-	import type { Component } from 'vue'
-
-	const VuePlyr: Component
-	export default VuePlyr
-}
-
 declare module '*.mp4' {
 	const src: string
 	export default src

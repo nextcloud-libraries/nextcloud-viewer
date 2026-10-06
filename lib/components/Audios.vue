@@ -4,43 +4,42 @@
 -->
 
 <template>
-	<!-- eslint-disable vue/no-unused-refs -- the plyr ref is consumed by usePlyrAdapter, the media one by useMediaPlayer, via useTemplateRef -->
-	<!-- Plyr currently replaces the parent. Wrapping to prevent this
-	https://github.com/redxtech/vue-plyr/issues/259 -->
-	<div>
-		<VuePlyr
-			ref="plyr"
-			:options="options">
-			<audio
-				ref="audio"
-				:autoplay="true"
-				:src="src"
-				preload="metadata"
-				@error.capture.prevent.stop="onFail"
-				@ended="donePlaying"
-				@pause="onPause"
-				@play="onPlay"
-				@canplay="doneLoading">
+	<!-- eslint-disable vue/no-unused-refs -- the player ref is consumed by useVideojsAdapter, the audio one by useMediaPlayer, via useTemplateRef -->
+	<media-i18n :lang="playerLanguage">
+		<audio-player ref="player">
+			<AudioSkin :stopped="stopped" :rate="rate">
+				<audio
+					ref="audio"
+					:autoplay="true"
+					:src="src"
+					preload="metadata"
+					@error.capture.prevent.stop="onFail"
+					@ended="donePlaying"
+					@pause="onPause"
+					@play="onPlay"
+					@canplay="doneLoading">
 
-				<!-- Omitting `type` on purpose because most of the
-					browsers auto detect the appropriate codec.
-					Having it set force the browser to comply to
-					the provided mime instead of detecting a potential
-					compatibility. -->
+					<!-- Omitting `type` on purpose because most of the
+						browsers auto detect the appropriate codec.
+						Having it set force the browser to comply to
+						the provided mime instead of detecting a potential
+						compatibility. -->
 
-				{{ t('Your browser does not support audio.') }}
-			</audio>
-		</VuePlyr>
-	</div>
+					{{ t('Your browser does not support audio.') }}
+				</audio>
+			</AudioSkin>
+		</audio-player>
+	</media-i18n>
 </template>
 
 <script setup lang="ts">
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
-import VuePlyr from '@skjnldsv/vue-plyr'
+import AudioSkin from './videojs/AudioSkin.vue'
 import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
-import { usePlyrAdapter } from '../composables/usePlyrAdapter.ts'
+import { useVideojsAdapter } from '../composables/useVideojsAdapter.ts'
 import { t } from '../utils/l10n.ts'
+import { playerLanguage } from '../utils/playerTranslations.ts'
 
 defineOptions({
 	name: 'ViewerAudios',
@@ -49,7 +48,7 @@ defineOptions({
 const props = defineProps<ViewerProps>()
 const emit = defineEmits<ViewerEmits>()
 
-const { options, ...player } = usePlyrAdapter(true)
+const { stopped, rate, ...adapter } = useVideojsAdapter()
 const {
 	onFail,
 	donePlaying,
@@ -57,52 +56,18 @@ const {
 	onPause,
 	onPlay,
 	src,
-} = useMediaPlayer(true, props, emit, player)
-
+} = useMediaPlayer(true, props, emit, adapter)
 </script>
 
 <style scoped lang="scss">
-audio {
+.media-skin {
 	/* over arrows in tiny screens */
 	z-index: 20050;
 	align-self: center;
-	max-width: 100%;
-	max-height: 100%;
-	background-color: black;
-
 	justify-self: center;
+	// It stretches to what it is given, and the viewer gives it nothing:
+	// a width of its own, clear of the viewer's arrows on a narrow screen
+	width: 600px;
+	max-width: calc(100vw - 4 * var(--default-clickable-area));
 }
-
-:deep() {
-	.plyr__progress__container {
-		flex: 1 1;
-	}
-
-	.plyr {
-		// stylelint-disable-next-line no-invalid-position-at-import-rule -- scoped scss partial
-		@import '../mixins/Plyr.scss';
-	}
-
-	// The settings menu (e.g. speed selection) is absolutely positioned and
-	// opens upward from the controls. On short viewports its full height does
-	// not fit and options get clipped off-screen. Cap its height to the
-	// available viewport space and let it scroll internally so no option is
-	// ever clipped, regardless of where the centered player sits.
-	.plyr__menu__container {
-		// The player is vertically centered, so the controls bar sits at
-		// ~50vh and the menu opens upward into the top half of the viewport.
-		// Cap to that available space (half the viewport, minus half the
-		// controls bar and a top margin) so options never clip off-screen.
-		max-height: calc(40vh - var(--plyr-button-size, 44px) / 2 - 20px);
-		overflow-y: auto;
-	}
-
-	// make it a bit off-center in order to fix mobile controls
-	@media only screen and (max-width: 500px) {
-		.plyr--audio {
-			top: calc(35vw / 2 + 60px / 2);
-		}
-	}
-}
-
 </style>

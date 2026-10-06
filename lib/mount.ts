@@ -4,7 +4,6 @@
  */
 import { createApp } from 'vue'
 import Viewer from './views/Viewer.vue'
-import plyrIcons from './img/plyr.svg?raw'
 import { registerAudioCustomElement } from './models/audios.ts'
 import { registerImageCustomElement } from './models/images.ts'
 import { registerSheetmusicCustomElement } from './models/sheetmusic.ts'
@@ -35,13 +34,6 @@ export async function mount(): Promise<void> {
 	const ViewerRoot = document.createElement('div')
 	ViewerRoot.id = 'viewer'
 	document.body.appendChild(ViewerRoot)
-
-	// Controls for the video viewer. Needed as Firefox CSP blocks loading
-	// the svg through the normal plyr system
-	const VideoControls = document.createElement('div')
-	VideoControls.innerHTML = plyrIcons
-	VideoControls.style.display = 'none'
-	document.body.appendChild(VideoControls)
 
 	const ViewerInstance = ViewerApp.mount(ViewerRoot)
 	getViewer()._setViewer(ViewerInstance as InstanceType<typeof Viewer>)

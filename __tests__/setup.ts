@@ -23,7 +23,7 @@ URL.revokeObjectURL ??= () => {}
 // window, unless a test narrows it on purpose
 Object.defineProperty(document.documentElement, 'clientWidth', { value: 1280, configurable: true })
 
-// plyr reads it while its module is evaluated
+// jsdom has none, and code under test reads it
 window.matchMedia ??= (query: string) => ({
 	matches: false,
 	media: query,
