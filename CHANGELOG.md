@@ -10,6 +10,18 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- `onInit()` on a handler, called the first time the viewer needs its element,
+  so the view and what it imports stay out of the registration script that
+  runs on every page. The viewer waits for the element to be defined before
+  rendering it. Tag names may now hold an underscore, for app ids like
+  `files_pdfviewer` (#76)
+- A "Start slideshow" Files action on a selection of two files or more that
+  can all be viewed (#103, nextcloud/viewer#1524)
+- Full screen and the sidebar are buttons in the header instead of entries
+  in the menu (#99)
+- The files next to the one shown are preloaded: the preview a picture will
+  ask for, and a video or sound's metadata. `preload` is given the space the
+  viewer shows files in as a second argument (#100)
 - Zooming into a picture goes to its full resolution: the first zoom fetches
   the largest preview the server renders and swaps it in once decoded, and
   the zoom goes until one of its pixels is four on screen, never less than
@@ -20,6 +32,15 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- A slideshow skipped videos that were slow to start: stepping to a file now
+  waits for it to load, and the slideshow holds while it does
+  (#101, nextcloud/viewer#39)
+- The image editor's text tool could not be typed in, and the arrow keys
+  paged away from an unsaved edit: the modal kept the focus from the editor
+  (#112, nextcloud/viewer#3335)
+- A file the caller looked up on its own was listed twice: `open()` finds it
+  in the list by its source (#102)
+- A neighbouring file updated elsewhere kept its old name and source (#100)
 - Saving from the image editor could damage a file: it was offered on every
   image and wrote PNG over GIF, SVG, BMP or AVIF. It is back to JPEG, PNG and
   WebP, on a file that may be downloaded, not while comparing, not on a phone
