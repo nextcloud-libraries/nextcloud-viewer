@@ -37,12 +37,16 @@ describe('translations', () => {
 	})
 
 	it('loads the full catalog once, however often it is asked for', async () => {
-		const { loadTranslations } = await importL10n()
+		const { loadTranslations, t } = await importL10n()
 
 		const first = loadTranslations()
 		const second = loadTranslations()
 
+		// The same load, and one that happens: two calls that load nothing
+		// would share their `undefined` just as well
+		expect(first).toBeInstanceOf(Promise)
 		expect(second).toBe(first)
 		await first
+		expect(t('Settings')).toBe('Paramètres')
 	})
 })
