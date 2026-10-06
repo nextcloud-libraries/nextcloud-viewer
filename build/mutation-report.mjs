@@ -12,6 +12,10 @@
  * the mutation run is scoped to the logic, and a component test is not
  * expected to catch a change it never ran.
  *
+ * It needs `disableBail` in stryker.config.json: Stryker otherwise stops
+ * at the first test that fails for a change, and every other test that
+ * would have failed too looks as if it caught nothing.
+ *
  * Writes a markdown summary to stdout, and `unchecked=<count>` to
  * `$GITHUB_OUTPUT` when run in a workflow. For a pull request, which only
  * mutates the files it changed:
