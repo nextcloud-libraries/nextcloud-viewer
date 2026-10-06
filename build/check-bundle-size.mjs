@@ -1,7 +1,11 @@
-/**
+/*
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+
+import { readFileSync } from 'node:fs'
+import { dirname, relative, resolve } from 'node:path'
+import { gzipSync } from 'node:zlib'
 
 /**
  * Guard what importing this package costs.
@@ -17,9 +21,6 @@
  * if it is bigger than it should be or if a chunk that must be lazy turns up
  * in it.
  */
-import { gzipSync } from 'node:zlib'
-import { readFileSync } from 'node:fs'
-import { dirname, relative, resolve } from 'node:path'
 
 /** What the entry may cost, gzipped, before anyone has opened a file */
 const BUDGET_GZIP = 10 * 1024
@@ -106,9 +107,7 @@ console.info(`  dependencies: ${packages.sort().join(', ') || 'none'}\n`)
 
 const eager = files.map((file) => file.replace(/.*\/([^/]+)\.mjs$/, '$1'))
 const leaked = MUST_BE_LAZY.filter((chunk) => eager.includes(chunk))
-const leakedPackages = MUST_BE_LAZY_PACKAGES.filter(
-	(name) => packages.some((used) => used === name || used.startsWith(`${name}/`)),
-)
+const leakedPackages = MUST_BE_LAZY_PACKAGES.filter((name) => packages.some((used) => used === name || used.startsWith(`${name}/`)))
 
 if (leakedPackages.length > 0) {
 	console.error(`These are only needed once a file is open, and something imports them at the top level: ${leakedPackages.join(', ')}`)

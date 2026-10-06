@@ -2,19 +2,20 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import { createLibConfig } from '@nextcloud/vite-config'
-import injectCSS from 'vite-plugin-css-injected-by-js'
 
-import { readdirSync, readFileSync } from 'node:fs'
+import type { UserConfigFn } from 'vite'
+
+import { createLibConfig } from '@nextcloud/vite-config'
 import { po as poParser } from 'gettext-parser'
-// eslint-disable-next-line n/no-extraneous-import
-import { defineConfig, type UserConfigFn } from 'vite'
+import { readdirSync, readFileSync } from 'node:fs'
+import { defineConfig } from 'vite'
+import injectCSS from 'vite-plugin-css-injected-by-js'
 
 const { version } = JSON.parse(readFileSync('./package.json', 'utf8'))
 
 const translations = readdirSync('./l10n')
-	.filter(name => name !== 'messages.pot' && name.endsWith('.pot'))
-	.map(file => {
+	.filter((name) => name !== 'messages.pot' && name.endsWith('.pot'))
+	.map((file) => {
 		const path = './l10n/' + file
 		const locale = file.slice(0, -'.pot'.length)
 
@@ -37,7 +38,7 @@ const translations = readdirSync('./l10n')
  */
 const eagerMessages = new Set([
 	'View',
-	'Open with …',
+	'Open with …',
 	'Open with {handler}',
 	'Images',
 	'Video player',

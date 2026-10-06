@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import type { UserConfig } from 'vitest/node'
+
 import config from './vite.config.ts'
 
 export default async (env) => {

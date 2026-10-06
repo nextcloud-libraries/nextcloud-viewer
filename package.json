@@ -20,39 +20,34 @@
 	"author": "Nextcloud GmbH and Nextcloud contributors",
 	"type": "module",
 	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.mjs",
-			"require": "./dist/index.cjs"
-		}
+		"types": "./dist/index.d.ts",
+		"import": "./dist/index.mjs",
+		"require": "./dist/index.cjs"
 	},
 	"files": [
 		"dist"
 	],
-	"engines": {
-		"node": "^20.0.0 || ^22.0.0 || ^24.0.0"
-	},
 	"scripts": {
 		"build": "vite --mode production build",
 		"build:demo": "vite build --config playground/vite.config.ts",
 		"build:doc": "npm run build && typedoc && touch dist/doc/.nojekyll",
+		"build:e2e-app": "VIEWER_VERSION=2.99999.0-e2e npm run build && vite build --config e2e-server/vite.config.ts",
+		"check:imports": "node build/check-published-imports.mjs",
 		"check:size": "node build/check-bundle-size.mjs",
-		"test:mutation": "stryker run",
 		"dev": "vite --mode development build",
 		"l10n:extract": "node build/extract-l10n.js",
-		"lint": "eslint lib/ __tests__/ e2e/ e2e-server/ playground/",
-		"lint:fix": "eslint --fix lib/ __tests__/ e2e/ e2e-server/ playground/",
-		"playground": "vite serve --config playground/vite.config.ts",
+		"lint": "eslint",
+		"lint:fix": "eslint --fix",
 		"prepack": "npm run build",
+		"playground": "vite serve --config playground/vite.config.ts",
 		"test": "vitest run",
 		"test:coverage": "vitest run --coverage",
 		"test:e2e": "playwright test",
 		"test:e2e:server": "playwright test --config playwright.server.config.ts",
-		"build:e2e-app": "VIEWER_VERSION=2.99999.0-e2e npm run build && vite build --config e2e-server/vite.config.ts",
+		"test:mutation": "stryker run",
 		"test:watch": "vitest watch",
 		"typecheck": "vue-tsc --noEmit -p tsconfig.check.json",
-		"watch": "vite --mode development build --watch",
-		"check:imports": "node build/check-published-imports.mjs"
+		"watch": "vite --mode development build --watch"
 	},
 	"dependencies": {
 		"@mdi/svg": "^7.4.47",
@@ -64,20 +59,6 @@
 		"opensheetmusicdisplay": "^2.1.3",
 		"vue-material-design-icons": "^5.3.1",
 		"webdav": "^5.10.0"
-	},
-	"peerDependencies": {
-		"@nextcloud/axios": "^2.5.2",
-		"@nextcloud/capabilities": "^1.2.1",
-		"@nextcloud/dialogs": "^7.5.0",
-		"@nextcloud/event-bus": "^3.3.3",
-		"@nextcloud/files": "^4.0.0",
-		"@nextcloud/initial-state": "^3.0.0",
-		"@nextcloud/l10n": "^3.4.1",
-		"@nextcloud/paths": "^3.1.0",
-		"@nextcloud/router": "^3.1.0",
-		"@nextcloud/sharing": "^0.4.0 || ^1.0.0-beta.2",
-		"@nextcloud/vue": "^9.13.0",
-		"vue": "^3.5.0"
 	},
 	"devDependencies": {
 		"@nextcloud/axios": "^2.5.2",
@@ -113,5 +94,34 @@
 		"vitest": "^3.2.4",
 		"vue": "^3.5.42",
 		"vue-tsc": "^3.3.11"
+	},
+	"peerDependencies": {
+		"@nextcloud/axios": "^2.5.2",
+		"@nextcloud/capabilities": "^1.2.1",
+		"@nextcloud/dialogs": "^7.5.0",
+		"@nextcloud/event-bus": "^3.3.3",
+		"@nextcloud/files": "^4.0.0",
+		"@nextcloud/initial-state": "^3.0.0",
+		"@nextcloud/l10n": "^3.4.1",
+		"@nextcloud/paths": "^3.1.0",
+		"@nextcloud/router": "^3.1.0",
+		"@nextcloud/sharing": "^0.4.0 || ^1.0.0-beta.2",
+		"@nextcloud/vue": "^9.13.0",
+		"vue": "^3.5.0"
+	},
+	"engines": {
+		"node": "^24.0.0 || >=26.0.0"
+	},
+	"devEngines": {
+		"runtime": {
+			"name": "node",
+			"version": "^24"
+		},
+		"packageManager": [
+			{
+				"name": "npm",
+				"version": "^11.3"
+			}
+		]
 	}
 }
