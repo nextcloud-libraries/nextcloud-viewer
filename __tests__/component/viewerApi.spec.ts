@@ -503,7 +503,8 @@ describe('the editing option', () => {
 		busHandler('files:node:updated')(file)
 		await flushPromises()
 
-		busHandler('files:node:updated')(file)
+		// Another version of it, saved from somewhere else
+		busHandler('files:node:updated')(makeFile({ id: file.fileid, basename: file.basename, attributes: { etag: 'elsewhere' } }))
 		await flushPromises()
 
 		expect(localSource()).toBeUndefined()
