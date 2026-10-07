@@ -39,44 +39,46 @@ vi.mock('@nextcloud/router', async (importOriginal) => ({
 	generateUrl: (url: string) => url,
 }))
 
-// The skins are Video.js markup, which jsdom cannot play: a stand-in keeps
-// what the viewer relies on, the media in a container that takes the
-// player's size, and a bar of controls the pointer can be over.
-vi.mock('../../lib/components/videojs/VideoSkin.vue', async () => mockSkin('VideoSkinStub'))
-vi.mock('../../lib/components/videojs/AudioSkin.vue', async () => mockSkin('AudioSkinStub'))
+// Video.js itself is not loaded: jsdom cannot play media, and the tests
+// stand in for its players and skins below
+vi.mock('@videojs/html/video/player', () => ({}))
+vi.mock('@videojs/html/video/skin', () => ({}))
+vi.mock('@videojs/html/audio/player', () => ({}))
+vi.mock('@videojs/html/audio/skin', () => ({}))
+vi.mock('@videojs/html/i18n', () => ({ registerI18n: vi.fn() }))
+
+// A skin draws its controls in an open shadow root, the one part of it the
+// viewer reaches into: the controls bar and the speed menu
+for (const tag of ['video-skin', 'audio-skin']) {
+	if (!customElements.get(tag)) {
+		customElements.define(tag, class extends HTMLElement {
+			constructor() {
+				super()
+				this.attachShadow({ mode: 'open' }).innerHTML = '<slot></slot><media-controls><button></button></media-controls><media-playback-rate-radio-group></media-playback-rate-radio-group>'
+			}
+		})
+	}
+}
 
 /**
- * A skin stand-in, named so a test can find it and read what it is given.
+ * The controls bar inside the skin a wrapper renders.
  *
- * @param name - The component name
+ * @param wrapper - The mounted Videos or Audios
  */
-async function mockSkin(name: string) {
-	const { defineComponent, h } = await import('vue')
-	return {
-		default: defineComponent({
-			name,
-			props: { stopped: Boolean, rate: { type: Number, default: 1 } },
-			render() {
-				return h('media-container', { class: 'media-skin' }, [
-					this.$slots.default?.(),
-					h('media-controls-content', [h('button', { class: 'media-button' })]),
-				])
-			},
-		}),
-	}
+function controlsOf(wrapper: VueWrapper): Element {
+	return wrapper.find('video-skin, audio-skin').element.shadowRoot!.querySelector('media-controls')!
 }
 
 /** What the tests drive of a Video.js player store */
 interface FakeStore {
 	paused: boolean
 	isFullscreen: boolean
-	playbackRate: number
 	target: object | undefined
 	pause: Mock
 	seek: Mock
 	subscribe(callback: () => void): () => void
 	/** Change the state and tell the subscribers, as the player does */
-	set(patch: Partial<Pick<FakeStore, 'paused' | 'isFullscreen' | 'playbackRate' | 'target'>>): void
+	set(patch: Partial<Pick<FakeStore, 'paused' | 'isFullscreen' | 'target'>>): void
 }
 
 /**
@@ -87,7 +89,6 @@ function makeStore(): FakeStore {
 	return {
 		paused: true,
 		isFullscreen: false,
-		playbackRate: 1,
 		target: {},
 		pause: vi.fn(),
 		seek: vi.fn(async () => 0),
@@ -127,6 +128,7 @@ import { useMediaPlayer } from '../../lib/composables/useMediaPlayer.ts'
 import { useVideojsAdapter } from '../../lib/composables/useVideojsAdapter.ts'
 import { logger } from '../../lib/services/logger.ts'
 import { preloadImage, preloadMedia, preloadPreview } from '../../lib/services/mediaPreloader.ts'
+import { formatRate } from '../../lib/utils/playerTranslations.ts'
 
 const preloadMediaMock = vi.mocked(preloadMedia)
 const preloadPreviewMock = vi.mocked(preloadPreview)
@@ -529,7 +531,7 @@ describe('Videos.vue (smoke)', () => {
 
 		await wrapper.find('video').trigger('loadedmetadata')
 
-		const skin = wrapper.find('media-container').element as HTMLElement
+		const skin = wrapper.find('video-skin').element as HTMLElement
 		expect(skin.style.width).toBe(width)
 		expect(skin.style.height).toBe(height)
 	})
@@ -563,7 +565,7 @@ describe('a video that has played to the end', () => {
 		// already buffered stay for the next play
 		expect(store.pause).toHaveBeenCalledOnce()
 		expect(store.seek).toHaveBeenCalledWith(0)
-		expect(wrapper.findComponent({ name: 'VideoSkinStub' }).props('stopped')).toBe(true)
+		expect(wrapper.find('.viewer-media__poster').attributes('src')).toBe(poster.encodedSource)
 		expect(video.load).not.toHaveBeenCalled()
 		expect(wrapper.find('video').attributes('poster')).toBe(poster.encodedSource)
 	})
@@ -576,7 +578,7 @@ describe('a video that has played to the end', () => {
 		store.set({ paused: false })
 		await nextTick()
 
-		expect(wrapper.findComponent({ name: 'VideoSkinStub' }).props('stopped')).toBe(false)
+		expect(wrapper.find('.viewer-media__poster').exists()).toBe(false)
 	})
 
 	it('says so, rather than throw, when it has neither a player nor a media element', () => {
@@ -646,8 +648,8 @@ describe('a video before it can play', () => {
 
 		expect(wrapper.emitted('loaded')).toHaveLength(1)
 		expect(wrapper.emitted('update:playing')).toEqual([[true]])
-		expect(wrapper.find('media-container').attributes('style')).toContain('width: 640px')
-		expect(wrapper.find('media-container').attributes('style')).toContain('height: 360px')
+		expect(wrapper.find('video-skin').attributes('style')).toContain('width: 640px')
+		expect(wrapper.find('video-skin').attributes('style')).toContain('height: 360px')
 
 		// Ready, but paused: a browser that refuses to autoplay does not
 		// hold the slideshow for good
@@ -671,8 +673,8 @@ describe('a video before it can play', () => {
 		const wrapper = await mountVideo({ hasPreview: false })
 
 		expect(wrapper.emitted('loaded')).toHaveLength(1)
-		expect(wrapper.find('media-container').attributes('style')).toContain('width: 360px')
-		expect(wrapper.find('media-container').attributes('style')).toContain('height: 640px')
+		expect(wrapper.find('video-skin').attributes('style')).toContain('width: 360px')
+		expect(wrapper.find('video-skin').attributes('style')).toContain('height: 640px')
 	})
 
 	it('shows the player once, when its metadata comes after its preview', async () => {
@@ -851,7 +853,7 @@ describe('the listeners on the player controls', () => {
 		// The viewer resizes the handler by handing it new bounds, and the
 		// first of those is what the controls are bound on
 		await wrapper.setProps({ maxWidth: 900 })
-		const controls = wrapper.findAll('media-controls-content').map((control) => control.element)
+		const controls = [controlsOf(wrapper)]
 		const bind = controls.map((control) => vi.spyOn(control, 'addEventListener'))
 
 		await wrapper.setProps({ maxWidth: 800 })
@@ -867,7 +869,7 @@ describe('the listeners on the player controls', () => {
 		await flushPromises()
 		await wrapper.setProps({ maxWidth: 900 })
 
-		const controls = wrapper.findAll('media-controls-content').map((control) => control.element)
+		const controls = [controlsOf(wrapper)]
 		const unbind = controls.map((control) => vi.spyOn(control, 'removeEventListener'))
 
 		wrapper.unmount()
@@ -885,16 +887,14 @@ describe('Audios.vue (smoke)', () => {
 		expect(wrapper.find('audio').exists()).toBe(true)
 	})
 
-	// The speed button writes the rate itself, in the user's locale
-	it('hands the speed button the rate the player plays at', async () => {
+	// Video.js writes `1.5×` whatever the language
+	it('writes the speeds in the user language', async () => {
 		const file = makeFile({ basename: 'song.mp3', mime: 'audio/mpeg' })
 		const wrapper = mount(Audios, { props: makeProps({ file, files: [file] }) })
 		await flushPromises()
 
-		storeOf(wrapper).set({ playbackRate: 1.5 })
-		await nextTick()
-
-		expect(wrapper.findComponent({ name: 'AudioSkinStub' }).props('rate')).toBe(1.5)
+		const group = wrapper.find('audio-skin').element.shadowRoot!.querySelector('media-playback-rate-radio-group') as HTMLElement & { formatRate?: unknown }
+		expect(group.formatRate).toBe(formatRate)
 	})
 })
 

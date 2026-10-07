@@ -7,8 +7,8 @@
 	<!-- eslint-disable vue/no-unused-refs -- the player ref is consumed by useVideojsAdapter, the video one by useMediaPlayer, via useTemplateRef -->
 	<media-i18n :lang="playerLanguage">
 		<video-player ref="player" :poster="poster">
-			<VideoSkin
-				:stopped="stopped"
+			<video-skin
+				class="viewer-media"
 				:style="{
 					height: height + 'px',
 					width: width + 'px',
@@ -35,7 +35,14 @@
 
 					{{ t('Your browser does not support videos.') }}
 				</video>
-			</VideoSkin>
+				<!-- The skin shows its poster only until playback starts, and
+					the viewer rewinds a played video to it (nextcloud/viewer#2585) -->
+				<img
+					v-if="stopped && poster"
+					class="viewer-media__poster"
+					alt=""
+					:src="poster">
+			</video-skin>
 		</video-player>
 	</media-i18n>
 </template>
@@ -44,7 +51,6 @@
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import VideoSkin from './videojs/VideoSkin.vue'
 import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
 import { useVideojsAdapter } from '../composables/useVideojsAdapter.ts'
 import { logger } from '../services/logger.ts'
@@ -55,6 +61,9 @@ import { t } from '../utils/l10n.ts'
 import { findLivePhotoPeerFromName } from '../utils/livePhotoUtils.ts'
 import { playerLanguage } from '../utils/playerTranslations.ts'
 import { getPreviewIfAny, getServerPreview } from '../utils/previewUtils.ts'
+
+import '@videojs/html/video/player'
+import '@videojs/html/video/skin'
 
 defineOptions({
 	name: 'ViewerVideos',
@@ -169,7 +178,15 @@ function onLoadedMetadata() {
 </script>
 
 <style scoped lang="scss">
-.media-skin {
+.viewer-media {
+	// The skin's public settings: the rest of its look is its own
+	--media-accent-color: var(--color-primary-element);
+	--media-accent-text-color: var(--color-primary-element-text);
+	--media-border-radius: 0;
+	--media-font-family: var(--font-face);
+
+	position: relative;
+	display: block;
 	/* over arrows in tiny screens */
 	z-index: 20050;
 	align-self: center;
@@ -177,6 +194,15 @@ function onLoadedMetadata() {
 	max-width: 100%;
 	max-height: 100%;
 	background-color: black;
+}
+
+.viewer-media__poster {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	pointer-events: none;
 }
 </style>
 

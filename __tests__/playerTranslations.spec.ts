@@ -24,11 +24,9 @@ describe('the player translations', () => {
 	})
 
 	// Video.js wants a BCP 47 tag, the server hands out `pt_BR`
-	it('are registered for the user language, as Video.js writes it', async () => {
+	it('are registered once imported, for the user language as Video.js writes it', async () => {
 		setLanguage('pt_BR')
-		const { playerLanguage, registerPlayerTranslations } = await importTranslations()
-
-		registerPlayerTranslations()
+		const { playerLanguage } = await importTranslations()
 
 		expect(playerLanguage).toBe('pt-BR')
 		expect(registerI18n).toHaveBeenCalledOnce()
@@ -37,9 +35,7 @@ describe('the player translations', () => {
 
 	// Placeholders are filled in by Video.js, so they must survive our t()
 	it('keep the placeholders Video.js fills in', async () => {
-		const { registerPlayerTranslations } = await importTranslations()
-
-		registerPlayerTranslations()
+		await importTranslations()
 
 		const translations = registerI18n.mock.calls[0]![1]
 		expect(translations.buttons.play).toBe('Play')
