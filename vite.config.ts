@@ -10,6 +10,7 @@ import { po as poParser } from 'gettext-parser'
 import { readdirSync, readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import injectCSS from 'vite-plugin-css-injected-by-js'
+import { videojsElements } from './build/videojsElements.ts'
 
 const { version } = JSON.parse(readFileSync('./package.json', 'utf8'))
 
@@ -84,7 +85,7 @@ export default defineConfig((env) => {
 		// rendered with none of its styles.
 		inlineCSS: false,
 		config: {
-			plugins: [injectCSS({ relativeCSSInjection: true })],
+			plugins: [injectCSS({ relativeCSSInjection: true }), videojsElements],
 		},
 
 		replace: {

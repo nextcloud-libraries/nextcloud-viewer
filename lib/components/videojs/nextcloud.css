@@ -1,0 +1,82 @@
+/**
+ * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ */
+
+/*
+ * The Video.js skins in Nextcloud colours.
+ *
+ * Only the theme tokens are set, the vendored styles stay as they are, so
+ * an update of the skin is a copy over them. Declarations outside any layer
+ * win over the skin's layered ones whatever their specificity, and
+ * `.viewer-media` keeps this off any other Video.js player on the page.
+ *
+ * The viewer forces only the main text and background colours to the dark
+ * palette, the rest follows the user's theme: hover and border colours are
+ * drawn from the main text, so they read on whichever palette is in force.
+ */
+.media-skin.viewer-media {
+	--viewer-media-hover: color-mix(in srgb, var(--color-main-text) 10%, transparent);
+	--viewer-media-border: color-mix(in srgb, var(--color-main-text) 15%, transparent);
+
+	--media-font-family: var(--font-face);
+	--media-control-size: var(--default-clickable-area);
+	--media-control-radius: var(--border-radius-element);
+	--media-controls-radius: var(--border-radius-container);
+	--media-menu-item-radius: var(--border-radius-element);
+	--media-popup-radius: var(--border-radius-container);
+	--media-video-border-radius: 0;
+
+	/* Sliders, checked items and primary actions */
+	--media-primary: var(--color-primary-element);
+	--media-primary-foreground: var(--color-primary-element-text);
+
+	/* Menus and tooltips, as any other Nextcloud popover */
+	--media-popover: var(--color-main-background);
+	--media-popover-foreground: var(--color-main-text);
+}
+
+/* Over the video the controls stay light on dark, and light up in the primary colour */
+.media-skin.viewer-media[data-preset='video'] {
+	--media-accent: var(--color-primary-element);
+	--media-accent-foreground: var(--color-primary-element-text);
+}
+
+/* The audio bar is a surface of the page, light or dark with the theme */
+.media-skin.viewer-media[data-preset='audio'] {
+	--media-background: var(--color-main-background);
+	--media-foreground: var(--color-main-text);
+	--media-controls: var(--color-main-background);
+	--media-controls-foreground: var(--color-main-text);
+	--media-surface-border: var(--viewer-media-border);
+	--media-border: var(--viewer-media-border);
+	--media-ring: var(--color-main-text);
+	--media-accent: var(--viewer-media-hover);
+	--media-accent-foreground: var(--color-main-text);
+}
+
+/* Inside menus a hovered item is highlighted as in any Nextcloud menu */
+.media-skin.viewer-media .media-menu-popup {
+	--media-accent: var(--viewer-media-hover);
+	--media-accent-foreground: var(--color-main-text);
+}
+
+/*
+ * The poster again once the media has played. Video.js shows it only until
+ * playback starts, and the viewer rewinds a played media to it instead of
+ * reloading it (nextcloud/viewer#2585).
+ */
+.media-skin.viewer-media--stopped .media-poster {
+	opacity: 1;
+}
+
+/* The audio speed button writes the rate itself, in the user's locale, and "Normal" is wider than a number */
+.media-skin.viewer-media .media-playback-rate-button {
+	width: auto;
+	min-width: var(--media-control-size);
+	padding-inline: calc(var(--media-spacing) * 2);
+}
+
+.media-skin.viewer-media .media-playback-rate-button::after {
+	content: none;
+}

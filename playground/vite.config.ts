@@ -4,10 +4,11 @@
  */
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
+import { isVideojsElement } from '../build/videojsElements.ts'
 
 export default defineConfig({
 	root: import.meta.dirname,
-	plugins: [vue()],
+	plugins: [vue({ template: { compilerOptions: { isCustomElement: isVideojsElement } } })],
 	define: {
 		// No bundled translations while serving the playground
 		__TRANSLATIONS__: '[]',

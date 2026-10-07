@@ -23,4 +23,14 @@ export default defineConfig([
 			'no-console': 'off',
 		},
 	},
+
+	{
+		files: ['lib/components/**/*.vue'],
+		rules: {
+			// The media skins are Video.js custom elements, not components
+			'vue/no-undef-components': ['warn', {
+				ignorePatterns: ['RouterLink', 'RouterView', '^media-', '^video-player$', '^audio-player$'],
+			}],
+		},
+	},
 ])
