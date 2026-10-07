@@ -6,6 +6,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.17
+
+### Added
+
+- Opened from anywhere but the Files app, the viewer offers its own Download
+  and Delete again, as the viewer app did. With a Files context the Files
+  actions show instead. Ctrl+S downloads, Ctrl+Delete deletes, Ctrl+E opens
+  the editor where it is offered, and F toggles full screen
+  (#95, nextcloud/viewer#406)
+
+### Fixed
+
+- A handler asking for the `'default'` theme follows the user's theme again,
+  backdrop and header included, as it did in the viewer app. A handler with no
+  theme stays dark (#125)
+- The viewer's dark palette only applies to its own parts on the dark
+  backdrop, no longer to what a handler shows: a document in Text came out
+  white on black under a light theme, and printed in grey (#125)
+- An end-to-end encrypted image, video or sound is fetched from its own URL:
+  the request went to a wrong address and never reached the file (#98)
+
+### Changed
+
+- `vue` and `@nextcloud/vue` are now dependencies rather than peer
+  dependencies, so apps still on Vue 2 can use the library (#121)
+- Node 24 or newer is required
+
 ## 2.0.0-beta.16
 
 ### Added
