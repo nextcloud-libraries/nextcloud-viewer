@@ -58,7 +58,8 @@ export function usePlyrPlayer(forAudio: boolean, props: ViewerProps, emit: EmitF
 
 	const options = computed(() => {
 		return {
-			autoplay: true,
+			// Not inline, where it would start in the middle of a page
+			autoplay: !props.embedded,
 			// Plyr labels its own controls, in English, unless given these
 			i18n: plyrTranslations,
 			// Used to reset the video streams https://github.com/sampotts/plyr#javascript-1

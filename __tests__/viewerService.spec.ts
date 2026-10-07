@@ -4,10 +4,12 @@
  */
 import type ViewerVue from '../lib/views/Viewer.vue'
 
+import { Permission } from '@nextcloud/files'
 import { describe, expect, it, vi } from 'vitest'
+import { registerHandler } from '../lib/handlers.ts'
 import { registerImplementation, scope } from '../lib/scope.ts'
 import { getViewer, Viewer } from '../lib/viewer.ts'
-import { makeFile } from './factories.ts'
+import { makeFile, makeHandler } from './factories.ts'
 
 type Mounted = InstanceType<typeof ViewerVue>
 
@@ -147,5 +149,40 @@ describe('the synchronous methods', () => {
 		expect(mounted.goTo).toHaveBeenCalledWith(42)
 		expect(mounted.close).toHaveBeenCalledTimes(1)
 		expect(mounted.setEditing).toHaveBeenCalledWith(true)
+	})
+})
+
+describe('elementFor()', () => {
+	let count = 0
+	const tag = () => `oca-viewer-embed-${++count}`
+
+	// A file link's preview shows the file where the link is, without the
+	// modal, and must not pull the whole viewer in for it
+	it('names the element of the handler that takes the file, without loading the viewer', async () => {
+		const load = offerImplementation(makeMounted())
+		const tagName = tag()
+		registerHandler(makeHandler({ id: tagName, tagName, enabled: (nodes) => nodes.every((node) => node.mime === 'image/jpeg') }))
+
+		expect(await getViewer().elementFor(makeFile({ mime: 'image/jpeg' }))).toBe(tagName)
+		expect(load).not.toHaveBeenCalled()
+	})
+
+	it('has the element defined first, by the handler\'s onInit', async () => {
+		const tagName = tag()
+		const onInit = vi.fn(async () => {
+			customElements.define(tagName, class extends HTMLElement {})
+		})
+		registerHandler(makeHandler({ id: tagName, tagName, enabled: () => true, onInit }))
+
+		expect(await getViewer().elementFor(makeFile())).toBe(tagName)
+		expect(customElements.get(tagName)).toBeDefined()
+	})
+
+	it('names nothing for a file no handler takes, or one the user cannot read', async () => {
+		const tagName = tag()
+		registerHandler(makeHandler({ id: tagName, tagName, enabled: (nodes) => nodes.every((node) => node.mime === 'image/jpeg') }))
+
+		expect(await getViewer().elementFor(makeFile({ mime: 'video/mp4' }))).toBeUndefined()
+		expect(await getViewer().elementFor(makeFile({ mime: 'image/jpeg', permissions: Permission.NONE }))).toBeUndefined()
 	})
 })

@@ -6,7 +6,10 @@
 import type { IFile, IFolder, IView } from '@nextcloud/files'
 import type ViewerVue from './views/Viewer.vue'
 
+import { canView } from './handlers.ts'
+import { getHandlerForFile } from './helpers/handlerHelper.ts'
 import { loadImplementation, scope } from './scope.ts'
+import { initHandlerElement } from './utils/customElements.ts'
 
 /**
  * List of props provided to your custom component.
@@ -62,6 +65,14 @@ export interface ViewerProps {
 	 * server preview). Handlers that support it should prefer this over `file`.
 	 */
 	localSource?: string
+
+	/**
+	 * Whether the file is shown inline, outside the viewer, as the preview of a
+	 * link to it (see `getViewer().elementFor()`). A hint that handlers should
+	 * not take over the page, for example by autoplaying. Editing is usually
+	 * better left to the viewer, which the caller can open on the file.
+	 */
+	embedded?: boolean
 }
 
 /**
@@ -265,6 +276,31 @@ export class Viewer extends EventTarget implements ViewerAPI {
 
 	setEditing(editing: boolean): void {
 		this.viewer?.setEditing(editing)
+	}
+
+	/**
+	 * The element that shows a file, to render it outside the viewer, as the
+	 * preview of a file link in a chat or a document does.
+	 *
+	 * Resolves with the tag name of the custom element of the handler the
+	 * viewer would open the file with, once that element is defined (see
+	 * `IHandler.onInit`), or with nothing when no handler takes the file. The
+	 * element takes the props every handler does (`ViewerProps`), and says it
+	 * has loaded or failed with the same events. Loads nothing of the viewer
+	 * itself.
+	 *
+	 * @param file - The file to show
+	 */
+	async elementFor(file: IFile): Promise<string | undefined> {
+		if (!canView(file)) {
+			return undefined
+		}
+		const handler = getHandlerForFile(file)
+		if (handler === undefined) {
+			return undefined
+		}
+		await initHandlerElement(handler)
+		return handler.tagName
 	}
 }
 
