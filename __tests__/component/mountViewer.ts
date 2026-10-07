@@ -17,9 +17,9 @@ import { registerTestHandlers } from '../factories.ts'
  * Minimal NcModal stub.
  *
  * It renders the default slot and the `#actions` slot so we can assert on the
- * handler custom-element markup and drive the header actions. The style is
- * kept, as the real modal applies it: that is how the viewer makes room for
- * the sidebar. Navigation is
+ * handler custom-element markup and drive the header actions. The style and
+ * classes are kept, as the real modal applies them: that is how the viewer
+ * makes room for the sidebar and themes itself. Navigation is
  * driven from tests through `findComponent(NcModalStub).vm.$emit('next'|'previous'|'close')`.
  * The relevant props (`name`, `show`, `hasNext`, `hasPrevious`, `isComparing`
  * related flags) are declared so they can be read back via `.props()`.
@@ -45,6 +45,7 @@ export const NcModalStub = defineComponent({
 		<div
 			v-show="show"
 			class="nc-modal-stub"
+			:class="$attrs.class"
 			:style="$attrs.style"
 			:data-handler="$attrs['data-handler']"
 			:data-name="name"

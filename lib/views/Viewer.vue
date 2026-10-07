@@ -25,6 +25,7 @@
 		:slideshowPaused="slideshowPaused"
 		:spreadNavigation="true"
 		:style="{ width: isSidebarShown ? `${sidebarPosition}px` : null }"
+		:class="{ 'viewer__modal--default': followsTheme }"
 		class="viewer__modal"
 		size="full"
 		@close="close"
@@ -354,6 +355,8 @@ const canSwipe = ref(true)
 const isFullscreen = ref(false)
 const editing = ref(false)
 const lightBackdrop = ref(false)
+// The handler asked for the user's own theme, backdrop and header included
+const followsTheme = ref(false)
 const slideshowRunning = ref(false)
 // Whether the current handler is playing media, which the slideshow waits for
 const playing = ref(false)
@@ -1158,13 +1161,22 @@ const compare: ViewerAPI['compare'] = async (file1, file2, handlerId) => {
 /**
  * Handle Viewer opening to determine backdrop style.
  *
- * The viewer is dark whatever theme the user runs: a photo or a video reads
- * better against dark, and the room around it should not compete with it.
- * A handler showing something else — a document, say — can ask for a light
- * backdrop instead, but nothing follows the user's theme here.
+ * The viewer is dark unless the handler asks otherwise: a photo or a video
+ * reads better against dark, and the room around it should not compete with
+ * it. A handler showing something else, a document say, can ask for a light
+ * backdrop, or for the user's own theme with 'default'.
  */
 function onOpen() {
-	lightBackdrop.value = (currentHandler.value?.theme ?? 'default') === 'light'
+	const theme = currentHandler.value?.theme ?? 'dark'
+	followsTheme.value = theme === 'default'
+	lightBackdrop.value = theme === 'light' || (followsTheme.value && isThemeLight())
+}
+
+/**
+ * Whether the user runs a light theme, the way the server's own styles tell.
+ */
+function isThemeLight(): boolean {
+	return getComputedStyle(document.body).getPropertyValue('--background-invert-if-dark').trim() !== 'invert(100%)'
 }
 
 /**
@@ -1741,8 +1753,9 @@ defineExpose<ViewerAPI>({
 	// 1.3:1 against black, which is a title nobody can read. Only the
 	// viewer's own parts: a handler's content keeps the theme's colours, or
 	// a document shown by Text turns dark under a light theme. A handler
-	// that asked for a light backdrop keeps them everywhere.
-	&:not(.modal-mask--light) {
+	// that asked for a light backdrop or for the user's theme keeps them
+	// everywhere.
+	&:not(.modal-mask--light, .viewer__modal--default) {
 		:deep(.modal-header),
 		:deep(.prev),
 		:deep(.next),
@@ -1755,6 +1768,11 @@ defineExpose<ViewerAPI>({
 
 			color: var(--color-main-text);
 		}
+	}
+
+	// Over NcModal's translucent black or white backdrop
+	&--default {
+		background-color: var(--color-main-background) !important;
 	}
 
 	:deep(.modal-container__content) {

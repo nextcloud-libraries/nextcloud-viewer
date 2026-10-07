@@ -119,17 +119,31 @@ describe('Viewer.open()', () => {
 		expect(modalProps().show).toBe(true)
 	})
 
-	it.each([
-		['light', true],
-		['dark', false],
-		['default', false],
-	] as const)('gives the modal a light backdrop only for a %s themed handler', async (theme, lightBackdrop) => {
-		const handler = makeHandler({ id: theme, tagName: `oca-viewer-${theme}`, theme, enabled: () => true })
-		const { vm, wrapper, modalProps } = mountViewer([handler])
-		const f1 = makeFile()
-		await vm.open([f1], f1)
-		await wrapper.vm.$nextTick()
-		expect(modalProps().lightBackdrop).toBe(lightBackdrop)
+	describe('under the user\'s theme', () => {
+		afterEach(() => document.body.style.removeProperty('--background-invert-if-dark'))
+
+		// The theme the user runs, the one a handler asks for, then whether the
+		// backdrop is light and whether it takes the theme's colours
+		it.each([
+			['light', 'light', true, false],
+			['light', 'dark', false, false],
+			['light', 'default', true, true],
+			['light', undefined, false, false],
+			['dark', 'light', true, false],
+			['dark', 'dark', false, false],
+			['dark', 'default', false, true],
+			['dark', undefined, false, false],
+		] as const)('a %s theme gives a %s themed handler a light backdrop: %s, the theme\'s colours: %s', async (userTheme, theme, lightBackdrop, followsTheme) => {
+			document.body.style.setProperty('--background-invert-if-dark', userTheme === 'dark' ? 'invert(100%)' : 'no')
+			const id = theme ?? 'unset'
+			const handler = makeHandler({ id, tagName: `oca-viewer-${id}`, theme, enabled: () => true })
+			const { vm, wrapper, modalProps } = mountViewer([handler])
+			const f1 = makeFile()
+			await vm.open([f1], f1)
+			await wrapper.vm.$nextTick()
+			expect(modalProps().lightBackdrop).toBe(lightBackdrop)
+			expect(wrapper.find('.nc-modal-stub').classes('viewer__modal--default')).toBe(followsTheme)
+		})
 	})
 })
 
