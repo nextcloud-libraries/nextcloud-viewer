@@ -551,6 +551,28 @@ describe('Videos.vue (smoke)', () => {
 	})
 })
 
+// Shown inline, as the preview of a link in a chat, the media would start
+// playing in the middle of the page
+describe.each([
+	['video', 'clip.mp4', 'video/mp4'],
+	['sound', 'song.mp3', 'audio/mpeg'],
+] as const)('a %s', (kind, basename, mime) => {
+	const component = kind === 'video' ? Videos : Audios
+
+	it.each([
+		['plays on its own in the viewer', false, true],
+		['waits to be played when shown inline', true, false],
+	])('%s', async (_name, embedded, autoplay) => {
+		const file = makeFile({ basename, mime })
+		const wrapper = mount(component, { props: makeProps({ file, files: [file], embedded }) })
+		await flushPromises()
+
+		expect((wrapper.find(kind === 'video' ? 'video' : 'audio').element as HTMLMediaElement).autoplay).toBe(autoplay)
+		const options = wrapper.findComponent({ name: 'VuePlyrStub' }).props('options') as { autoplay?: boolean }
+		expect(options.autoplay).toBe(autoplay)
+	})
+})
+
 describe('a video that has played to the end', () => {
 	// What a user puts beside a film to show before and after it plays:
 	// a picture of the same name in the same folder
