@@ -9,7 +9,6 @@ import { createLibConfig } from '@nextcloud/vite-config'
 import { po as poParser } from 'gettext-parser'
 import { readdirSync, readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
-import injectCSS from 'vite-plugin-css-injected-by-js'
 import { videojsElements } from './build/videojsElements.ts'
 
 const { version } = JSON.parse(readFileSync('./package.json', 'utf8'))
@@ -67,7 +66,6 @@ export default defineConfig((env) => {
 	return createLibConfig({
 		index: 'lib/index.ts',
 	}, {
-		libraryFormats: ['es', 'cjs'],
 		nodeExternalsOptions: {
 			// for subpath imports like '@nextcloud/l10n/gettext'
 			include: [/^@nextcloud\//],
@@ -77,15 +75,8 @@ export default defineConfig((env) => {
 			// not survive into what we publish.
 			exclude: [/^vue-material-design-icons\//, /^@mdi\/svg\//],
 		},
-		// The styles are carried inside the javascript and injected as it
-		// runs, each chunk bringing its own. Emitting stylesheets instead
-		// leaves it to the consuming bundler to link a chunk's CSS when
-		// that chunk loads, which is not something a library can count on:
-		// in the server it did not happen, and the lazily loaded viewer
-		// rendered with none of its styles.
-		inlineCSS: false,
 		config: {
-			plugins: [injectCSS({ relativeCSSInjection: true }), videojsElements],
+			plugins: [videojsElements],
 		},
 
 		replace: {

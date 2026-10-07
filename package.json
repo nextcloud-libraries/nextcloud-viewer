@@ -21,8 +21,7 @@
 	"type": "module",
 	"exports": {
 		"types": "./dist/index.d.ts",
-		"import": "./dist/index.mjs",
-		"require": "./dist/index.cjs"
+		"import": "./dist/index.mjs"
 	},
 	"files": [
 		"dist"
@@ -93,7 +92,6 @@
 		"typedoc": "^0.28.20",
 		"typescript": "^5.9.3",
 		"vite": "^7.1.11",
-		"vite-plugin-css-injected-by-js": "^3.5.2",
 		"vitest": "^3.2.4",
 		"vue": "^3.5.42",
 		"vue-tsc": "^3.3.11"
