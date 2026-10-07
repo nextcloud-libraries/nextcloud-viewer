@@ -15,7 +15,7 @@
 				}">
 				<video
 					ref="video"
-					:autoplay="true"
+					:autoplay="!embedded"
 					:playsinline="true"
 					:poster="poster"
 					:src="src"
