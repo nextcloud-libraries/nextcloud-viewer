@@ -45,4 +45,17 @@ test.describe('Backdrop', () => {
 		// What WCAG asks of normal text
 		expect(contrast).toBeGreaterThanOrEqual(4.5)
 	})
+
+	// The dark palette was set on the whole modal, so it reached into what a
+	// handler shows: a document in Text came out white on black under a
+	// light theme, and printed grey
+	test('leaves the colours of what a handler shows to the theme', async ({ page }) => {
+		const viewer = new ViewerPage(page)
+		await viewer.open('photo.jpg')
+		await viewer.waitForOpen()
+
+		const text = (selector: string) => page.locator(selector).first().evaluate((element) => getComputedStyle(element).getPropertyValue('--color-main-text').trim())
+		expect(await text('.viewer__modal .modal-header')).toBe('#ffffff')
+		expect(await text('.viewer__modal oca-viewer-image')).not.toBe('#ffffff')
+	})
 })

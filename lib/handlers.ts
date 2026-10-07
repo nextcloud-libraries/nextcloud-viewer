@@ -94,7 +94,8 @@ export interface IHandler {
 	onInit?: () => Promise<void>
 
 	/**
-	 * Viewer modal theme (one of 'dark', 'light', 'default')
+	 * Viewer modal theme: 'dark' (the default), 'light', or 'default' to
+	 * follow the user's theme
 	 */
 	theme?: 'dark' | 'light' | 'default'
 
