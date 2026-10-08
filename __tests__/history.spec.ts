@@ -2,13 +2,15 @@
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import type { IFile, IFolder, IView } from '@nextcloud/files'
+import type { IFolder, IView } from '@nextcloud/files'
 import type { MockedObject } from 'vitest'
+import type { ViewerEventMap, ViewerNotification } from '../lib/session.ts'
 import type * as HistoryModule from '../lib/utils/history.ts'
 import type { Viewer } from '../lib/viewer.ts'
 
 import { showError } from '@nextcloud/dialogs'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { dispatchViewerEvent, ViewerSession } from '../lib/session.ts'
 import { makeFile } from './factories.ts'
 
 vi.mock('../lib/viewer.ts')
@@ -19,6 +21,7 @@ const folder = { path: '/photos' } as IFolder
 
 let openWithHistory: typeof HistoryModule.openWithHistory
 let viewer: MockedObject<Viewer>
+let session: ViewerSession
 let addSpy: ReturnType<typeof vi.spyOn>
 let removeSpy: ReturnType<typeof vi.spyOn>
 let goSpy: ReturnType<typeof vi.spyOn>
@@ -51,10 +54,15 @@ function popstateHandler(addSpy: ReturnType<typeof vi.spyOn>): () => void {
 }
 
 /**
- * Get the options passed to the mocked viewer.open call.
+ * Have the session the opening resolved with tell its opener something,
+ * once the opener had the time to listen to it.
+ *
+ * @param type - The event
+ * @param detail - Its values
  */
-function openOptions(): { onNext: (f: IFile) => void, onPrev: (f: IFile) => void, onClose: () => void } {
-	return viewer.open.mock.calls[0]![2] as never
+async function tell<K extends ViewerNotification>(type: K, ...detail: ViewerEventMap[K]['detail']): Promise<void> {
+	await settle()
+	dispatchViewerEvent(session, type, ...detail)
 }
 
 describe('openWithHistory', () => {
@@ -64,6 +72,8 @@ describe('openWithHistory', () => {
 		// history module under test share the same mock instance.
 		const { getViewer } = await import('../lib/viewer.ts')
 		viewer = vi.mocked(getViewer())
+		session = new ViewerSession()
+		viewer.open.mockResolvedValue(session)
 		// Reset the per-entry viewer offset kept in history state.
 		window.history.replaceState({}, '')
 		addSpy = vi.spyOn(window, 'addEventListener')
@@ -112,7 +122,7 @@ describe('openWithHistory', () => {
 		expect(addSpy).not.toHaveBeenCalledWith('popstate', expect.anything())
 	})
 
-	it('pushes a history entry and wires navigation callbacks on a fresh open', async () => {
+	it('pushes a history entry and follows the files shown on a fresh open', async () => {
 		const router = setRouter()
 		const file = makeFile({ id: 42 })
 		openWithHistory([file], file, view, folder)
@@ -129,7 +139,7 @@ describe('openWithHistory', () => {
 		expect(addSpy).toHaveBeenCalledWith('popstate', expect.any(Function))
 
 		router.goToRoute.mockClear()
-		openOptions().onNext(makeFile({ id: 43 }))
+		await tell('update:file', makeFile({ id: 43 }))
 		await settle()
 		expect(router.goToRoute).toHaveBeenCalledWith(
 			'filelist',
@@ -182,12 +192,12 @@ describe('openWithHistory', () => {
 		await landed()
 		expect(window.history.state?.viewerPos).toBe(1)
 
-		openOptions().onNext(makeFile({ id: 43 }))
+		await tell('update:file', makeFile({ id: 43 }))
 		await landed()
 		expect(window.history.state?.viewerPos).toBe(2)
 
 		router.query.openfile = 'true'
-		openOptions().onClose()
+		await tell('close')
 		await landed()
 		expect(goSpy).toHaveBeenCalledWith(-2)
 	})
@@ -204,14 +214,36 @@ describe('openWithHistory', () => {
 		const file = makeFile({ id: 1 })
 		openWithHistory([file], file, view, folder)
 		// One navigation → two entries pushed in total.
-		openOptions().onNext(makeFile({ id: 2 }))
+		await tell('update:file', makeFile({ id: 2 }))
 
 		router.query.openfile = 'true'
-		openOptions().onClose()
+		await tell('close')
 		await settle()
 
 		expect(goSpy).toHaveBeenCalledWith(-2)
 		expect(removeSpy).toHaveBeenCalledWith('popstate', expect.any(Function))
+	})
+
+	// The Files app opens the same file again as the sidebar opens, and
+	// every opening hears the viewer close
+	it('unwinds the history once when the viewer was opened twice', async () => {
+		const router = setRouter()
+		const file = makeFile({ id: 1 })
+		const first = new ViewerSession()
+		viewer.open.mockResolvedValueOnce(first)
+		openWithHistory([file], file, view, folder)
+		await settle()
+		router.query.openfile = 'true'
+		openWithHistory([file], file, view, folder)
+		await settle()
+
+		router.goToRoute.mockClear()
+		dispatchViewerEvent(first, 'close')
+		dispatchViewerEvent(session, 'close')
+		await settle()
+
+		expect(goSpy).toHaveBeenCalledOnce()
+		expect(router.goToRoute).toHaveBeenCalledOnce()
 	})
 
 	it('drops the openfile flag before the jump, not after it', async () => {
@@ -229,7 +261,7 @@ describe('openWithHistory', () => {
 			order.push('go')
 		})
 
-		openOptions().onClose()
+		await tell('close')
 		await settle()
 
 		// history.go() lands on a later task. Until it does the URL still says
@@ -249,7 +281,7 @@ describe('openWithHistory', () => {
 		const file = makeFile({ id: 1 })
 		openWithHistory([file], file, view, folder)
 
-		openOptions().onClose()
+		await tell('close')
 		await settle()
 
 		expect(goSpy).not.toHaveBeenCalled()
@@ -310,14 +342,14 @@ describe('openWithHistory', () => {
 		expect(viewer.setEditing).toHaveBeenCalledWith(true)
 	})
 
-	it('reflects an editing change in the URL by replacing the current entry', () => {
+	it('reflects an editing change in the URL by replacing the current entry', async () => {
 		const router = setRouter()
 		const file = makeFile({ id: 1 })
 		openWithHistory([file], file, view, folder)
+		await settle()
 
-		const options = viewer.open.mock.calls[0]![2] as { onEditingChange: (editing: boolean) => void }
 		router.goToRoute.mockClear()
-		options.onEditingChange(true)
+		await tell('update:editing', true)
 		expect(router.goToRoute).toHaveBeenCalledWith(
 			'filelist',
 			router.params,

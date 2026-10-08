@@ -250,6 +250,21 @@ const src = computed(() => props.file.encodedSource)
 | `update:editing`   | `[boolean]` | Notify the viewer the editing mode changed                  |
 | `update:playing`   | `[boolean]` | Notify the viewer media plays, so the slideshow waits for it |
 
+Before it downloads the file shown, from its own Download, Ctrl+S or the Files
+download action, the viewer dispatches `before-download` on your element. A view
+with edits not written yet saves them first: the download waits for the promise
+it hands `waitUntil()`, and is cancelled with an error if that promise rejects.
+
+```ts
+import type { ViewerBeforeDownloadDetail } from '@nextcloud/viewer'
+
+useHost()!.addEventListener('before-download', (event) => {
+	if (dirty.value) {
+		(event as CustomEvent<ViewerBeforeDownloadDetail>).detail.waitUntil(save())
+	}
+})
+```
+
 #### 2. Define the custom element and register the handler
 
 Turn your component into a custom element with Vue's `defineCustomElement`, define
@@ -413,10 +428,35 @@ await viewer.compare(file1, file2, 'my-app')
 
 Signatures:
 
-- `open(nodes: File[], file?: File, options?: ViewerOptions, handlerId?: string): Promise<void>`
-- `openFolder(folder: Folder, file?: File, options?: ViewerOptions, handlerId?: string): Promise<void>`
-- `compare(node1: File, node2: File, handlerId?: string): Promise<void>`
+- `open(nodes: File[], file?: File, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>`
+- `openFolder(folder: Folder, file?: File, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>`
+- `compare(node1: File, node2: File, handlerId?: string): Promise<ViewerSession>`
 - `close(): void`
+
+#### Following what the viewer does
+
+The viewer tells about itself with events, shaped like the ones handler elements
+emit: a `CustomEvent` whose `detail` holds the values.
+
+| Event            | `detail`              | When                                                              |
+| ---------------- | --------------------- | ----------------------------------------------------------------- |
+| `update:file`    | `[file: File]`        | Another file is shown: next, previous, or the one after a deleted file. Not on `goTo()` |
+| `update:editing` | `[editing: boolean]`  | Editing was entered or left                                        |
+| `close`          | `[]`                  | The viewer closed                                                  |
+| `before-download` | `{ file, waitUntil }` | The file shown is about to be downloaded. The same event the handler's element gets, see above: the download waits for what is handed to `waitUntil()` |
+
+`open()`, `openFolder()` and `compare()` resolve with the session of that
+opening, which tells its opener only. It hears of the file shown and of editing
+until another opening takes over, and of the viewer closing in any case:
+
+```ts
+const session = await getViewer().open(files, file)
+session.addEventListener('update:file', ({ detail: [shown] }) => updateUrl(shown))
+session.addEventListener('close', () => updateUrl(null), { once: true })
+```
+
+The viewer itself (`getViewer()`) dispatches the same events for any page,
+whoever opened it.
 
 #### Ordering
 
@@ -431,18 +471,14 @@ has it sorted and sorts the folder the same way, so paging through it matches
 what the user would see in the list. A public share has no such setting, and
 neither does a request that fails: both fall back to names ascending.
 
-`ViewerOptions` lets you hook into navigation and paging. All of them are optional:
+`ViewerOptions` sets up the opening. All of them are optional:
 
 | Option            | Type                          | Description                                                          |
 | ----------------- | ----------------------------- | -------------------------------------------------------------------- |
 | `loadMore`        | `() => Promise<File[]>`       | Called to append more files when reaching the end of the list        |
-| `onPrev`          | `(file: File) => void`        | Called with the file navigated to, going back                         |
-| `onNext`          | `(file: File) => void`        | Called with the file navigated to, going forward                      |
-| `onClose`         | `() => void`                  | Called when the viewer is closed                                     |
 | `canLoop`         | `boolean`                     | Whether navigation loops from last to first and back. Defaults to `true` |
 | `startSlideshow`  | `boolean`                     | Whether to start the slideshow on open, given more than one file     |
 | `editing`         | `boolean`                     | Open straight into editing mode, for a handler that can edit         |
-| `onEditingChange` | `(editing: boolean) => void`  | Called when editing mode changes, e.g. to keep it in the URL         |
 | `enableSidebar`   | `boolean`                     | Whether to offer the Files sidebar. Defaults to `true`, turn it off for files it cannot resolve, like an old version |
 | `view`            | `View`                        | The Files view the viewer was opened from, handed to the file actions in its header |
 | `folder`          | `Folder`                      | The folder the files live in, handed to those actions as well        |
@@ -480,7 +516,8 @@ Inside a handler, what used to be read off the global comes in as props:
 | `OCA.Viewer.list`          | the `files` prop                                        |
 | `OCA.Viewer.enableSidebar` | no equivalent, it is the opener's option; `isSidebarShown` says whether it is open right now |
 | `OCA.Viewer.loadMore`      | no equivalent, the viewer calls it and handles the list |
-| `OCA.Viewer.onPrev`, `onNext`, `onClose`, `canLoop` | no equivalent, they belong to whoever opened the viewer |
+| `OCA.Viewer.onPrev`, `onNext`, `onClose` | the `update:file` and `close` events of the session `open()` resolves with |
+| `OCA.Viewer.canLoop`       | no equivalent, it is the opener's `canLoop` option     |
 
 Two changes are worth calling out because they are not a rename:
 

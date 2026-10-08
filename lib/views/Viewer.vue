@@ -252,6 +252,7 @@ import type { IFile, IFolder, INode, IView } from '@nextcloud/files'
 import type { IFileAction } from '@nextcloud/files'
 import type { ComponentPublicInstance } from 'vue'
 import type { IHandler } from '../handlers.ts'
+import type { ViewerEventMap } from '../session.ts'
 import type { ViewerAPI, ViewerOptions } from '../viewer.ts'
 
 import axios from '@nextcloud/axios'
@@ -286,12 +287,15 @@ import { getHandlers, isHandlerEnabled } from '../handlers.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
 import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
+import { dispatchViewerEvent, ViewerSession } from '../session.ts'
+import { prepareDownload } from '../utils/beforeDownload.ts'
 import { canDownload } from '../utils/canDownload.ts'
 import { initHandlerElement } from '../utils/customElements.ts'
 import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
 import { emittedValue, toError } from '../utils/handlerEvents.ts'
 import { t } from '../utils/l10n.ts'
 import { renameFile } from '../utils/rename.ts'
+import { getViewer } from '../viewer.ts'
 
 defineOptions({ name: 'ViewerModal' })
 
@@ -355,6 +359,8 @@ const canSwipe = ref(true)
 const isFullscreen = ref(false)
 const editing = ref(false)
 const lightBackdrop = ref(false)
+// The element of the handler showing the file
+const handlerElement = useTemplateRef<HTMLElement>('handlerElement')
 // The handler asked for the user's own theme, backdrop and header included
 const followsTheme = ref(false)
 const slideshowRunning = ref(false)
@@ -474,12 +480,48 @@ const slideshowPaused = computed(() => editing.value || playing.value || loading
 // for a caller that passes no options (see defaultViewerOptions).
 const currentOptions = ref<ViewerOptions>({})
 
-// Everyone who opened the viewer since it last opened, to tell once it
-// closes. Opening over a viewer that is still open replaces what is shown
-// but does not end the earlier opener's session: calling its onClose then
-// would let the Files app unwind its history and close what was just
-// opened. A Set, as the Files app opens the same file twice with one.
-const closeCallbacks = new Set<() => void>()
+// Every opening since the viewer last opened, to tell once it closes.
+// Opening over a viewer that is still open replaces what is shown but does
+// not end the earlier opening: telling it the viewer closed then would let
+// the Files app unwind its history and close what was just opened.
+const sessions = new Set<ViewerSession>()
+// The latest opening, the one told of the file shown and of editing
+let currentSession: ViewerSession | undefined
+
+/**
+ * Start an opening, for the page that asked for it.
+ */
+function beginSession(): ViewerSession {
+	// A viewer opened afresh owes nothing to whoever opened it before
+	if (currentFile.value === undefined) {
+		sessions.clear()
+	}
+	currentSession = new ViewerSession()
+	sessions.add(currentSession)
+	return currentSession
+}
+
+/**
+ * Who hears of a download first: the handler's element, the latest opening,
+ * and any page listening to the viewer.
+ */
+function downloadTargets(): (EventTarget | null | undefined)[] {
+	return [handlerElement.value, currentSession, getViewer()]
+}
+
+/**
+ * Tell the latest opening, and any page listening to the viewer.
+ *
+ * @param type - The event
+ * @param detail - Its values
+ */
+function notify<K extends 'update:file' | 'update:editing'>(type: K, ...detail: ViewerEventMap[K]['detail']) {
+	for (const target of [currentSession, getViewer()]) {
+		if (target !== undefined) {
+			dispatchViewerEvent(target, type, ...detail)
+		}
+	}
+}
 
 // The sidebar resolves a file by its dav source, so it can only be offered
 // for a file the Files app can find there.
@@ -552,11 +594,15 @@ const canDeleteFile = computed(() => currentFile.value !== undefined
 	&& (currentFile.value.permissions & Permission.DELETE) !== 0)
 
 /**
- * Download a file through the browser.
+ * Download a file through the browser, once the handler showing it is done
+ * with it.
  *
  * @param file - The file shown
  */
-function downloadFile(file: IFile) {
+async function downloadFile(file: IFile) {
+	if (!await prepareDownload(downloadTargets(), file)) {
+		return
+	}
 	const link = document.createElement('a')
 	link.href = file.encodedSource
 	link.download = file.basename
@@ -581,6 +627,9 @@ async function deleteFile(file: IFile) {
 	}
 }
 
+const RENAME_ACTION_ID = 'rename'
+const DOWNLOAD_ACTION_ID = 'download'
+
 /**
  * The Files action with that id, if the opener gave the Files actions their
  * context and it is offered for the file shown.
@@ -602,9 +651,9 @@ useHotKey('s', (event) => {
 		return
 	}
 	event.preventDefault()
-	const action = filesAction('download')
+	const action = filesAction(DOWNLOAD_ACTION_ID)
 	if (action !== undefined) {
-		execAction(action)
+		runDownloadAction(action)
 	} else if (canDownloadFile.value) {
 		downloadFile(currentFile.value)
 	}
@@ -648,7 +697,6 @@ const openedSubmenu = ref<IFileAction | null>(null)
 
 // Stable Files action ids the viewer handles itself instead of delegating,
 // because their default UI lives on the (hidden) file-list row.
-const RENAME_ACTION_ID = 'rename'
 
 // Rename dialog state
 const renameDialogOpen = ref(false)
@@ -685,6 +733,23 @@ function handleAction(action: IFileAction) {
 	openedSubmenu.value = null
 	if (action.id === RENAME_ACTION_ID) {
 		openRenameDialog()
+		return
+	}
+	if (action.id === DOWNLOAD_ACTION_ID) {
+		runDownloadAction(action)
+		return
+	}
+	execAction(action)
+}
+
+/**
+ * Run the Files download action, once the handler showing the file is done
+ * with it.
+ *
+ * @param action - The Files download action
+ */
+async function runDownloadAction(action: IFileAction) {
+	if (currentFile.value !== undefined && !await prepareDownload(downloadTargets(), currentFile.value)) {
 		return
 	}
 	execAction(action)
@@ -761,17 +826,12 @@ function onNodeDeleted(node: INode) {
 
 	// Same index now points to the former next file; clamp to the last one when
 	// the deleted file was at the end (i.e. fall back to the previous file).
-	const wasLast = index >= currentFileList.value.length
 	const newFile = currentFileList.value[Math.min(index, currentFileList.value.length - 1)] as IFile
 	showFile(newFile)
 	// Told like any move to another file: the Files app takes the file out
 	// of its URL when it is deleted, and puts the one shown back in from
 	// here, or a reload does not reopen it and closing does not unwind
-	if (wasLast) {
-		currentOptions.value.onPrev?.(newFile)
-	} else {
-		currentOptions.value.onNext?.(newFile)
-	}
+	notify('update:file', newFile)
 	preloadNeighbors()
 }
 
@@ -864,9 +924,9 @@ function setEditing(value: boolean) {
 // Reflect editing changes (Edit button, editor save/cancel) in the URL so a
 // refresh reopens in the same state.
 // Synchronous so leaving editing on close still reaches the opener, before
-// close() drops the options.
+// close() ends its session.
 watch(editing, (value) => {
-	currentOptions.value.onEditingChange?.(value)
+	notify('update:editing', value)
 }, { flush: 'sync' })
 
 const modalName = computed(() => {
@@ -961,6 +1021,20 @@ const hasPrevious = computed(() => {
 })
 
 const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
+	const session = beginSession()
+	await showFiles(files, file, options, handlerId)
+	return session
+}
+
+/**
+ * Show files, the latest opening's.
+ *
+ * @param files - The files to show
+ * @param file - The one to show first
+ * @param options - What the opener asked for
+ * @param handlerId - The handler to show them with, if forced
+ */
+async function showFiles(files: IFile[], file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<void> {
 	logger.debug('Opening files', { files, file, options, handlerId })
 
 	// Filter out any non-file files
@@ -1047,19 +1121,11 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 		&& currentHandler.value?.id === handler.id
 		&& comparisonFile.value === undefined
 
-	// A viewer opened afresh owes nothing to whoever opened it before
-	if (currentFile.value === undefined) {
-		closeCallbacks.clear()
-	}
-
 	comparisonFile.value = undefined
 	comparisonHandler.value = undefined
 	currentHandler.value = handler
 	currentFile.value = file
 	currentOptions.value = options ?? {} as ViewerOptions
-	if (currentOptions.value.onClose) {
-		closeCallbacks.add(currentOptions.value.onClose)
-	}
 	if (!isSameFile) {
 		loading.value = true
 		pendingLoads.value = 1
@@ -1085,6 +1151,20 @@ const open: ViewerAPI['open'] = async (files, file, options, handlerId) => {
 let folderListing: AbortController | null = null
 
 const openFolder: ViewerAPI['openFolder'] = async (folder, file, options, handlerId) => {
+	const session = beginSession()
+	await showFolder(folder, file, options, handlerId)
+	return session
+}
+
+/**
+ * Show the files of a folder, the latest opening's.
+ *
+ * @param folder - The folder to list
+ * @param file - The one to show first
+ * @param options - What the opener asked for
+ * @param handlerId - The handler to show them with, if forced
+ */
+async function showFolder(folder: IFolder, file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<void> {
 	logger.debug('Opening folder', { folder, file, options, handlerId })
 	loading.value = true
 
@@ -1106,7 +1186,7 @@ const openFolder: ViewerAPI['openFolder'] = async (folder, file, options, handle
 
 	try {
 		const files = await fetchFolderContent(folder, signal)
-		return open(files, file, options, handlerId)
+		return showFiles(files, file, options, handlerId)
 	} catch (error) {
 		if (signal.aborted) {
 			logger.debug('Folder listing dropped, the viewer moved on', { folder })
@@ -1119,6 +1199,19 @@ const openFolder: ViewerAPI['openFolder'] = async (folder, file, options, handle
 }
 
 const compare: ViewerAPI['compare'] = async (file1, file2, handlerId) => {
+	const session = beginSession()
+	await showComparison(file1, file2, handlerId)
+	return session
+}
+
+/**
+ * Show two files side by side, the latest opening's.
+ *
+ * @param file1 - The first file
+ * @param file2 - The file to compare it with
+ * @param handlerId - The handler to show them with, if forced
+ */
+async function showComparison(file1: IFile, file2: IFile, handlerId?: string): Promise<void> {
 	logger.debug('Comparing files', { file1, file2, handlerId })
 	loading.value = true
 
@@ -1247,7 +1340,6 @@ function onError(reported: unknown) {
 // v-on. A handler is a custom element, so its emits leave as DOM events under
 // the name it declared, while v-on hyphenates the listener it is given
 // (`update:canSwipe` becomes `update:can-swipe`) and then matches nothing.
-const handlerElement = useTemplateRef<HTMLElement>('handlerElement')
 
 watch(handlerElement, (element, previous) => {
 	if (previous) {
@@ -1298,8 +1390,7 @@ function onPlaying(reported: unknown) {
  * Close the viewer and reset state
  */
 function close() {
-	// Leave editing first so its URL param is stripped while onEditingChange is
-	// still wired (before currentOptions is reset below).
+	// Leave editing first, so the opener hears of it before its session ends
 	editing.value = false
 	restoreTitle()
 	if (document.fullscreenElement) {
@@ -1307,14 +1398,11 @@ function close() {
 			// Nothing to do: the page is simply left as the browser has it
 		})
 	}
-	for (const onClose of closeCallbacks) {
-		try {
-			onClose()
-		} catch (error) {
-			logger.error('An onClose callback threw', { error })
-		}
+	for (const target of [...sessions, getViewer()]) {
+		dispatchViewerEvent(target, 'close')
 	}
-	closeCallbacks.clear()
+	sessions.clear()
+	currentSession = undefined
 	currentFile.value = undefined
 	currentFileList.value = []
 	currentHandler.value = undefined
@@ -1369,7 +1457,7 @@ async function next() {
 	}
 
 	showFile(newFile)
-	currentOptions.value.onNext?.(newFile)
+	notify('update:file', newFile)
 	preloadNeighbors()
 }
 
@@ -1435,7 +1523,7 @@ function previous() {
 	}
 
 	showFile(newFile)
-	currentOptions.value.onPrev?.(newFile)
+	notify('update:file', newFile)
 
 	preloadNeighbors()
 }

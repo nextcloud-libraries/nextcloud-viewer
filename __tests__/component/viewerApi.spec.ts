@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import type { VueWrapper } from '@vue/test-utils'
+import type { ViewerSession } from '../../lib/session.ts'
 
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -526,7 +527,8 @@ describe('the editing option', () => {
 		const { vm, wrapper } = mountViewer([imageHandler({ canEdit: true })])
 		const file = makeFile()
 
-		await vm.open([file], file, { onEditingChange })
+		const session: ViewerSession = await vm.open([file], file)
+		session.addEventListener('update:editing', ({ detail: [editing] }) => onEditingChange(editing))
 		await wrapper.vm.$nextTick()
 		vm.setEditing(true)
 		await wrapper.vm.$nextTick()
@@ -565,7 +567,7 @@ describe('clicking beside the media', () => {
 		const { vm, wrapper, modalExists } = mountViewer([imageHandler()])
 		const file = makeFile()
 
-		await vm.open([file], file, { onClose })
+		;(await vm.open([file], file)).addEventListener('close', onClose)
 		await flushPromises()
 
 		await wrapper.find('.modal-container__content').trigger('click')
@@ -579,7 +581,7 @@ describe('clicking beside the media', () => {
 		const { vm, wrapper, modalExists } = mountViewer([imageHandler()])
 		const file = makeFile()
 
-		await vm.open([file], file, { onClose })
+		;(await vm.open([file], file)).addEventListener('close', onClose)
 		await flushPromises()
 
 		// The click lands on the handler element, and bubbles up through the content

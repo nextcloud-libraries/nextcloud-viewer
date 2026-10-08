@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import type { IFile, IFolder, IView } from '@nextcloud/files'
+import type { ViewerEventMap, ViewerSession } from '../session.ts'
 import type { ViewerOptions } from '../viewer.ts'
 
 import { logger } from '../services/logger.ts'
@@ -32,14 +33,17 @@ import { t } from './l10n.ts'
  * @param options - The viewer options
  * @param handlerId - Optional handler to force
  */
-export function openViewer(contents: IFile[], file: IFile, options: ViewerOptions, handlerId?: string): void {
-	getViewer().open(contents, file, options, handlerId).catch(async (error) => {
+export async function openViewer(contents: IFile[], file: IFile, options: ViewerOptions, handlerId?: string): Promise<ViewerSession | undefined> {
+	try {
+		return await getViewer().open(contents, file, options, handlerId)
+	} catch (error) {
 		logger.error('Could not open the viewer', { error })
 		// Loaded on demand: this is the one path that needs it, and the
 		// package is meant to cost nothing until a file is opened.
 		const { showError } = await import('@nextcloud/dialogs')
 		showError(t('The viewer could not be loaded.'))
-	})
+		return undefined
+	}
 }
 
 /**
@@ -223,17 +227,17 @@ function closeHistory(): void {
  * @param folder - The folder the files live in
  * @param handlerId - Optional handler to force
  */
-export function openWithHistory(
+export async function openWithHistory(
 	contents: IFile[],
 	file: IFile,
 	view: IView | undefined,
 	folder: IFolder | undefined,
 	handlerId?: string,
-): void {
+): Promise<void> {
 	const router = getRouter()
 	if (!router || !view || !folder) {
 		// Standalone mode: no history integration, just open.
-		openViewer(contents, file, { view, folder }, handlerId)
+		await openViewer(contents, file, { view, folder }, handlerId)
 		return
 	}
 
@@ -249,15 +253,48 @@ export function openWithHistory(
 		logger.debug('Viewer opened from an openfile URL, reusing the current history entry')
 	}
 
-	openViewer(contents, file, {
+	const session = await openViewer(contents, file, {
 		view,
 		folder,
 		// Open straight into editing only on a refresh/deeplink (openfile already
 		// set); a fresh open must never inherit a stale editing flag.
 		editing: deeplink && router.query?.editing === 'true',
-		onNext: (navFile) => pushToHistory(navFile, view, folder.path),
-		onPrev: (navFile) => pushToHistory(navFile, view, folder.path),
-		onClose: closeHistory,
-		onEditingChange: updateEditingParam,
 	}, handlerId)
+	listenToSession(session, view, folder)
+}
+
+// The listeners on the latest opening the history follows. The Files app
+// opens the same file again as the sidebar opens: every opening hears the
+// viewer close, and the history must only be unwound once.
+let stopListening: (() => void) | undefined
+
+/**
+ * Follow an opening of the viewer in the history, instead of the one before.
+ *
+ * @param session - The opening, if the viewer opened
+ * @param view - The files view the viewer was opened from
+ * @param folder - The folder the files live in
+ */
+function listenToSession(session: ViewerSession | undefined, view: IView, folder: IFolder): void {
+	stopListening?.()
+	stopListening = undefined
+	if (session === undefined) {
+		return
+	}
+
+	const onFile = ({ detail: [file] }: ViewerEventMap['update:file']) => pushToHistory(file, view, folder.path)
+	const onEditing = ({ detail: [editing] }: ViewerEventMap['update:editing']) => updateEditingParam(editing)
+	const onClose = () => {
+		stopListening?.()
+		stopListening = undefined
+		closeHistory()
+	}
+	session.addEventListener('update:file', onFile)
+	session.addEventListener('update:editing', onEditing)
+	session.addEventListener('close', onClose)
+	stopListening = () => {
+		session.removeEventListener('update:file', onFile)
+		session.removeEventListener('update:editing', onEditing)
+		session.removeEventListener('close', onClose)
+	}
 }

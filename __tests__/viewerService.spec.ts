@@ -82,9 +82,6 @@ describe('opening before anything is mounted', () => {
 
 		const options = mounted.open.mock.calls[0]![2]
 		expect(options).toMatchObject({ canLoop: true, enableSidebar: true })
-		// No stand-in callbacks: a no-op onClose would read as the caller's
-		// own and drop the one a handler handing its file on relies on
-		expect(options.onClose).toBeUndefined()
 		expect(options.loadMore).toBeUndefined()
 	})
 
