@@ -4,6 +4,7 @@
  */
 
 import type { IFile, IFolder, IView } from '@nextcloud/files'
+import type { ViewerEventMap, ViewerSession } from './session.ts'
 import type ViewerVue from './views/Viewer.vue'
 
 import { loadImplementation, scope } from './scope.ts'
@@ -111,6 +112,34 @@ export interface ViewerEmits {
 }
 
 /**
+ * What the viewer hands the element of the handler showing a file, with the
+ * `before-download` event it dispatches on it before downloading that file,
+ * from its own Download, Ctrl+S or the Files download action. A handler with
+ * edits not written yet saves them first:
+ * ```ts
+ * element.addEventListener('before-download', (event) => {
+ *   if (dirty) {
+ *     event.detail.waitUntil(save())
+ *   }
+ * })
+ * ```
+ * A promise that rejects cancels the download, and the viewer says so.
+ */
+export interface ViewerBeforeDownloadDetail {
+	/**
+	 * The file about to be downloaded
+	 */
+	file: IFile
+
+	/**
+	 * Hold the download until the promise settles
+	 *
+	 * @param promise - What the download waits for
+	 */
+	waitUntil(promise: Promise<unknown>): void
+}
+
+/**
  * Options for opening the viewer
  */
 export type ViewerOptions = {
@@ -120,36 +149,10 @@ export type ViewerOptions = {
 	loadMore?: () => Promise<IFile[]>
 
 	/**
-	 * Called when navigating to the previous item, with the file navigated to.
-	 */
-	onPrev?: (file: IFile) => void
-
-	/**
-	 * Called when navigating to the next item, with the file navigated to.
-	 */
-	onNext?: (file: IFile) => void
-
-	/**
-	 * Called once when the viewer is closed.
-	 *
-	 * Opening over a viewer that is still open does not drop it: every
-	 * `onClose` passed since the viewer opened is called when it closes, each
-	 * once, so a handler passing its file to another one with `open()` still
-	 * lets the first opener clean up.
-	 */
-	onClose?: () => void
-
-	/**
 	 * Whether to open straight into editing mode (e.g. from an `editing=true` URL).
 	 * Ignored for handlers that do not support editing.
 	 */
 	editing?: boolean
-
-	/**
-	 * Called when the editing state changes, so the opener can reflect it (e.g.
-	 * in the URL).
-	 */
-	onEditingChange?: (editing: boolean) => void
 
 	/**
 	 * Whether the viewer can loop from last to first item and vice versa. Defaults to true.
@@ -182,21 +185,23 @@ export type ViewerOptions = {
 	folder?: IFolder
 }
 
-// No callbacks here: the viewer calls them optionally, and every onClose
-// passed is kept until the viewer closes (see open() in Viewer.vue)
 const defaultViewerOptions: ViewerOptions = {
 	canLoop: true,
 	enableSidebar: true,
 }
 
 export interface ViewerAPI {
-	open(nodes: IFile[], file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<void>
-	openFolder(folder: IFolder, file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<void>
-	compare(node1: IFile, node2: IFile, handlerId?: string): Promise<void>
+	/**
+	 * Show files. Resolves with the session of this opening, which tells of
+	 * the file shown, editing and the viewer closing (see `ViewerEventMap`).
+	 */
+	open(nodes: IFile[], file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>
+	openFolder(folder: IFolder, file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>
+	compare(node1: IFile, node2: IFile, handlerId?: string): Promise<ViewerSession>
 
 	/**
-	 * Show an already-opened file by its id, without triggering navigation
-	 * callbacks. Used to sync the viewer to browser history (back/forward).
+	 * Show an already-opened file by its id, without an `update:file` event.
+	 * Used to sync the viewer to browser history (back/forward).
 	 *
 	 * @param fileid - The id of the file to show
 	 */
@@ -215,6 +220,10 @@ export interface ViewerAPI {
 	setEditing(editing: boolean): void
 }
 
+/**
+ * The viewer of the page. Tells any page of the file shown, editing and the
+ * viewer closing, whoever opened it (see `ViewerEventMap`).
+ */
 export class Viewer extends EventTarget implements ViewerAPI {
 	private viewer: InstanceType<typeof ViewerVue> | null = null
 
@@ -243,16 +252,16 @@ export class Viewer extends EventTarget implements ViewerAPI {
 		return this.viewer
 	}
 
-	async open(nodes: IFile[], file?: IFile, options: ViewerOptions = defaultViewerOptions, handlerId?: string): Promise<void> {
-		(await this.mounted()).open(nodes, file, options, handlerId)
+	async open(nodes: IFile[], file?: IFile, options: ViewerOptions = defaultViewerOptions, handlerId?: string): Promise<ViewerSession> {
+		return (await this.mounted()).open(nodes, file, options, handlerId)
 	}
 
-	async openFolder(folder: IFolder, file?: IFile, options: ViewerOptions = defaultViewerOptions, handlerId?: string): Promise<void> {
-		(await this.mounted()).openFolder(folder, file, options, handlerId)
+	async openFolder(folder: IFolder, file?: IFile, options: ViewerOptions = defaultViewerOptions, handlerId?: string): Promise<ViewerSession> {
+		return (await this.mounted()).openFolder(folder, file, options, handlerId)
 	}
 
-	async compare(node1: IFile, node2: IFile, handlerId?: string): Promise<void> {
-		(await this.mounted()).compare(node1, node2, handlerId)
+	async compare(node1: IFile, node2: IFile, handlerId?: string): Promise<ViewerSession> {
+		return (await this.mounted()).compare(node1, node2, handlerId)
 	}
 
 	goTo(fileid: number): void {
@@ -265,6 +274,18 @@ export class Viewer extends EventTarget implements ViewerAPI {
 
 	setEditing(editing: boolean): void {
 		this.viewer?.setEditing(editing)
+	}
+
+	addEventListener<K extends keyof ViewerEventMap>(type: K, listener: (event: ViewerEventMap[K]) => void, options?: boolean | AddEventListenerOptions): void
+	addEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions): void
+	addEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | AddEventListenerOptions): void {
+		super.addEventListener(type, listener, options)
+	}
+
+	removeEventListener<K extends keyof ViewerEventMap>(type: K, listener: (event: ViewerEventMap[K]) => void, options?: boolean | EventListenerOptions): void
+	removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions): void
+	removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions): void {
+		super.removeEventListener(type, listener, options)
 	}
 }
 

@@ -78,7 +78,7 @@ describe('the offered implementation', () => {
 		expect(customElements.get('oca-viewer-audio')).toBeDefined()
 		// The service is now backed by the mounted component: opening no longer needs a load
 		const file = makeFile({ mime: 'image/png' })
-		await expect(getViewer().open([file], file)).resolves.toBeUndefined()
+		await expect(getViewer().open([file], file)).resolves.toBeInstanceOf(EventTarget)
 		expect(root!.innerHTML).not.toBe('')
 
 		// The real modal traps focus once its enter transition ends: wait for that

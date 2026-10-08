@@ -29,5 +29,6 @@ getViewer()
 export { canCompare, canView, getHandlers, registerHandler } from './handlers.ts'
 export type { IHandler } from './handlers.ts'
 export { getViewer, Viewer } from './viewer.ts'
-export type { ViewerAPI, ViewerEmits, ViewerOptions, ViewerProps } from './viewer.ts'
+export type { ViewerAPI, ViewerBeforeDownloadDetail, ViewerEmits, ViewerOptions, ViewerProps } from './viewer.ts'
+export type { ViewerEventMap, ViewerSession } from './session.ts'
 export { registerDefaultHandlers } from './defaults.ts'

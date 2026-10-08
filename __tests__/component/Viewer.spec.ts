@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import type { VueWrapper } from '@vue/test-utils'
+import type { ViewerSession } from '../../lib/session.ts'
+import type { ViewerBeforeDownloadDetail } from '../../lib/viewer.ts'
 
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -31,8 +33,24 @@ vi.mock('@nextcloud/image-editor', async () => {
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { Permission, registerFileAction } from '@nextcloud/files'
 import { restoreTitle } from '../../lib/utils/documentTitle.ts'
+import { getViewer } from '../../lib/viewer.ts'
 import { makeFile, makeHandler } from '../factories.ts'
 import { mountViewer, unmountViewers } from './mountViewer.ts'
+
+/**
+ * What an opening of the viewer tells its opener, as spies.
+ *
+ * @param session - The opening
+ */
+function listenTo(session: ViewerSession) {
+	const onFile = vi.fn()
+	const onEditing = vi.fn()
+	const onClose = vi.fn()
+	session.addEventListener('update:file', ({ detail: [file] }) => onFile(file))
+	session.addEventListener('update:editing', ({ detail: [editing] }) => onEditing(editing))
+	session.addEventListener('close', () => onClose())
+	return { onFile, onEditing, onClose }
+}
 
 function imageHandler() {
 	return makeHandler({
@@ -149,36 +167,33 @@ describe('Viewer.open()', () => {
 
 describe('Viewer navigation', () => {
 	const setup = async (canLoop: boolean) => {
-		const onNext = vi.fn()
-		const onPrev = vi.fn()
-		const onClose = vi.fn()
 		const loadMore = vi.fn(async () => [])
 		const ctx = mountViewer([imageHandler()])
 		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
 		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
 		const f3 = makeFile({ basename: 'f3.jpg', mime: 'image/jpeg' })
-		await ctx.vm.open([f1, f2, f3], f1, { onNext, onPrev, onClose, canLoop, loadMore })
+		const session = await ctx.vm.open([f1, f2, f3], f1, { canLoop, loadMore })
 		await ctx.wrapper.vm.$nextTick()
-		return { ...ctx, onNext, onPrev, onClose, loadMore, f1, f2, f3 }
+		return { ...ctx, ...listenTo(session), loadMore, f1, f2, f3 }
 	}
 
-	it('next advances the current file and calls onNext with the new file', async () => {
-		const { emitModal, modalName, onNext, f2 } = await setup(true)
+	it('next advances the current file and tells the opener', async () => {
+		const { emitModal, modalName, onFile, f2 } = await setup(true)
 		await emitModal('next')
 		expect(modalName()).toBe('f2.jpg')
-		expect(onNext).toHaveBeenCalledTimes(1)
-		expect(onNext).toHaveBeenCalledWith(f2)
+		expect(onFile).toHaveBeenCalledTimes(1)
+		expect(onFile).toHaveBeenCalledWith(f2)
 	})
 
-	it('previous goes back and calls onPrev', async () => {
-		const { emitModal, modalName, onPrev } = await setup(true)
+	it('previous goes back and tells the opener', async () => {
+		const { emitModal, modalName, onFile, f1 } = await setup(true)
 		await emitModal('next')
 		await emitModal('previous')
 		expect(modalName()).toBe('f1.jpg')
-		expect(onPrev).toHaveBeenCalledTimes(1)
+		expect(onFile).toHaveBeenLastCalledWith(f1)
 	})
 
-	it('close calls onClose and resets the viewer', async () => {
+	it('close tells the opener and resets the viewer', async () => {
 		const { emitModal, modalExists, onClose } = await setup(true)
 		await emitModal('close')
 		expect(onClose).toHaveBeenCalledTimes(1)
@@ -219,27 +234,51 @@ describe('Viewer navigation', () => {
 	})
 })
 
+// For any page, whoever opened the viewer: the Files sidebar following the
+// file shown, say
+describe('the viewer itself', () => {
+	it('tells any page of the file shown, editing and closing', async () => {
+		const onFile = vi.fn()
+		const onEditing = vi.fn()
+		const onClose = vi.fn()
+		const viewer = getViewer()
+		viewer.addEventListener('update:file', ({ detail: [file] }) => onFile(file))
+		viewer.addEventListener('update:editing', ({ detail: [editing] }) => onEditing(editing))
+		viewer.addEventListener('close', onClose)
+		const { vm, wrapper, emitModal } = mountViewer([makeHandler({ id: 'image', tagName: 'oca-viewer-image', canEdit: true, enabled: () => true })])
+		const f1 = makeFile()
+		const f2 = makeFile()
+		await vm.open([f1, f2], f1)
+		await wrapper.vm.$nextTick()
+
+		await emitModal('next')
+		vm.setEditing(true)
+		vm.close()
+
+		expect(onFile).toHaveBeenCalledWith(f2)
+		expect(onEditing.mock.calls).toEqual([[true], [false]])
+		expect(onClose).toHaveBeenCalledOnce()
+	})
+})
+
 describe('Viewer goTo()', () => {
 	const setup = async () => {
-		const onNext = vi.fn()
-		const onPrev = vi.fn()
 		const ctx = mountViewer([imageHandler()])
 		const f1 = makeFile({ id: 101, basename: 'f1.jpg', mime: 'image/jpeg' })
 		const f2 = makeFile({ id: 102, basename: 'f2.jpg', mime: 'image/jpeg' })
 		const f3 = makeFile({ id: 103, basename: 'f3.jpg', mime: 'image/jpeg' })
-		await ctx.vm.open([f1, f2, f3], f1, { onNext, onPrev })
+		const session = await ctx.vm.open([f1, f2, f3], f1)
 		await ctx.wrapper.vm.$nextTick()
-		return { ...ctx, onNext, onPrev, f1, f2, f3 }
+		return { ...ctx, ...listenTo(session), f1, f2, f3 }
 	}
 
-	it('shows the requested file without firing navigation callbacks', async () => {
-		const { vm, wrapper, modalName, onNext, onPrev } = await setup()
+	it('shows the requested file without telling the opener', async () => {
+		const { vm, wrapper, modalName, onFile } = await setup()
 		vm.goTo(103)
 		await wrapper.vm.$nextTick()
 		expect(modalName()).toBe('f3.jpg')
-		// History-driven move: must not push new entries via onNext/onPrev.
-		expect(onNext).not.toHaveBeenCalled()
-		expect(onPrev).not.toHaveBeenCalled()
+		// History-driven move: must not push new entries
+		expect(onFile).not.toHaveBeenCalled()
 	})
 
 	it('ignores an unknown file id', async () => {
@@ -306,19 +345,17 @@ describe('Viewer delete handling', () => {
 		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
 		const f2 = makeFile({ basename: 'f2.jpg', mime: 'image/jpeg' })
 		const f3 = makeFile({ basename: 'f3.jpg', mime: 'image/jpeg' })
-		const onNext = vi.fn()
-		const onPrev = vi.fn()
-		await ctx.vm.open([f1, f2, f3], f2, { onNext, onPrev })
+		const { onFile } = listenTo(await ctx.vm.open([f1, f2, f3], f2))
 		await ctx.wrapper.vm.$nextTick()
 
 		deletedHandler()(f2)
 		await ctx.wrapper.vm.$nextTick()
-		expect(onNext).toHaveBeenCalledWith(f3)
+		expect(onFile).toHaveBeenCalledWith(f3)
 
 		// The last one gone, it falls back on the one before
 		deletedHandler()(f3)
 		await ctx.wrapper.vm.$nextTick()
-		expect(onPrev).toHaveBeenCalledWith(f1)
+		expect(onFile).toHaveBeenLastCalledWith(f1)
 	})
 
 	it('ignores deletion of a file not in the viewer list', async () => {
@@ -466,7 +503,7 @@ describe('Viewer preload', () => {
 		const f1 = makeFile()
 		const f2 = makeFile()
 
-		await expect(vm.open([f1, f2], f1)).resolves.toBeUndefined()
+		await expect(vm.open([f1, f2], f1)).resolves.toBeInstanceOf(EventTarget)
 		expect(modalHandlerId()).toBe('image')
 	})
 })
@@ -789,10 +826,9 @@ describe('opening over a viewer that is still open', () => {
 	it('still tells the first opener when a handler reopens without options', async () => {
 		// A handler passing its file to another one reopens it with nothing
 		// of its own, and the Files app still has to clean its URL on close
-		const onClose = vi.fn()
 		const { vm, wrapper, modalHandlerId } = mountViewer([pdfHandler(), officeHandler()])
 		const doc = makeFile({ mime: 'application/pdf' })
-		await vm.open([doc], doc, { onClose })
+		const { onClose } = listenTo(await vm.open([doc], doc))
 		await vm.open([doc], doc, undefined, 'office')
 		await wrapper.vm.$nextTick()
 
@@ -803,50 +839,33 @@ describe('opening over a viewer that is still open', () => {
 		expect(onClose).toHaveBeenCalledOnce()
 	})
 
-	it('calls an onClose passed again only once', async () => {
-		// The Files app opens the same file again as the sidebar opens
-		const onClose = vi.fn()
-		const { vm } = mountViewer([pdfHandler()])
-		const doc = makeFile({ mime: 'application/pdf' })
-		await vm.open([doc], doc, { onClose })
-		await vm.open([doc], doc, { onClose })
-
-		vm.close()
-		expect(onClose).toHaveBeenCalledOnce()
-	})
-
 	it('tells both openers, the first one too', async () => {
-		const first = vi.fn()
-		const second = vi.fn()
 		const { vm } = mountViewer([pdfHandler()])
 		const doc = makeFile({ mime: 'application/pdf' })
-		await vm.open([doc], doc, { onClose: first })
-		await vm.open([doc], doc, { onClose: second })
+		const first = listenTo(await vm.open([doc], doc))
+		const second = listenTo(await vm.open([doc], doc))
 
 		vm.close()
-		expect(first).toHaveBeenCalledOnce()
-		expect(second).toHaveBeenCalledOnce()
+		expect(first.onClose).toHaveBeenCalledOnce()
+		expect(second.onClose).toHaveBeenCalledOnce()
 	})
 
-	it('tells the others when one of them throws', async () => {
-		const throwing = vi.fn(() => {
-			throw new Error('nope')
-		})
-		const after = vi.fn()
-		const { vm } = mountViewer([pdfHandler()])
-		const doc = makeFile({ mime: 'application/pdf' })
-		await vm.open([doc], doc, { onClose: throwing })
-		await vm.open([doc], doc, { onClose: after })
+	it('tells only the latest opener of the files shown', async () => {
+		const { vm, emitModal } = mountViewer([pdfHandler()])
+		const one = makeFile({ mime: 'application/pdf' })
+		const two = makeFile({ mime: 'application/pdf' })
+		const first = listenTo(await vm.open([one, two], one))
+		const second = listenTo(await vm.open([one, two], one))
 
-		vm.close()
-		expect(after).toHaveBeenCalledOnce()
+		await emitModal('next')
+		expect(first.onFile).not.toHaveBeenCalled()
+		expect(second.onFile).toHaveBeenCalledWith(two)
 	})
 
-	it('does not bring back the onClose of a viewer already closed', async () => {
-		const onClose = vi.fn()
+	it('does not tell an opener of a viewer already closed again', async () => {
 		const { vm } = mountViewer([pdfHandler()])
 		const doc = makeFile({ mime: 'application/pdf' })
-		await vm.open([doc], doc, { onClose })
+		const { onClose } = listenTo(await vm.open([doc], doc))
 		vm.close()
 		await vm.open([doc], doc)
 		vm.close()
@@ -1418,6 +1437,7 @@ describe('the viewer\'s own Download and Delete', () => {
 		await wrapper.vm.$nextTick()
 
 		await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Download')!.trigger('click')
+		await flushPromises()
 
 		const link = click.mock.contexts[0] as HTMLAnchorElement
 		expect(link.href).toBe(file.encodedSource)
@@ -1445,7 +1465,82 @@ describe('the viewer\'s own Download and Delete', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(ctrl('s').defaultPrevented).toBe(true)
+		await flushPromises()
 		expect(click).toHaveBeenCalledOnce()
+	})
+
+	// Text saves edits not written yet, or the download is the last saved
+	// version of the document
+	describe('when the handler has something to finish first', () => {
+		/**
+		 * Open a file and have its element hold any download until told
+		 */
+		async function holdingHandler() {
+			const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			await vm.open([file], file)
+			await wrapper.vm.$nextTick()
+
+			const saved = Promise.withResolvers<void>()
+			const asked: unknown[] = []
+			wrapper.find('oca-viewer-image').element.addEventListener('before-download', (event) => {
+				const { detail } = event as CustomEvent<ViewerBeforeDownloadDetail>
+				asked.push(detail.file)
+				detail.waitUntil(saved.promise)
+			})
+			return { click, file, saved, asked, wrapper }
+		}
+
+		it('download once it is done', async () => {
+			const { click, file, saved, asked, wrapper } = await holdingHandler()
+
+			await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Download')!.trigger('click')
+			await flushPromises()
+			expect(asked).toEqual([file])
+			expect(click).not.toHaveBeenCalled()
+
+			saved.resolve()
+			await flushPromises()
+			expect(click).toHaveBeenCalledOnce()
+		})
+
+		// The opener and any page get the same event, to finish with the file
+		// on their side
+		it.each([
+			['the opener', async (session: ViewerSession) => session],
+			['any page', async () => getViewer()],
+		])('wait for %s too', async (_, target) => {
+			const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			const session: ViewerSession = await vm.open([file], file)
+			await wrapper.vm.$nextTick()
+			const done = Promise.withResolvers<void>()
+			const listener = (event: Event) => (event as CustomEvent<ViewerBeforeDownloadDetail>).detail.waitUntil(done.promise)
+			const listening = await target(session)
+			listening.addEventListener('before-download', listener)
+
+			ctrl('s')
+			await flushPromises()
+			expect(click).not.toHaveBeenCalled()
+
+			done.resolve()
+			await flushPromises()
+			expect(click).toHaveBeenCalledOnce()
+			listening.removeEventListener('before-download', listener)
+		})
+
+		it('download nothing when it fails, and say so', async () => {
+			const { click, saved } = await holdingHandler()
+
+			ctrl('s')
+			saved.reject(new Error('offline'))
+			await flushPromises()
+
+			expect(click).not.toHaveBeenCalled()
+			expect(showError).toHaveBeenCalledWith(expect.stringContaining('before downloading it'))
+		})
 	})
 
 	it('delete on Ctrl+Delete', async () => {
@@ -1534,6 +1629,29 @@ describe('the viewer\'s own Download and Delete', () => {
 			expect(filesDelete).toHaveBeenCalledOnce()
 			expect(click).not.toHaveBeenCalled()
 			expect(axiosDelete).not.toHaveBeenCalled()
+		})
+
+		it.each([
+			['from its menu entry', (wrapper: VueWrapper) => wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'download')!.trigger('click')],
+			['on Ctrl+S', () => ctrl('s')],
+		])('run its download action %s once the handler is done', async (_, start) => {
+			enabled = true
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			await vm.open([file], file, { view, folder })
+			await wrapper.vm.$nextTick()
+			const saved = Promise.withResolvers<void>()
+			wrapper.find('oca-viewer-image').element.addEventListener('before-download', (event) => {
+				(event as CustomEvent<ViewerBeforeDownloadDetail>).detail.waitUntil(saved.promise)
+			})
+
+			await start(wrapper)
+			await flushPromises()
+			expect(filesDownload).not.toHaveBeenCalled()
+
+			saved.resolve()
+			await flushPromises()
+			expect(filesDownload).toHaveBeenCalledOnce()
 		})
 	})
 
