@@ -239,6 +239,7 @@ const src = computed(() => props.file.encodedSource)
 | `isSidebarShown` | `boolean` | Whether the sidebar is shown                    |
 | `localSource`    | `string`  | An object URL to show instead of the file, e.g. right after an edit. Optional |
 | `turns`          | `number`  | Quarter turns the viewer asks you to show the file rotated by. Optional |
+| `comparisonFile` | `File`    | The file `file` is compared against, for a handler with `rendersComparison`. Optional |
 
 `ViewerEmits` lets you emit:
 
@@ -331,6 +332,7 @@ The full handler shape (see the `IHandler` interface):
 | `preload`       | `(node: File) => Promise<void>`       | no       | Preload data for neighbouring files                                |
 | `theme`         | `'dark' \| 'light' \| 'default'`      | no       | Viewer modal theme                                                 |
 | `canCompare`    | `boolean`                             | no       | Comparing two versions is worth offering, see `canCompare(node)`   |
+| `rendersComparison` | `boolean`                         | no       | The handler shows a comparison itself, given `file` and `comparisonFile` in one element |
 | `supportsEndToEndEncryption` | `boolean`                | no       | Whether the handler supports end-to-end encrypted files            |
 | `onInit`        | `() => Promise<void>`                 | no       | Defines the element for `tagName`, called the first time it is needed |
 
@@ -407,8 +409,9 @@ await viewer.open(files, files[0], options, 'my-app')
 // Open every viewable file of a folder, ordered by name like the files list.
 await viewer.openFolder(folder, file, options, 'my-app')
 
-// Open two files side by side for comparison.
-await viewer.compare(file1, file2, 'my-app')
+// Compare a file to another, e.g. its current version to an older one. They
+// show side by side, or in one view by a handler with `rendersComparison`.
+await viewer.compare(current, older, 'my-app')
 ```
 
 Signatures:

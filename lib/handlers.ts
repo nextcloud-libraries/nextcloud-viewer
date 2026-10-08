@@ -115,6 +115,14 @@ export interface IHandler {
 	canCompare?: boolean
 
 	/**
+	 * Whether this handler shows a comparison of two files itself, e.g. as a
+	 * diff. When both files of `getViewer().compare()` open with it, the
+	 * viewer renders one element with `file` and `comparisonFile` across its
+	 * whole width, instead of two elements side by side.
+	 */
+	rendersComparison?: boolean
+
+	/**
 	 * Whether this handler works with end-to-end encrypted files.
 	 *
 	 * End-to-end encrypted files are decrypted when fetched from their

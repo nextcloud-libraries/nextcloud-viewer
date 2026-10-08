@@ -43,6 +43,7 @@ const Probe = defineComponent({
 		editing: { type: Boolean, default: false },
 		isSidebarShown: { type: Boolean, default: false },
 		localSource: { type: String, default: undefined },
+		comparisonFile: { type: Object, default: undefined },
 	},
 	emits: ['loaded', 'errored', 'update:canSwipe', 'update:editing', 'update:playing'],
 	setup(props, { emit }) {
@@ -164,6 +165,68 @@ describe('what a handler is given', () => {
 
 		expect(loadMore).toHaveBeenCalledTimes(1)
 		expect(lastRender().files.map((file) => file.basename)).toEqual(['f1.jpg', 'f2.jpg', 'f3.jpg'])
+	})
+})
+
+describe('a handler comparing two files', () => {
+	it('is given both files in one element when it shows the comparison itself', async () => {
+		renders.length = 0
+		const current = makeFile({ basename: 'current.md', mime: 'text/markdown' })
+		const older = makeFile({ basename: 'older.md', mime: 'text/markdown' })
+		const { vm, wrapper, renderedTags } = mountViewer([probeHandler({ rendersComparison: true })])
+		const spinner = () => wrapper.find('.nc-loading-icon-stub').exists()
+
+		await vm.compare(current, older)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		expect(renderedTags()).toEqual(['oca-viewer-probe'])
+		expect(lastRender().file.basename).toBe('current.md')
+		expect(lastRender().comparisonFile?.basename).toBe('older.md')
+		expect(spinner()).toBe(true)
+
+		// One element, so one load to wait for
+		emitFromProbe!('loaded')
+		await wrapper.vm.$nextTick()
+		expect(spinner()).toBe(false)
+	})
+
+	it('is given one file per element side by side otherwise', async () => {
+		renders.length = 0
+		const current = makeFile({ basename: 'current.jpg', mime: 'image/jpeg' })
+		const older = makeFile({ basename: 'older.jpg', mime: 'image/jpeg' })
+		const { vm, wrapper, renderedTags } = mountViewer([probeHandler()])
+
+		await vm.compare(current, older)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		expect(renderedTags()).toEqual(['oca-viewer-probe', 'oca-viewer-probe'])
+		expect(renders.map((props) => props.file.basename)).toEqual(expect.arrayContaining(['current.jpg', 'older.jpg']))
+		expect(renders.every((props) => props.comparisonFile === undefined)).toBe(true)
+	})
+
+	it('stays side by side when the two files open with different handlers', async () => {
+		renders.length = 0
+		const current = makeFile({ basename: 'current.md', mime: 'text/markdown' })
+		const older = makeFile({ basename: 'older.jpg', mime: 'image/jpeg' })
+		const other = makeHandler({
+			id: 'other',
+			tagName: 'oca-viewer-other',
+			enabled: (nodes) => nodes.every((node) => node.mime === 'image/jpeg'),
+		})
+		const probe = probeHandler({
+			rendersComparison: true,
+			enabled: (nodes: IFile[]) => nodes.every((node) => node.mime === 'text/markdown'),
+		})
+		const { vm, wrapper, renderedTags } = mountViewer([probe, other])
+
+		await vm.compare(current, older)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		expect(renderedTags()).toEqual(['oca-viewer-probe', 'oca-viewer-other'])
+		expect(lastRender().comparisonFile).toBeUndefined()
 	})
 })
 

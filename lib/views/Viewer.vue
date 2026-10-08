@@ -167,15 +167,30 @@
 			emit its `loaded` event. It must not share the v-if chain with the
 			loading spinner, otherwise it would never mount and never load.
 		-->
+		<!-- The handlers are custom elements: they observe hyphenated
+		     attributes, so camelCase bindings are lost whenever the element
+		     is patched before it upgrades. -->
+		<!-- eslint-disable vue/attribute-hyphenation -->
+		<!-- Comparison of two files, shown by their handler in one element -->
+		<component
+			:is="currentHandler?.tagName"
+			v-if="isComparingInOne && currentFile && elementReady(currentHandler)"
+			v-show="!loading && !errorString"
+			:file="currentFile"
+			:comparison-file="comparisonFile"
+			:files="[]"
+			:is-sidebar-shown="isSidebarShown"
+			:max-height="height"
+			:max-width="width"
+			:editing="false"
+			@loaded="onLoad"
+			@errored="onError" />
+
 		<!-- Comparison of two files, rendered side by side -->
 		<div
-			v-if="isComparing"
+			v-else-if="isComparing"
 			v-show="!loading && !errorString"
 			class="viewer__comparison">
-			<!-- The handlers are custom elements: they observe hyphenated
-			     attributes, so camelCase bindings are lost whenever the element
-			     is patched before it upgrades. -->
-			<!-- eslint-disable vue/attribute-hyphenation -->
 			<component
 				:is="currentHandler?.tagName"
 				v-if="currentFile && elementReady(currentHandler)"
@@ -408,6 +423,10 @@ function handlerFor(file: IFile): IHandler | undefined {
 const comparisonFile = ref<IFile>()
 const comparisonHandler = ref<IHandler>()
 const isComparing = computed(() => !!comparisonFile.value)
+// Both files go to one element when their handler shows the comparison itself
+const isComparingInOne = computed(() => isComparing.value
+	&& currentHandler.value?.id === comparisonHandler.value?.id
+	&& currentHandler.value?.rendersComparison === true)
 
 /**
  * The formats the image editor writes back as they came. Anything else would
@@ -1150,7 +1169,7 @@ const compare: ViewerAPI['compare'] = async (file1, file2, handlerId) => {
 	currentFile.value = file1
 	comparisonHandler.value = handler2
 	comparisonFile.value = file2
-	pendingLoads.value = 2
+	pendingLoads.value = isComparingInOne.value ? 1 : 2
 	// A failure to open something else earlier is not this comparison's
 	// problem, and the error is what the modal shows instead of the files.
 	errorString.value = null

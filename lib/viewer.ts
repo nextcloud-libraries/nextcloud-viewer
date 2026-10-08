@@ -62,6 +62,12 @@ export interface ViewerProps {
 	 * server preview). Handlers that support it should prefer this over `file`.
 	 */
 	localSource?: string
+
+	/**
+	 * The file `file` is compared against. Only set for a handler that shows
+	 * the comparison itself (see `IHandler.rendersComparison`).
+	 */
+	comparisonFile?: IFile
 }
 
 /**
@@ -192,6 +198,14 @@ const defaultViewerOptions: ViewerOptions = {
 export interface ViewerAPI {
 	open(nodes: IFile[], file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<void>
 	openFolder(folder: IFolder, file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<void>
+	/**
+	 * Compare two files, side by side, or in one view by a handler that shows
+	 * the comparison itself (see `IHandler.rendersComparison`).
+	 *
+	 * @param node1 - The file shown, e.g. the current version of a file
+	 * @param node2 - The file it is compared against, e.g. an older version
+	 * @param handlerId - The id of the handler to show both files with
+	 */
 	compare(node1: IFile, node2: IFile, handlerId?: string): Promise<void>
 
 	/**
