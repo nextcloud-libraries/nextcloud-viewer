@@ -315,7 +315,7 @@ describe('compare() with bad input', () => {
 		vi.spyOn(logger, 'error').mockImplementation(() => {})
 		const { vm, wrapper, errorText } = mountViewer([imageHandler()])
 
-		await vm.compare(makeFile(), makeFile(), 'nope')
+		await vm.compare(makeFile(), makeFile(), { handlerId: 'nope' })
 		await wrapper.vm.$nextTick()
 
 		expect(errorText()).toBe(CANNOT_OPEN)
@@ -325,7 +325,7 @@ describe('compare() with bad input', () => {
 		const other = makeHandler({ id: 'other', tagName: 'oca-viewer-other' })
 		const { vm, wrapper, renderedTags } = mountViewer([imageHandler(), other])
 
-		await vm.compare(makeFile(), makeFile(), 'other')
+		await vm.compare(makeFile(), makeFile(), { handlerId: 'other' })
 		await wrapper.vm.$nextTick()
 
 		expect(renderedTags()).toEqual(['oca-viewer-other', 'oca-viewer-other'])

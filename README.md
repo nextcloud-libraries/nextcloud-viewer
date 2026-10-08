@@ -232,13 +232,14 @@ const src = computed(() => props.file.encodedSource)
 | Prop             | Type      | Description                                     |
 | ---------------- | --------- | ----------------------------------------------- |
 | `file`           | `File`    | The file currently displayed                    |
-| `files`          | `File[]`  | The list of files currently opened in the viewer |
+| `files`          | `File[]`  | The list of files currently opened in the viewer. When comparing, the two compared, the base first |
 | `maxHeight`      | `number`  | Max height of the viewer container              |
 | `maxWidth`       | `number`  | Max width of the viewer container               |
 | `editing`        | `boolean` | Whether the viewer is in editing mode           |
 | `isSidebarShown` | `boolean` | Whether the sidebar is shown                    |
 | `localSource`    | `string`  | An object URL to show instead of the file, e.g. right after an edit. Optional |
 | `turns`          | `number`  | Quarter turns the viewer asks you to show the file rotated by. Optional |
+| `comparison`     | `'side-by-side' \| 'differences'` | How the viewer compares `files`, see [comparing two files](#comparing-two-files). Optional |
 
 `ViewerEmits` lets you emit:
 
@@ -345,7 +346,8 @@ The full handler shape (see the `IHandler` interface):
 | `group`         | `string`                              | no       | Group used to combine handlers when opening a folder               |
 | `preload`       | `(node: File) => Promise<void>`       | no       | Preload data for neighbouring files                                |
 | `theme`         | `'dark' \| 'light' \| 'default'`      | no       | Viewer modal theme                                                 |
-| `canCompare`    | `boolean`                             | no       | Comparing two versions is worth offering, see `canCompare(node)`   |
+| `canCompare`    | `(nodes: File[]) => boolean`          | no       | Comparing versions of these files is worth offering, see `canCompare(node)` |
+| `canShowDifferences` | `(files: File[]) => boolean`     | no       | It can show what changed between these two of its files in one view, see [comparing two files](#comparing-two-files) |
 | `supportsEndToEndEncryption` | `boolean`                | no       | Whether the handler supports end-to-end encrypted files            |
 | `onInit`        | `() => Promise<void>`                 | no       | Defines the element for `tagName`, called the first time it is needed |
 
@@ -423,14 +425,14 @@ await viewer.open(files, files[0], options, 'my-app')
 await viewer.openFolder(folder, file, options, 'my-app')
 
 // Open two files side by side for comparison.
-await viewer.compare(file1, file2, 'my-app')
+await viewer.compare(file, olderVersion, { view: 'differences', handlerId: 'my-app' })
 ```
 
 Signatures:
 
 - `open(nodes: File[], file?: File, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>`
 - `openFolder(folder: Folder, file?: File, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>`
-- `compare(node1: File, node2: File, handlerId?: string): Promise<ViewerSession>`
+- `compare(file: File, base: File, options?: { view?: 'side-by-side' | 'differences', handlerId?: string }): Promise<ViewerSession>`
 - `close(): void`
 
 #### Following what the viewer does
@@ -483,6 +485,23 @@ neither does a request that fails: both fall back to names ascending.
 | `view`            | `View`                        | The Files view the viewer was opened from, handed to the file actions in its header |
 | `folder`          | `Folder`                      | The folder the files live in, handed to those actions as well        |
 
+#### Comparing two files
+
+`compare(file, base)` shows `file` compared with `base`, an older version of
+it: what changed from `base` to `file`. The versions tab passes the current
+file, then the version. Side by side, that is two elements, `base` on the left,
+each given its own `file`, both given `files: [base, file]` and
+`comparison: 'side-by-side'`. A handler finds its side with
+`files.indexOf(file)`, and can mark what changed against the other file.
+
+A handler can also show what changed in a single view, an image slider or a
+list of changes, say. Its `canShowDifferences(files)` says for which files,
+like `enabled()` does for opening them. When it takes both files and says yes,
+the viewer offers a "Show differences" toggle in its header and on **D**, and
+renders one element with `file`, `files: [base, file]` and
+`comparison: 'differences'`. `compare(file, base, { view: 'differences' })`
+opens on it. The view chosen is kept until the viewer closes.
+
 ### 🧭 Migrating from `OCA.Viewer`
 
 The `OCA.Viewer` global is gone. Everything is imported from the
@@ -497,13 +516,13 @@ instead, and the viewer works with `@nextcloud/files` nodes rather than the
 | `OCA.Viewer.open({ fileInfo, list })`             | `getViewer().open(nodes, file)`                                |
 | `OCA.Viewer.openWith(id, { … })`                  | `getViewer().open(nodes, file, options, id)`                   |
 | `OCA.Viewer.open({ …, startSlideshow: true })`    | `getViewer().open(nodes, file, { startSlideshow: true })`      |
-| `OCA.Viewer.compare(fileInfo1, fileInfo2)`        | `getViewer().compare(node1, node2)`                            |
+| `OCA.Viewer.compare(fileInfo1, fileInfo2)`        | `getViewer().compare(file, base)`                              |
 | `OCA.Viewer.close()`                              | `getViewer().close()`                                          |
 | `OCA.Viewer.mimetypes.includes(node.mime)`        | `canView(node)`                                                |
 | `OCA.Viewer.mimetypesCompare.includes(node.mime)` | `canView(node)`                                                |
 | `OCA.Viewer.availableHandlers`                    | `getHandlers()`, or `canView(node)` to test one file           |
 | `OCA.Viewer.registerHandler({ component })`       | `registerHandler({ tagName })`, see above                      |
-| `canCompare: true` on a handler                   | the same, and `canCompare(node)` to decide whether to offer it |
+| `canCompare: true` on a handler                   | `canCompare: (nodes) => true`, and `canCompare(node)` to decide whether to offer it |
 | `\OCP\Util::addScript` for the registration        | `\OCP\Util::addInitScript`                                      |
 | A listener for `OCA\Viewer\Event\LoadViewer`       | a listener for `BeforeTemplateRenderedEvent`, see the [tutorial](#4-load-it-on-every-page) |
 | Dispatching `OCA\Viewer\Event\LoadViewer`          | nothing, the viewer is on every page already                   |

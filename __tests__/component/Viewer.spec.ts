@@ -2,9 +2,10 @@
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import type { IFile } from '@nextcloud/files'
 import type { VueWrapper } from '@vue/test-utils'
 import type { ViewerSession } from '../../lib/session.ts'
-import type { ViewerBeforeDownloadDetail } from '../../lib/viewer.ts'
+import type { CompareOptions, ViewerBeforeDownloadDetail } from '../../lib/viewer.ts'
 
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -406,6 +407,118 @@ describe('Viewer action submenu', () => {
 
 		await buttons().find((b) => b.text().includes('Child action'))!.trigger('click')
 		expect(childExec).toHaveBeenCalled()
+	})
+})
+
+// What a handler is told when comparing, read back from its element
+class ComparedElement extends HTMLElement {
+	file?: IFile
+	files?: IFile[]
+	comparison?: string
+}
+customElements.define('oca-viewer-compared', ComparedElement)
+
+describe('comparing two files', () => {
+	/**
+	 * A handler for both files, that can show their differences or not
+	 *
+	 * @param canShowDifferences - Whether it can
+	 */
+	function comparingHandler(canShowDifferences: boolean | ((files: IFile[]) => boolean)) {
+		return makeHandler({
+			id: 'compared',
+			tagName: 'oca-viewer-compared',
+			canShowDifferences: typeof canShowDifferences === 'function' ? canShowDifferences : () => canShowDifferences,
+			enabled: () => true,
+		})
+	}
+
+	const elements = (wrapper: VueWrapper) => wrapper.findAll('oca-viewer-compared').map((found) => found.element as ComparedElement)
+	const toggle = (wrapper: VueWrapper) => wrapper.findAll('.nc-action-button-stub').find((button) => /Show (differences|side by side)/.test(button.text()))
+
+	async function compareTwo(canShowDifferences: boolean | ((files: IFile[]) => boolean), options?: CompareOptions) {
+		const ctx = mountViewer([comparingHandler(canShowDifferences)])
+		// The current file compared with an older version, as the versions tab does
+		const current = makeFile({ basename: 'current.md' })
+		const older = makeFile({ basename: 'older.md' })
+		await ctx.vm.compare(current, older, options)
+		await ctx.wrapper.vm.$nextTick()
+		return { ...ctx, current, older }
+	}
+	it('tells both elements side by side what they are compared with, the older on the left', async () => {
+		const { wrapper, current, older } = await compareTwo(false)
+
+		const [left, right] = elements(wrapper)
+		expect(left!.file?.source).toBe(older.source)
+		expect(right!.file?.source).toBe(current.source)
+		for (const element of [left!, right!]) {
+			expect(element.files?.map((file) => file.source)).toEqual([older.source, current.source])
+			expect(element.comparison).toBe('side-by-side')
+		}
+	})
+
+	it('offers the differences only when the handler can show them', async () => {
+		expect(toggle((await compareTwo(false)).wrapper)).toBeUndefined()
+		expect(toggle((await compareTwo(true)).wrapper)?.text()).toBe('Show differences')
+	})
+
+	// Text opens plain text too, but can only show the changes of Markdown
+	it('asks the handler whether it can for these two files', async () => {
+		const canShowDifferences = vi.fn((files: IFile[]) => files.every((file) => file.basename.endsWith('.md')))
+		const { current, older, wrapper } = await compareTwo(canShowDifferences)
+
+		expect(toggle(wrapper)).toBeDefined()
+		expect(canShowDifferences.mock.lastCall?.[0].map((file) => file.source)).toEqual([older.source, current.source])
+	})
+
+	it('offers nothing when the handler cannot tell', async () => {
+		const { wrapper } = await compareTwo(() => {
+			throw new Error('nope')
+		})
+
+		expect(toggle(wrapper)).toBeUndefined()
+		expect(elements(wrapper)).toHaveLength(2)
+	})
+
+	it('shows the differences in one element, and goes back', async () => {
+		const { wrapper, current, older } = await compareTwo(true)
+
+		await toggle(wrapper)!.trigger('click')
+		const [only, ...rest] = elements(wrapper)
+		expect(rest).toEqual([])
+		expect(only!.file?.source).toBe(current.source)
+		expect(only!.files?.map((file) => file.source)).toEqual([older.source, current.source])
+		expect(only!.comparison).toBe('differences')
+
+		await toggle(wrapper)!.trigger('click')
+		expect(elements(wrapper)).toHaveLength(2)
+	})
+
+	it('switches with D', async () => {
+		const { wrapper } = await compareTwo(true)
+
+		document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'd', bubbles: true, cancelable: true }))
+		await wrapper.vm.$nextTick()
+
+		expect(elements(wrapper)).toHaveLength(1)
+	})
+
+	it('opens on the differences when asked, and side by side when the handler cannot show them', async () => {
+		expect(elements((await compareTwo(true, { view: 'differences' })).wrapper)).toHaveLength(1)
+		expect(elements((await compareTwo(false, { view: 'differences' })).wrapper)).toHaveLength(2)
+	})
+
+	it('keeps the view while the viewer is open, not after', async () => {
+		const { vm, wrapper, current, older } = await compareTwo(true, { view: 'differences' })
+
+		await vm.compare(older, current)
+		await wrapper.vm.$nextTick()
+		expect(elements(wrapper)).toHaveLength(1)
+
+		vm.close()
+		await vm.compare(current, older)
+		await wrapper.vm.$nextTick()
+		expect(elements(wrapper)).toHaveLength(2)
 	})
 })
 

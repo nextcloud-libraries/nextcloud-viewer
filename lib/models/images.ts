@@ -104,7 +104,7 @@ export function registerImageHandler() {
 		supportsEndToEndEncryption: true,
 		canEdit: true,
 		// Side by side is how two versions of a picture show what changed
-		canCompare: true,
+		canCompare: () => true,
 		// Shown at once when the user steps to it, as the old viewer had it
 		preload: async (node, space) => {
 			const { preloadNeighbourPreview } = await import('../utils/neighbours.ts')

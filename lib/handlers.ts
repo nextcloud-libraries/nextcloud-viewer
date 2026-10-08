@@ -107,12 +107,21 @@ export interface IHandler {
 	canEdit?: boolean
 
 	/**
-	 * Whether comparing two versions of a file side by side is worth offering
-	 * for this handler's files. It is a hint for callers deciding whether to
-	 * offer it at all (see `canCompare()`): `getViewer().compare()` shows any
-	 * pair either way.
+	 * Whether comparing versions of these files is worth offering, like
+	 * `enabled()` says whether it opens them. It is a hint for callers deciding
+	 * whether to offer it at all (see `canCompare()`): `getViewer().compare()`
+	 * shows any pair either way.
 	 */
-	canCompare?: boolean
+	canCompare?: (nodes: IFile[]) => boolean
+
+	/**
+	 * Whether it can show the differences between these two of its files in a
+	 * single view, as an image slider or a list of changes does. Called with
+	 * the files compared, the older first. When it says so, the viewer offers
+	 * that view next to side by side, and renders one element with
+	 * `comparison: 'differences'`.
+	 */
+	canShowDifferences?: (files: IFile[]) => boolean
 
 	/**
 	 * Whether this handler works with end-to-end encrypted files.
@@ -158,7 +167,15 @@ export function canCompare(node: INode): boolean {
 	}
 	// The one the viewer would show it with: the first to take it
 	const handler = [...getHandlers().values()].find((candidate) => isHandlerEnabled(candidate, [node as IFile]))
-	return handler?.canCompare === true
+	if (handler?.canCompare === undefined) {
+		return false
+	}
+	try {
+		return handler.canCompare([node as IFile]) === true
+	} catch (error) {
+		logger.error(`The ${handler.id} handler could not tell whether comparing is worth offering`, { error })
+		return false
+	}
 }
 
 /**
@@ -392,6 +409,14 @@ function validateHandler(handler: IHandler): void {
 
 	if (handler.onInit && typeof handler.onInit !== 'function') {
 		throw new Error('Handler onInit must be a function if provided')
+	}
+
+	if (handler.canCompare && typeof handler.canCompare !== 'function') {
+		throw new Error('Handler canCompare must be a function if provided')
+	}
+
+	if (handler.canShowDifferences && typeof handler.canShowDifferences !== 'function') {
+		throw new Error('Handler canShowDifferences must be a function if provided')
 	}
 
 	if (handler.theme && !['dark', 'light', 'default'].includes(handler.theme)) {
