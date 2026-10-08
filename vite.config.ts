@@ -66,6 +66,10 @@ export default defineConfig((env) => {
 	return createLibConfig({
 		index: 'lib/index.ts',
 	}, {
+		// Each chunk imports its own stylesheet, for the app bundling the
+		// library to load along with that chunk. Without it the styles are
+		// emitted but nothing loads them.
+		inlineCSS: true,
 		nodeExternalsOptions: {
 			// for subpath imports like '@nextcloud/l10n/gettext'
 			include: [/^@nextcloud\//],

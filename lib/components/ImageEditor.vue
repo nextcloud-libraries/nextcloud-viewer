@@ -113,8 +113,10 @@ function onError(error: Error) {
 
 <style scoped>
 /* Full-viewport overlay so the editor fills the screen regardless of the
-   (collapsing) handler container it replaces. */
-.viewer__image-editor {
+   (collapsing) handler container it replaces. Over the editor's own
+   `.image-editor` rule by specificity, as the app bundling the library may
+   load that stylesheet after this one. */
+.image-editor.viewer__image-editor {
 	position: fixed;
 	inset: 0;
 	z-index: 10102;
