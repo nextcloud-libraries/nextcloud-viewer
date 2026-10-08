@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 import type { VueWrapper } from '@vue/test-utils'
+import type { ViewerBeforeDownloadDetail } from '../../lib/viewer.ts'
 
 import { flushPromises } from '@vue/test-utils'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
@@ -1418,6 +1419,7 @@ describe('the viewer\'s own Download and Delete', () => {
 		await wrapper.vm.$nextTick()
 
 		await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Download')!.trigger('click')
+		await flushPromises()
 
 		const link = click.mock.contexts[0] as HTMLAnchorElement
 		expect(link.href).toBe(file.encodedSource)
@@ -1445,7 +1447,56 @@ describe('the viewer\'s own Download and Delete', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(ctrl('s').defaultPrevented).toBe(true)
+		await flushPromises()
 		expect(click).toHaveBeenCalledOnce()
+	})
+
+	// Text saves edits not written yet, or the download is the last saved
+	// version of the document
+	describe('when the handler has something to finish first', () => {
+		/**
+		 * Open a file and have its element hold any download until told
+		 */
+		async function holdingHandler() {
+			const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			await vm.open([file], file)
+			await wrapper.vm.$nextTick()
+
+			const saved = Promise.withResolvers<void>()
+			const asked: unknown[] = []
+			wrapper.find('oca-viewer-image').element.addEventListener('before-download', (event) => {
+				const { detail } = event as CustomEvent<ViewerBeforeDownloadDetail>
+				asked.push(detail.file)
+				detail.waitUntil(saved.promise)
+			})
+			return { click, file, saved, asked, wrapper }
+		}
+
+		it('download once it is done', async () => {
+			const { click, file, saved, asked, wrapper } = await holdingHandler()
+
+			await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Download')!.trigger('click')
+			await flushPromises()
+			expect(asked).toEqual([file])
+			expect(click).not.toHaveBeenCalled()
+
+			saved.resolve()
+			await flushPromises()
+			expect(click).toHaveBeenCalledOnce()
+		})
+
+		it('download nothing when it fails, and say so', async () => {
+			const { click, saved } = await holdingHandler()
+
+			ctrl('s')
+			saved.reject(new Error('offline'))
+			await flushPromises()
+
+			expect(click).not.toHaveBeenCalled()
+			expect(showError).toHaveBeenCalledWith(expect.stringContaining('before downloading it'))
+		})
 	})
 
 	it('delete on Ctrl+Delete', async () => {
@@ -1534,6 +1585,29 @@ describe('the viewer\'s own Download and Delete', () => {
 			expect(filesDelete).toHaveBeenCalledOnce()
 			expect(click).not.toHaveBeenCalled()
 			expect(axiosDelete).not.toHaveBeenCalled()
+		})
+
+		it.each([
+			['from its menu entry', (wrapper: VueWrapper) => wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'download')!.trigger('click')],
+			['on Ctrl+S', () => ctrl('s')],
+		])('run its download action %s once the handler is done', async (_, start) => {
+			enabled = true
+			const { vm, wrapper } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			await vm.open([file], file, { view, folder })
+			await wrapper.vm.$nextTick()
+			const saved = Promise.withResolvers<void>()
+			wrapper.find('oca-viewer-image').element.addEventListener('before-download', (event) => {
+				(event as CustomEvent<ViewerBeforeDownloadDetail>).detail.waitUntil(saved.promise)
+			})
+
+			await start(wrapper)
+			await flushPromises()
+			expect(filesDownload).not.toHaveBeenCalled()
+
+			saved.resolve()
+			await flushPromises()
+			expect(filesDownload).toHaveBeenCalledOnce()
 		})
 	})
 

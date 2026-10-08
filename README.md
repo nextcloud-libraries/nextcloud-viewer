@@ -250,6 +250,21 @@ const src = computed(() => props.file.encodedSource)
 | `update:editing`   | `[boolean]` | Notify the viewer the editing mode changed                  |
 | `update:playing`   | `[boolean]` | Notify the viewer media plays, so the slideshow waits for it |
 
+Before it downloads the file shown, from its own Download, Ctrl+S or the Files
+download action, the viewer dispatches `before-download` on your element. A view
+with edits not written yet saves them first: the download waits for the promise
+it hands `waitUntil()`, and is cancelled with an error if that promise rejects.
+
+```ts
+import type { ViewerBeforeDownloadDetail } from '@nextcloud/viewer'
+
+useHost()!.addEventListener('before-download', (event) => {
+	if (dirty.value) {
+		(event as CustomEvent<ViewerBeforeDownloadDetail>).detail.waitUntil(save())
+	}
+})
+```
+
 #### 2. Define the custom element and register the handler
 
 Turn your component into a custom element with Vue's `defineCustomElement`, define

@@ -286,6 +286,7 @@ import { getHandlers, isHandlerEnabled } from '../handlers.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
 import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
+import { prepareDownload } from '../utils/beforeDownload.ts'
 import { canDownload } from '../utils/canDownload.ts'
 import { initHandlerElement } from '../utils/customElements.ts'
 import { restoreTitle, setViewerTitle } from '../utils/documentTitle.ts'
@@ -355,6 +356,8 @@ const canSwipe = ref(true)
 const isFullscreen = ref(false)
 const editing = ref(false)
 const lightBackdrop = ref(false)
+// The element of the handler showing the file
+const handlerElement = useTemplateRef<HTMLElement>('handlerElement')
 // The handler asked for the user's own theme, backdrop and header included
 const followsTheme = ref(false)
 const slideshowRunning = ref(false)
@@ -552,11 +555,15 @@ const canDeleteFile = computed(() => currentFile.value !== undefined
 	&& (currentFile.value.permissions & Permission.DELETE) !== 0)
 
 /**
- * Download a file through the browser.
+ * Download a file through the browser, once the handler showing it is done
+ * with it.
  *
  * @param file - The file shown
  */
-function downloadFile(file: IFile) {
+async function downloadFile(file: IFile) {
+	if (!await prepareDownload(handlerElement.value, file)) {
+		return
+	}
 	const link = document.createElement('a')
 	link.href = file.encodedSource
 	link.download = file.basename
@@ -581,6 +588,9 @@ async function deleteFile(file: IFile) {
 	}
 }
 
+const RENAME_ACTION_ID = 'rename'
+const DOWNLOAD_ACTION_ID = 'download'
+
 /**
  * The Files action with that id, if the opener gave the Files actions their
  * context and it is offered for the file shown.
@@ -602,9 +612,9 @@ useHotKey('s', (event) => {
 		return
 	}
 	event.preventDefault()
-	const action = filesAction('download')
+	const action = filesAction(DOWNLOAD_ACTION_ID)
 	if (action !== undefined) {
-		execAction(action)
+		runDownloadAction(action)
 	} else if (canDownloadFile.value) {
 		downloadFile(currentFile.value)
 	}
@@ -648,7 +658,6 @@ const openedSubmenu = ref<IFileAction | null>(null)
 
 // Stable Files action ids the viewer handles itself instead of delegating,
 // because their default UI lives on the (hidden) file-list row.
-const RENAME_ACTION_ID = 'rename'
 
 // Rename dialog state
 const renameDialogOpen = ref(false)
@@ -685,6 +694,23 @@ function handleAction(action: IFileAction) {
 	openedSubmenu.value = null
 	if (action.id === RENAME_ACTION_ID) {
 		openRenameDialog()
+		return
+	}
+	if (action.id === DOWNLOAD_ACTION_ID) {
+		runDownloadAction(action)
+		return
+	}
+	execAction(action)
+}
+
+/**
+ * Run the Files download action, once the handler showing the file is done
+ * with it.
+ *
+ * @param action - The Files download action
+ */
+async function runDownloadAction(action: IFileAction) {
+	if (currentFile.value !== undefined && !await prepareDownload(handlerElement.value, currentFile.value)) {
 		return
 	}
 	execAction(action)
@@ -1247,7 +1273,6 @@ function onError(reported: unknown) {
 // v-on. A handler is a custom element, so its emits leave as DOM events under
 // the name it declared, while v-on hyphenates the listener it is given
 // (`update:canSwipe` becomes `update:can-swipe`) and then matches nothing.
-const handlerElement = useTemplateRef<HTMLElement>('handlerElement')
 
 watch(handlerElement, (element, previous) => {
 	if (previous) {

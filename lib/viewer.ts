@@ -111,6 +111,34 @@ export interface ViewerEmits {
 }
 
 /**
+ * What the viewer hands the element of the handler showing a file, with the
+ * `before-download` event it dispatches on it before downloading that file,
+ * from its own Download, Ctrl+S or the Files download action. A handler with
+ * edits not written yet saves them first:
+ * ```ts
+ * element.addEventListener('before-download', (event) => {
+ *   if (dirty) {
+ *     event.detail.waitUntil(save())
+ *   }
+ * })
+ * ```
+ * A promise that rejects cancels the download, and the viewer says so.
+ */
+export interface ViewerBeforeDownloadDetail {
+	/**
+	 * The file about to be downloaded
+	 */
+	file: IFile
+
+	/**
+	 * Hold the download until the promise settles
+	 *
+	 * @param promise - What the download waits for
+	 */
+	waitUntil(promise: Promise<unknown>): void
+}
+
+/**
  * Options for opening the viewer
  */
 export type ViewerOptions = {
