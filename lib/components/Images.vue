@@ -4,7 +4,15 @@
 -->
 
 <template>
-	<div class="image_container">
+	<ImageDifferences
+		v-if="showsDifferences"
+		:files="files"
+		:maxWidth="maxWidth"
+		:maxHeight="maxHeight"
+		@loaded="emit('loaded')"
+		@errored="(error) => emit('errored', error)"
+		@update:canSwipe="(canSwipe) => emit('update:canSwipe', canSwipe)" />
+	<div v-else class="image_container">
 		<template v-if="data !== null">
 			<img
 				v-if="!livePhotoCanBePlayed"
@@ -79,6 +87,7 @@ import axios from '@nextcloud/axios'
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import PlayCircleOutline from 'vue-material-design-icons/PlayCircleOutline.vue'
+import ImageDifferences from './ImageDifferences.vue'
 import { useViewerProps } from '../composables/useViewerProps.ts'
 import { logger } from '../services/logger.ts'
 import { preloadImage, preloadMedia, preloadPreview } from '../services/mediaPreloader.ts'
@@ -96,6 +105,10 @@ const props = withDefaults(defineProps<ViewerProps>(), {
 })
 
 const emit = defineEmits<ViewerEmits>()
+
+// The viewer asks for the differences between two images in one element,
+// and remounts it to switch back
+const showsDifferences = props.comparison === 'differences'
 
 // Use the viewer props composable
 const { filename, src } = useViewerProps(props)
@@ -250,6 +263,9 @@ function showOwnedUrl(url: string): void {
 // two files can be shown under one name and it is the source that says
 // which bytes to fetch.
 watch(() => props.file.source, () => {
+	if (showsDifferences) {
+		return
+	}
 	forgetDetail()
 	load()
 })
@@ -267,7 +283,9 @@ watch(() => props.localSource, (source) => {
 		data.value = source
 	}
 })
-load()
+if (!showsDifferences) {
+	load()
+}
 
 /**
  * Load the image, and report a load that cannot even be attempted.
