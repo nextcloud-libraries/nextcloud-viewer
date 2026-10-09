@@ -38,7 +38,7 @@ export async function prepareDownload(element: EventTarget | null | undefined, f
 		return true
 	} catch (error) {
 		logger.error('The handler could not get the file ready to download', { file, error })
-		showError(t('Could not save "{name}" before downloading it', { name: file.displayname }))
+		showError(t('Could not prepare "{name}" before downloading it', { name: file.displayname }))
 		return false
 	}
 }
