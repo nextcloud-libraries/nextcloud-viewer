@@ -2,12 +2,12 @@
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import type { IFile, IFileAction, INode } from '@nextcloud/files'
+import type { IFile, IFileAction, IFileListAction, INode } from '@nextcloud/files'
 
 import FileSvg from '@mdi/svg/svg/file.svg?raw'
 import MotionPlaySvg from '@mdi/svg/svg/motion-play-outline.svg?raw'
 import OpenInAppSvg from '@mdi/svg/svg/open-in-app.svg?raw'
-import { DefaultType, FileType, getFileActions, Permission, registerFileAction } from '@nextcloud/files'
+import { DefaultType, FileType, getFileActions, getFileListActions, Permission, registerFileAction, registerFileListAction } from '@nextcloud/files'
 import { scope } from './scope.ts'
 import { logger } from './services/logger.ts'
 import { openViewer, openWithHistory } from './utils/history.ts'
@@ -19,6 +19,8 @@ const ACTION_VIEWER = 'viewer-open'
 const ACTION_VIEWER_MENU = 'viewer-open-with'
 // Starts with the menu's prefix, so the viewer leaves it out of its own header
 const ACTION_SLIDESHOW = 'viewer-open-slideshow'
+/** Folder-wide slideshow, in the Files list header */
+const ACTION_FOLDER_SLIDESHOW = 'viewer-folder-slideshow'
 
 export interface IHandler {
 	/**
@@ -261,6 +263,41 @@ const slideshowAction: IFileAction = {
 }
 
 /**
+ * The pictures and videos among the given nodes that the viewer can show.
+ *
+ * @param nodes - The nodes to pick from
+ */
+function viewableMedia(nodes: INode[]): IFile[] {
+	return nodes.filter((node) => /^(image|video)\//.test(node.mime ?? '')
+		&& countEnabledHandlers([node], 1)) as IFile[]
+}
+
+/**
+ * Start a slideshow of the pictures and videos of the folder shown in Files
+ * (nextcloud/viewer#1524). Only offered when they are most of its files, two
+ * at least: a folder of documents with a picture or two is not a photo album.
+ * Subfolders do not count against it.
+ */
+const folderSlideshowAction: IFileListAction = {
+	id: ACTION_FOLDER_SLIDESHOW,
+	displayName: () => t('Start slideshow'),
+	iconSvgInline: () => MotionPlaySvg,
+	order: 0,
+
+	enabled: ({ contents }) => {
+		const media = viewableMedia(contents)
+		const files = contents.filter((node) => node.type === FileType.File)
+		return media.length > 1 && media.length * 2 > files.length
+	},
+	async exec({ contents, view, folder }) {
+		const media = viewableMedia(contents)
+		// Not through the Files history, as for a selection
+		openViewer(media, media[0]!, { view, folder, startSlideshow: true })
+		return null
+	},
+}
+
+/**
  * Default action, triggered on file click. Opens the viewer with the first
  * matching handler. Hidden from the actions menu to avoid cluttering it, but
  * it is what makes any viewable file open on a single click, regardless of how
@@ -321,6 +358,10 @@ export function registerHandler(handler: IHandler): void {
 			registerFileAction(action)
 			logger.info('Registered viewer file action', { id: action.id })
 		}
+	}
+	if (!getFileListActions().some((action) => action.id === ACTION_FOLDER_SLIDESHOW)) {
+		registerFileListAction(folderSlideshowAction)
+		logger.info('Registered viewer file list action', { id: ACTION_FOLDER_SLIDESHOW })
 	}
 
 	scope.handlers ??= new Map<string, IHandler>()

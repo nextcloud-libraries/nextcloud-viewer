@@ -6,7 +6,7 @@ import type { Page } from '@playwright/test'
 
 import { createRandomUser } from '@nextcloud/e2e-test-server/playwright'
 import { expect, test } from '@playwright/test'
-import { signIn, upload } from './support.ts'
+import { basic, signIn, upload } from './support.ts'
 
 /**
  * Start a slideshow of the selection from the Files list, wherever the
@@ -66,5 +66,36 @@ test.describe('A slideshow of files', () => {
 		await expect(name).toHaveText('second.mp4', { timeout: 30_000 })
 		const ended = await page.evaluate(() => (window as unknown as { ended: string[] }).ended)
 		expect(ended.some((source) => source.endsWith('first.mp4'))).toBe(true)
+	})
+})
+
+test.describe('A slideshow of a folder', () => {
+	test('starts from the Files list header when the folder is mostly media', async ({ page, request }) => {
+		test.setTimeout(120_000)
+		const user = await createRandomUser()
+		const folder = await request.fetch(`/remote.php/dav/files/${user.userId}/album`, {
+			method: 'MKCOL',
+			headers: { Authorization: basic(user) },
+		})
+		expect(folder.status()).toBeLessThan(300)
+		await upload(request, user, 'clip.mp4', 'video/mp4', 'album/first.mp4')
+		await upload(request, user, 'clip.mp4', 'video/mp4', 'album/second.mp4')
+		await signIn(page, user)
+
+		await page.goto('/index.php/apps/files?dir=/album')
+		await page.getByRole('row', { name: /first\.mp4/ }).waitFor({ timeout: 30_000 })
+		const inline = page.getByRole('button', { name: 'Start slideshow' })
+		if (await inline.isVisible()) {
+			await inline.click()
+		} else {
+			// Folded into a menu next to the breadcrumbs when there are many
+			await page.locator('.files-list__header').getByRole('button', { name: 'Actions' }).click()
+			await page.getByRole('menuitem', { name: 'Start slideshow' }).click()
+		}
+
+		const modal = page.locator('.viewer__modal')
+		await expect(modal).toBeVisible({ timeout: 30_000 })
+		await expect(modal.getByRole('button', { name: 'Pause slideshow' })).toBeVisible()
+		await expect(modal.locator('.modal-header__name')).toHaveText('first.mp4')
 	})
 })
