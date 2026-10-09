@@ -7,6 +7,7 @@ import type { IFile } from '@nextcloud/files'
 
 import { File, Permission } from '@nextcloud/files'
 import { getViewer, registerDefaultHandlers } from '../lib/index.ts'
+import { ODD_FIXTURES, oddFileName, oddFolderName } from './oddNames.ts'
 
 // The handlers for images, video and audio. Nothing of the viewer itself is
 // loaded until one of these files is opened.
@@ -15,6 +16,8 @@ registerDefaultHandlers()
 interface Fixture {
 	name: string
 	mime: string
+	/** Where it sits under the user's folder, its name by default */
+	path?: string
 	/** Whether the viewer offers its editor for this one */
 	editable?: boolean
 	/** Whether the share this file came from forbids downloading it */
@@ -34,6 +37,9 @@ const flags = new URLSearchParams(window.location.search)
 const withPreviews = flags.has('previews')
 // Open straight into the slideshow, the way Photos does
 const startSlideshow = flags.has('slideshow')
+// Some of the fixtures again, under names that break a path escaped wrong.
+// Nothing is served there: the test answers for them.
+const withOddNames = flags.has('oddnames')
 
 const fixtures: Fixture[] = [
 	{ name: 'photo.jpg', mime: 'image/jpeg', editable: true },
@@ -74,6 +80,9 @@ const fixtures: Fixture[] = [
 	...(withPreviews ? [{ name: 'previewed.webm', mime: 'video/webm', hasPreview: true }] : []),
 	// photo.jpg in black and white, to compare with it
 	{ name: 'photo-edited.jpg', mime: 'image/jpeg' },
+	...(withOddNames
+		? ODD_FIXTURES.map(({ name, mime }) => ({ name: oddFileName(name), mime, path: `${oddFolderName(name)}/${oddFileName(name)}` }))
+		: []),
 ]
 
 /** Where the fixtures are served from, shaped like a WebDAV path */
@@ -93,7 +102,8 @@ const DAV = '/remote.php/dav/files/playground'
  * sets it is there so that path can be tested against a stubbed endpoint.
  */
 const nodes: IFile[] = fixtures.map((fixture, index) => new File({
-	source: `${window.location.origin}${DAV}/${fixture.name}`,
+	// Not encoded, as Files has them: the viewer encodes what it requests
+	source: `${window.location.origin}${DAV}/${fixture.path ?? fixture.name}`,
 	root: '/files/playground',
 	owner: 'playground',
 	id: index + 1,
