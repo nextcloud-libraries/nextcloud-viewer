@@ -35,6 +35,7 @@ const MEDIA = [
 	'clip.webm',
 	'trailer.webm',
 	'trailer.jpg',
+	'photo-edited.jpg',
 ]
 
 // No group, so the sheet music only pages among itself

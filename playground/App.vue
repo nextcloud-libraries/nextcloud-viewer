@@ -72,6 +72,8 @@ const fixtures: Fixture[] = [
 	{ name: 'trailer.jpg', mime: 'image/jpeg' },
 	// A video the server has a preview of, last so the others keep their ids
 	...(withPreviews ? [{ name: 'previewed.webm', mime: 'video/webm', hasPreview: true }] : []),
+	// photo.jpg in black and white, to compare with it
+	{ name: 'photo-edited.jpg', mime: 'image/jpeg' },
 ]
 
 /** Where the fixtures are served from, shaped like a WebDAV path */
@@ -113,6 +115,14 @@ const nodes: IFile[] = fixtures.map((fixture, index) => new File({
  */
 function open(node: IFile) {
 	getViewer().open(nodes, node, { startSlideshow })
+}
+
+// One compared with an older version of it, the way the versions tab does
+// it: `?compare=photo-edited.jpg,photo.jpg`, with `&view=differences` to open
+// on the differences
+const compared = flags.get('compare')?.split(',').map((name) => nodes.find((node) => node.basename === name))
+if (compared?.length === 2 && compared[0] && compared[1]) {
+	getViewer().compare(compared[0], compared[1], { view: flags.get('view') === 'differences' ? 'differences' : 'side-by-side' })
 }
 </script>
 
