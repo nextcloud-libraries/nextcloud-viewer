@@ -22,6 +22,8 @@
 		:lightBackdrop="lightBackdrop"
 		:name="modalName"
 		:show="!!currentFile || !!errorString"
+		:noClose="settingsOpen /* Escape belongs to the settings over it */"
+		:slideshowDelay="slideshowDelay * 1000"
 		:slideshowPaused="slideshowPaused"
 		:spreadNavigation="true"
 		:style="{ width: isSidebarShown ? `${sidebarPosition}px` : null }"
@@ -249,6 +251,19 @@
 			@loaded="onLoad"
 			@errored="onError" />
 		<!-- eslint-enable vue/attribute-hyphenation -->
+
+		<!-- Where apps keep their settings, floating as there is no navigation -->
+		<NcButton
+			class="viewer__settings"
+			variant="tertiary"
+			:aria-label="t('Viewer settings')"
+			:title="t('Viewer settings')"
+			@click="settingsOpen = true">
+			<template #icon>
+				<CogOutlineIcon :size="20" />
+			</template>
+		</NcButton>
+		<ViewerSettings v-if="settingsOpen" v-model:open="settingsOpen" />
 	</NcModal>
 
 	<!-- Editing overlay, rendered at the viewer level (not inside the handler
@@ -303,6 +318,7 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcModal from '@nextcloud/vue/components/NcModal'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import ChevronLeft from 'vue-material-design-icons/ChevronLeft.vue'
+import CogOutlineIcon from 'vue-material-design-icons/CogOutline.vue'
 import CompareHorizontalIcon from 'vue-material-design-icons/CompareHorizontal.vue'
 import DockRight from 'vue-material-design-icons/DockRight.vue'
 import DownloadIcon from 'vue-material-design-icons/Download.vue'
@@ -315,6 +331,7 @@ import RotateLeftIcon from 'vue-material-design-icons/RotateLeft.vue'
 import TrashCanOutlineIcon from 'vue-material-design-icons/TrashCanOutline.vue'
 import { useRotation } from '../composables/useRotation.ts'
 import { useViewerActions } from '../composables/useViewerActions.ts'
+import { useViewerSettings } from '../composables/useViewerSettings.ts'
 import { getHandlers, isHandlerEnabled } from '../handlers.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
 import { fetchFolderContent } from '../services/dav.ts'
@@ -333,6 +350,7 @@ defineOptions({ name: 'ViewerModal' })
 
 // The image editor is a large, canvas-based dependency; load it only when needed.
 const ImageEditor = defineAsyncComponent(() => import('../components/ImageEditor.vue'))
+const ViewerSettings = defineAsyncComponent(() => import('../components/ViewerSettings.vue'))
 
 let resizeObserver = null as ResizeObserver | null
 // $el is only an element while the modal is shown, a comment node otherwise.
@@ -744,6 +762,17 @@ useHotKey('e', (event) => {
 		editing.value = true
 	}
 }, { ctrl: true, allowInModal: true })
+// The settings, which list these shortcuts, on ? as in the Files app
+const settingsOpen = ref(false)
+const { slideshowDelay } = useViewerSettings()
+useHotKey('?', (event) => {
+	if (currentFile.value === undefined || editing.value) {
+		return
+	}
+	event.preventDefault()
+	settingsOpen.value = true
+}, { allowInModal: true })
+
 // F for full screen, as the old Gallery had it (nextcloud/viewer#406). A
 // plain key, which useHotKey leaves alone while typing in a field
 useHotKey('f', (event) => {
@@ -1924,7 +1953,8 @@ defineExpose<ViewerAPI>({
 		:deep(.next),
 		:deep(.modal-container__close),
 		.viewer__loading,
-		.viewer__error {
+		.viewer__error,
+		.viewer__settings {
 			--color-main-text: #ffffff;
 			--color-text-maxcontrast: #d8d8d8;
 			--color-main-background: #171717;
@@ -1962,6 +1992,14 @@ defineExpose<ViewerAPI>({
 	margin-top: calc(2 * var(--default-grid-baseline));
 	text-align: center;
 	color: var(--color-text-maxcontrast);
+}
+
+// Bottom left, where an app keeps its settings in its navigation
+.viewer__settings {
+	position: fixed;
+	inset-block-end: calc(2 * var(--default-grid-baseline));
+	inset-inline-start: calc(2 * var(--default-grid-baseline));
+	z-index: 10001;
 }
 
 .viewer__comparison {

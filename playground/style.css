@@ -8,3 +8,11 @@ body {
 	color: var(--color-main-text, #222);
 	background: var(--color-main-background, #fff);
 }
+
+/*
+ * What the server's core/css/fixes.scss does for nextcloud-libraries/nextcloud-vue#8783:
+ * NcSelect appends its dropdown to the body, where it would sit behind modals
+ */
+.nc-select__dropdown.vs__dropdown-menu {
+	--vs-dropdown-z-index: 9999;
+}
