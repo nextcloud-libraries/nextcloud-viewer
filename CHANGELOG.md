@@ -6,6 +6,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.18
+
+### Breaking
+
+- The viewer tells whoever opened it with events instead of callbacks.
+  `open()`, `openFolder()` and `compare()` resolve with a `ViewerSession`, an
+  `EventTarget` dispatching `update:file`, `update:editing`, `close` and
+  `before-download`. They replace the `onPrev`, `onNext`, `onEditingChange`
+  and `onClose` options. `getViewer()` dispatches the same events, whoever
+  opened the viewer (#130)
+- `compare(file, base, { view, handlerId })` replaces
+  `compare(node1, node2, handlerId)`. Both handler elements get
+  `files: [base, file]` and a `comparison` prop, and the older file shows on
+  the left (#133)
+- A handler's `canCompare` is a function of the files, like `enabled` (#133)
+- The package is ESM only, the CommonJS build is gone. Its styles are no
+  longer injected from JavaScript: each chunk imports its own stylesheet, so
+  the app's bundler has to handle CSS imports (#124, #132)
+
+### Added
+
+- A handler setting `canShowDifferences` can show what changed between two
+  files in one view. The viewer then offers a toggle in its header, also on D,
+  and `compare()` can open straight on it with `view: 'differences'` (#133)
+- Two versions of a picture show over each other, cut where you drag a
+  slider (#134)
+- `before-download` also reaches the handler's element, and
+  `detail.waitUntil()` holds the download back, so an editor can save first
+  (#130)
+
+### Changed
+
+- Video and audio play with Video.js 10 and its packaged skins instead of
+  Plyr, which is deprecated. Picture-in-picture is back (#128, #138)
+
 ## 2.0.0-beta.17
 
 ### Added
