@@ -55,6 +55,18 @@
 				{{ t('Edit') }}
 			</NcActionButton>
 
+			<!-- Between the two ways of comparing, when the handler has both -->
+			<NcActionButton
+				v-if="offerDifferences"
+				closeAfterClick
+				@click="toggleDifferences">
+				<template #icon>
+					<CompareHorizontalIcon v-if="showsDifferences" :size="20" />
+					<FileCompareIcon v-else :size="20" />
+				</template>
+				{{ showsDifferences ? t('Show side by side') : t('Show differences') }}
+			</NcActionButton>
+
 			<!-- Full screen, which is the point of a viewer on a large photo -->
 			<NcActionButton
 				closeAfterClick
@@ -167,7 +179,7 @@
 			emit its `loaded` event. It must not share the v-if chain with the
 			loading spinner, otherwise it would never mount and never load.
 		-->
-		<!-- Comparison of two files, rendered side by side -->
+		<!-- Comparison of two files: side by side, or the differences in one -->
 		<div
 			v-if="isComparing"
 			v-show="!loading && !errorString"
@@ -178,26 +190,44 @@
 			<!-- eslint-disable vue/attribute-hyphenation -->
 			<component
 				:is="currentHandler?.tagName"
-				v-if="currentFile && elementReady(currentHandler)"
+				v-if="showsDifferences && currentFile && elementReady(currentHandler)"
+				key="differences"
 				:file="currentFile"
-				:files="[]"
+				:files="comparedFiles"
+				comparison="differences"
 				:is-sidebar-shown="isSidebarShown"
 				:max-height="height"
-				:max-width="width / 2"
+				:max-width="width"
 				:editing="false"
 				@loaded="onLoad"
 				@errored="onError" />
-			<component
-				:is="comparisonHandler?.tagName"
-				v-if="comparisonFile && elementReady(comparisonHandler)"
-				:file="comparisonFile"
-				:files="[]"
-				:is-sidebar-shown="isSidebarShown"
-				:max-height="height"
-				:max-width="width / 2"
-				:editing="false"
-				@loaded="onLoad"
-				@errored="onError" />
+			<!-- The older one on the left, as diffs read -->
+			<template v-else-if="!showsDifferences">
+				<component
+					:is="comparisonHandler?.tagName"
+					v-if="comparisonFile && elementReady(comparisonHandler)"
+					:file="comparisonFile"
+					:files="comparedFiles"
+					comparison="side-by-side"
+					:is-sidebar-shown="isSidebarShown"
+					:max-height="height"
+					:max-width="width / 2"
+					:editing="false"
+					@loaded="onLoad"
+					@errored="onError" />
+				<component
+					:is="currentHandler?.tagName"
+					v-if="currentFile && elementReady(currentHandler)"
+					:file="currentFile"
+					:files="comparedFiles"
+					comparison="side-by-side"
+					:is-sidebar-shown="isSidebarShown"
+					:max-height="height"
+					:max-width="width / 2"
+					:editing="false"
+					@loaded="onLoad"
+					@errored="onError" />
+			</template>
 		</div>
 
 		<!-- Single file view -->
@@ -253,7 +283,7 @@ import type { IFileAction } from '@nextcloud/files'
 import type { ComponentPublicInstance } from 'vue'
 import type { IHandler } from '../handlers.ts'
 import type { ViewerEventMap } from '../session.ts'
-import type { ViewerAPI, ViewerOptions } from '../viewer.ts'
+import type { CompareOptions, ComparisonView, ViewerAPI, ViewerOptions } from '../viewer.ts'
 
 import axios from '@nextcloud/axios'
 import { showError } from '@nextcloud/dialogs'
@@ -273,9 +303,11 @@ import NcLoadingIcon from '@nextcloud/vue/components/NcLoadingIcon'
 import NcModal from '@nextcloud/vue/components/NcModal'
 import NcTextField from '@nextcloud/vue/components/NcTextField'
 import ChevronLeft from 'vue-material-design-icons/ChevronLeft.vue'
+import CompareHorizontalIcon from 'vue-material-design-icons/CompareHorizontal.vue'
 import DockRight from 'vue-material-design-icons/DockRight.vue'
 import DownloadIcon from 'vue-material-design-icons/Download.vue'
 import FileAlertOutlineIcon from 'vue-material-design-icons/FileAlertOutline.vue'
+import FileCompareIcon from 'vue-material-design-icons/FileCompare.vue'
 import FullscreenIcon from 'vue-material-design-icons/Fullscreen.vue'
 import FullscreenExitIcon from 'vue-material-design-icons/FullscreenExit.vue'
 import PencilIcon from 'vue-material-design-icons/Pencil.vue'
@@ -414,6 +446,36 @@ function handlerFor(file: IFile): IHandler | undefined {
 const comparisonFile = ref<IFile>()
 const comparisonHandler = ref<IHandler>()
 const isComparing = computed(() => !!comparisonFile.value)
+// How the two files are compared, kept until the viewer closes
+const comparisonView = ref<ComparisonView>('side-by-side')
+// Both files, the older one compared with first, for each element to know
+// what it is compared with
+const comparedFiles = computed(() => [comparisonFile.value, currentFile.value].filter((file) => file !== undefined))
+// Only a handler showing both files can show what changed from one to the
+// other, and only for files it says it can
+const offerDifferences = computed(() => {
+	const handler = currentHandler.value
+	if (!isComparing.value || handler?.canShowDifferences === undefined || handler.id !== comparisonHandler.value?.id) {
+		return false
+	}
+	try {
+		return handler.canShowDifferences(comparedFiles.value) === true
+	} catch (error) {
+		logger.error(`The ${handler.id} handler could not tell whether it can show the differences`, { error })
+		return false
+	}
+})
+const showsDifferences = computed(() => offerDifferences.value && comparisonView.value === 'differences')
+
+/**
+ * Switch between the files side by side and their differences in one view.
+ */
+function toggleDifferences() {
+	comparisonView.value = showsDifferences.value ? 'side-by-side' : 'differences'
+	// The elements of the other view are new, and load again
+	loading.value = true
+	pendingLoads.value = showsDifferences.value ? 1 : 2
+}
 
 /**
  * The formats the image editor writes back as they came. Anything else would
@@ -690,6 +752,14 @@ useHotKey('f', (event) => {
 	}
 	event.preventDefault()
 	toggleFullScreen()
+}, { allowInModal: true })
+// D for the differences between the two files compared, and back
+useHotKey('d', (event) => {
+	if (!offerDifferences.value) {
+		return
+	}
+	event.preventDefault()
+	toggleDifferences()
 }, { allowInModal: true })
 
 // The parent action whose submenu is currently open in the menu, if any.
@@ -1198,21 +1268,22 @@ async function showFolder(folder: IFolder, file?: IFile, options?: ViewerOptions
 	}
 }
 
-const compare: ViewerAPI['compare'] = async (file1, file2, handlerId) => {
+const compare: ViewerAPI['compare'] = async (file, base, options) => {
 	const session = beginSession()
-	await showComparison(file1, file2, handlerId)
+	await showComparison(file, base, options)
 	return session
 }
 
 /**
- * Show two files side by side, the latest opening's.
+ * Show a file compared with an older version of it, the latest opening's.
  *
- * @param file1 - The first file
- * @param file2 - The file to compare it with
- * @param handlerId - The handler to show them with, if forced
+ * @param file1 - The file
+ * @param file2 - The older version it is compared with
+ * @param options - The view to open on, and the handler to show them with
  */
-async function showComparison(file1: IFile, file2: IFile, handlerId?: string): Promise<void> {
-	logger.debug('Comparing files', { file1, file2, handlerId })
+async function showComparison(file1: IFile, file2: IFile, options?: CompareOptions): Promise<void> {
+	const handlerId = options?.handlerId
+	logger.debug('Comparing files', { file1, file2, options })
 	loading.value = true
 
 	if (handlerId && !getHandlers().has(handlerId)) {
@@ -1243,7 +1314,10 @@ async function showComparison(file1: IFile, file2: IFile, handlerId?: string): P
 	currentFile.value = file1
 	comparisonHandler.value = handler2
 	comparisonFile.value = file2
-	pendingLoads.value = 2
+	if (options?.view !== undefined) {
+		comparisonView.value = options.view
+	}
+	pendingLoads.value = showsDifferences.value ? 1 : 2
 	// A failure to open something else earlier is not this comparison's
 	// problem, and the error is what the modal shows instead of the files.
 	errorString.value = null
@@ -1409,6 +1483,7 @@ function close() {
 	forcedHandler.value = undefined
 	comparisonFile.value = undefined
 	comparisonHandler.value = undefined
+	comparisonView.value = 'side-by-side'
 	currentOptions.value = {} as ViewerOptions
 	errorString.value = null
 	// Reset transient UI state so it never leaks into the next open

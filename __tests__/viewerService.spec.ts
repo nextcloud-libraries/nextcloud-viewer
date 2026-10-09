@@ -93,10 +93,10 @@ describe('opening before anything is mounted', () => {
 		const b = makeFile()
 
 		await getViewer().openFolder(folder, a, undefined, 'h')
-		await getViewer().compare(a, b, 'h')
+		await getViewer().compare(a, b, { handlerId: 'h' })
 
 		expect(mounted.openFolder).toHaveBeenCalledWith(folder, a, expect.any(Object), 'h')
-		expect(mounted.compare).toHaveBeenCalledWith(a, b, 'h')
+		expect(mounted.compare).toHaveBeenCalledWith(a, b, { handlerId: 'h' })
 	})
 
 	it('rejects when no copy of the library offered an implementation', async () => {

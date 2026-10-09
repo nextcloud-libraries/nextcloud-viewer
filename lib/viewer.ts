@@ -26,7 +26,8 @@ export interface ViewerProps {
 	file: IFile
 
 	/**
-	 * The list of files currently opened in the viewer
+	 * The list of files currently opened in the viewer. When comparing, the
+	 * two files compared, the older one first (see `comparison`)
 	 */
 	files: IFile[]
 
@@ -63,6 +64,36 @@ export interface ViewerProps {
 	 * server preview). Handlers that support it should prefer this over `file`.
 	 */
 	localSource?: string
+
+	/**
+	 * How the viewer compares `files`, or nothing when it is not comparing.
+	 * Side by side, each of the two elements shows its own `file`; in
+	 * differences, the only element shows what changed from the first file of
+	 * `files`, the older one, to its `file` (see `IHandler.canShowDifferences`).
+	 */
+	comparison?: ComparisonView
+}
+
+/**
+ * How the viewer shows two files compared
+ */
+export type ComparisonView = 'side-by-side' | 'differences'
+
+/**
+ * How to compare two files
+ */
+export interface CompareOptions {
+	/**
+	 * The view to open on. Defaults to side by side, which is also what is
+	 * shown when the handler cannot show the differences.
+	 */
+	view?: ComparisonView
+
+	/**
+	 * The handler to show both files with, rather than the one each would
+	 * open with
+	 */
+	handlerId?: string
 }
 
 /**
@@ -197,7 +228,12 @@ export interface ViewerAPI {
 	 */
 	open(nodes: IFile[], file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>
 	openFolder(folder: IFolder, file?: IFile, options?: ViewerOptions, handlerId?: string): Promise<ViewerSession>
-	compare(node1: IFile, node2: IFile, handlerId?: string): Promise<ViewerSession>
+	/**
+	 * Show `file` compared with `base`, an older version of it: what changed
+	 * from `base` to `file`. Side by side, `base` is on the left. Resolves with
+	 * the session of this opening.
+	 */
+	compare(file: IFile, base: IFile, options?: CompareOptions): Promise<ViewerSession>
 
 	/**
 	 * Show an already-opened file by its id, without an `update:file` event.
@@ -260,8 +296,8 @@ export class Viewer extends EventTarget implements ViewerAPI {
 		return (await this.mounted()).openFolder(folder, file, options, handlerId)
 	}
 
-	async compare(node1: IFile, node2: IFile, handlerId?: string): Promise<ViewerSession> {
-		return (await this.mounted()).compare(node1, node2, handlerId)
+	async compare(file: IFile, base: IFile, options?: CompareOptions): Promise<ViewerSession> {
+		return (await this.mounted()).compare(file, base, options)
 	}
 
 	goTo(fileid: number): void {

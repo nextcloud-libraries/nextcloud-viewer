@@ -56,7 +56,7 @@ describe('handler groups', () => {
 		expect(handlerById('audios').group).toBe('media')
 		expect(handlerById('images').group).toBe('media')
 		// Two versions of a picture side by side show what changed
-		expect(handlerById('images').canCompare).toBe(true)
+		expect(handlerById('images').canCompare?.([])).toBe(true)
 		expect(handlerById('videos').canCompare).toBeUndefined()
 		// Ready when the user steps to them, as the old viewer kept them mounted
 		expect(handlerById('images').preload).toBeTypeOf('function')

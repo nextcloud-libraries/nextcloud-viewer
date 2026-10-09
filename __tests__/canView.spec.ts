@@ -2,8 +2,10 @@
  * SPDX-FileCopyrightText: 2026 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import type { INode } from '@nextcloud/files'
+
 import { Folder, Permission } from '@nextcloud/files'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { canCompare, canView, registerHandler } from '../lib/index.ts'
 import { makeFile, makeHandler } from './factories.ts'
 
@@ -47,7 +49,7 @@ describe('canView', () => {
 
 describe('canCompare', () => {
 	it('is true for a file whose handler says comparing it is worth it', () => {
-		registerHandler(makeHandler({ id: 'images', canCompare: true, enabled: (nodes) => nodes.every((node) => node.mime === 'image/jpeg') }))
+		registerHandler(makeHandler({ id: 'images', canCompare: () => true, enabled: (nodes) => nodes.every((node) => node.mime === 'image/jpeg') }))
 		registerHandler(makeHandler({ id: 'videos', enabled: (nodes) => nodes.every((node) => node.mime === 'video/mp4') }))
 
 		expect(canCompare(makeFile({ mime: 'image/jpeg' }))).toBe(true)
@@ -57,13 +59,36 @@ describe('canCompare', () => {
 	// The handler the viewer would show it with, not any that takes it
 	it('asks the first handler to take the file', () => {
 		registerHandler(makeHandler({ id: 'first', enabled: () => true }))
-		registerHandler(makeHandler({ id: 'second', canCompare: true, enabled: () => true }))
+		registerHandler(makeHandler({ id: 'second', canCompare: () => true, enabled: () => true }))
 
 		expect(canCompare(makeFile())).toBe(false)
 	})
 
+	// Text opens plain text too, but comparing is only worth it for Markdown
+	it('asks the handler about this file', () => {
+		const canCompareFile = vi.fn((nodes: INode[]) => nodes.every((node) => node.mime === 'text/markdown'))
+		registerHandler(makeHandler({ id: 'text', canCompare: canCompareFile, enabled: (nodes) => nodes.every((node) => node.mime?.startsWith('text/')) }))
+		const markdown = makeFile({ mime: 'text/markdown' })
+
+		expect(canCompare(markdown)).toBe(true)
+		expect(canCompareFile).toHaveBeenLastCalledWith([markdown])
+		expect(canCompare(makeFile({ mime: 'text/plain' }))).toBe(false)
+	})
+
+	it('is false when the handler cannot tell', () => {
+		registerHandler(makeHandler({
+			id: 'throwing',
+			canCompare: () => {
+				throw new Error('nope')
+			},
+			enabled: (nodes) => nodes.every((node) => node.mime === 'application/x-throwing'),
+		}))
+
+		expect(canCompare(makeFile({ mime: 'application/x-throwing' }))).toBe(false)
+	})
+
 	it('is false for a file that cannot be viewed', () => {
-		registerHandler(makeHandler({ id: 'everything', canCompare: true, enabled: () => true }))
+		registerHandler(makeHandler({ id: 'everything', canCompare: () => true, enabled: () => true }))
 
 		expect(canCompare(makeFile({ permissions: Permission.NONE }))).toBe(false)
 	})
