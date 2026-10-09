@@ -6,13 +6,13 @@
 import type { MediaPlayerAdapter } from './useMediaPlayer.ts'
 
 import { onBeforeUnmount, ref, useTemplateRef, watch } from 'vue'
+import { formatRate } from '../utils/playerTranslations.ts'
 
 /** What the viewer reads of, and asks of, a Video.js player store */
 interface PlayerStore {
 	readonly paused: boolean
 	/** Absent from the audio player, which has no full screen */
 	readonly isFullscreen?: boolean
-	readonly playbackRate: number
 	/** The media the store is attached to, absent until then */
 	readonly target?: unknown
 	pause(): void
@@ -23,24 +23,31 @@ interface PlayerStore {
 /**
  * What the media player needs of Video.js.
  *
- * Expects a `player` template ref on the `<video-player>` or `<audio-player>`.
+ * Expects a `player` template ref on the `<video-player>` or `<audio-player>`,
+ * with the packaged skin inside it.
  */
 export function useVideojsAdapter() {
 	const player = useTemplateRef<HTMLElement & { store: PlayerStore }>('player')
 
 	/** Back at its start once played, which brings its poster back */
 	const stopped = ref(false)
-	/** The playback rate, for the controls that show it */
-	const rate = ref(1)
 
 	let onFullscreen: ((fullscreen: boolean) => void) | undefined
 	let fullscreen = false
 	let unsubscribe: (() => void) | undefined
 
 	/**
+	 * The skin draws its controls in a shadow root of its own, open, which
+	 * is the way to the controls the viewer has to reach.
+	 */
+	function skin(): ShadowRoot | null | undefined {
+		return player.value?.querySelector('video-skin, audio-skin')?.shadowRoot
+	}
+
+	/**
 	 * Follow what the player says of itself: its full screen, however it is
-	 * entered or left (the button, Escape, the browser's own control), its
-	 * speed, and its playing again once stopped.
+	 * entered or left (the button, Escape, the browser's own control), and
+	 * its playing again once stopped.
 	 *
 	 * @param store - The player's store
 	 */
@@ -50,7 +57,6 @@ export function useVideojsAdapter() {
 				fullscreen = Boolean(store.isFullscreen)
 				onFullscreen?.(fullscreen)
 			}
-			rate.value = store.playbackRate
 			if (!store.paused) {
 				stopped.value = false
 			}
@@ -62,6 +68,12 @@ export function useVideojsAdapter() {
 	watch(player, (element) => {
 		unsubscribe?.()
 		unsubscribe = element ? follow(element.store) : undefined
+
+		// Video.js writes the speeds as `1.5×` whatever the language
+		skin()?.querySelectorAll<HTMLElement & { formatRate: (rate: number) => string }>('media-playback-rate-radio-group')
+			.forEach((group) => {
+				group.formatRate = formatRate
+			})
 	})
 
 	onBeforeUnmount(() => unsubscribe?.())
@@ -83,10 +95,10 @@ export function useVideojsAdapter() {
 		},
 
 		controls() {
-			const controls = player.value?.querySelector('media-controls-content')
+			const controls = skin()?.querySelector('media-controls')
 			return controls ? [controls] : []
 		},
 	}
 
-	return { ...adapter, stopped, rate }
+	return { ...adapter, stopped }
 }

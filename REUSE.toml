@@ -46,9 +46,3 @@ path = ["stryker.config.json"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2026 Nextcloud GmbH and Nextcloud contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"
-
-[[annotations]]
-path = ["lib/components/videojs/vendor/**"]
-precedence = "aggregate"
-SPDX-FileCopyrightText = "2025-present Video.js contributors"
-SPDX-License-Identifier = "Apache-2.0"

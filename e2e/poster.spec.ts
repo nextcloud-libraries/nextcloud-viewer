@@ -26,9 +26,9 @@ test.describe('A video with a poster beside it', () => {
 		await viewer.open('trailer.webm')
 		await viewer.waitForOpen()
 
-		const player = viewer.container.locator('media-container')
-		const poster = player.locator('.media-poster-image')
-		await expect(poster).toHaveAttribute('src', /trailer\.jpg/)
+		// The skin's own poster, before it plays
+		await expect(viewer.container.locator('.media-poster-image')).toHaveAttribute('src', /trailer\.jpg/)
+		const poster = viewer.container.locator('.viewer-media__poster')
 
 		// Played through to the end, muted so no autoplay policy stands in the way
 		const video = viewer.container.locator('video').first()
@@ -41,8 +41,8 @@ test.describe('A video with a poster beside it', () => {
 		})
 
 		// Back at the start and paused, with the poster on top again
-		await expect(player).toHaveClass(/viewer-media--stopped/)
-		await expect(player.locator('media-poster')).toHaveCSS('opacity', '1')
+		await expect(poster).toBeVisible()
+		await expect(poster).toHaveAttribute('src', /trailer\.jpg/)
 		const downloads = requests.length
 
 		// Playing it again comes from what was already buffered
@@ -51,7 +51,7 @@ test.describe('A video with a poster beside it', () => {
 			await element.play()
 			await ended
 		})
-		await expect(player.locator('media-poster')).toHaveCSS('opacity', '1')
+		await expect(poster).toBeVisible()
 		expect(requests).toHaveLength(downloads)
 	})
 })

@@ -14,14 +14,15 @@ import { t } from './l10n.ts'
 export const playerLanguage = getLanguage().replace('_', '-')
 
 /**
- * Give Video.js our own translations of the labels the viewer's skins show.
+ * Give Video.js our own translations of the labels the skins show. Done
+ * once, as this module is imported by the players.
  *
  * Video.js ships packs of its own, loaded on demand, but ours go through
  * the Nextcloud translators like every other string of the viewer, and a
  * language registered here never fetches its pack. Keys the skins do not
- * use (errors, casting, live streams...) are left out.
+ * use (casting, live streams...) are left out.
  */
-export function registerPlayerTranslations(): void {
+function registerPlayerTranslations(): void {
 	registerI18n(playerLanguage, {
 		buttons: {
 			play: t('Play'),
@@ -41,6 +42,14 @@ export function registerPlayerTranslations(): void {
 		captions: {
 			enable: t('Enable captions'),
 			disable: t('Disable captions'),
+		},
+		pip: {
+			enter: t('Enter picture-in-picture'),
+			exit: t('Exit picture-in-picture'),
+		},
+		airplay: {
+			start: t('Start AirPlay'),
+			stop: t('Stop AirPlay'),
 		},
 		slider: {
 			seek: t('Seek'),
@@ -75,13 +84,33 @@ export function registerPlayerTranslations(): void {
 			paused: t('Paused'),
 			playing: t('Playing'),
 			fullscreen: t('Fullscreen'),
+			pip: t('Picture in picture'),
+			exitPip: t('Exit picture in picture'),
 			seekedTo: t('Seeked to {time}'),
 		},
 		container: {
 			label: t('Media player'),
 		},
+		errors: {
+			aborted: t('You stopped media playback before it finished.'),
+			network: t('This media could not be loaded due to a network or server issue.'),
+			decode: t('This media could not be played. It may be corrupted, or your browser may not support its format.'),
+			source: t('This media could not be loaded. It may be unavailable, or your browser may not support its format.'),
+			encrypted: t('This media could not be played because it could not be decrypted.'),
+			unplayable: t('This media is unsupported by the player.'),
+			title: t('Something went wrong.'),
+			unexpected: t('An unexpected error occurred.'),
+		},
+		common: {
+			ok: t('OK'),
+		},
 		menu: {
 			settings: t('Settings'),
+			quality: t('Quality'),
+			audio: t('Audio'),
+			default: t('Default'),
+			auto: t('Auto'),
+			autoWithLabel: t('Auto ({label})'),
 			speed: t('Speed'),
 			captions: t('Captions'),
 			playbackRate: t('Playback rate'),
@@ -91,6 +120,8 @@ export function registerPlayerTranslations(): void {
 		},
 	})
 }
+
+registerPlayerTranslations()
 
 /**
  * A playback rate as the user writes numbers: `1,5×` in German, where

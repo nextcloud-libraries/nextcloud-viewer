@@ -6,14 +6,14 @@ import type { Api } from '@vitejs/plugin-vue'
 import type { Plugin } from 'vite'
 
 /**
- * Whether a tag of the media skins is a Video.js element rather than a
+ * Whether a tag of the media players is a Video.js element rather than a
  * Vue component to resolve. Our own components are all PascalCase, so the
  * `media-` prefix cannot hide a misspelled one.
  *
  * @param tag - The tag as written in a template
  */
 export function isVideojsElement(tag: string): boolean {
-	return tag.startsWith('media-') || tag === 'video-player' || tag === 'audio-player'
+	return tag.startsWith('media-') || /^(video|audio)-(player|skin)$/.test(tag)
 }
 
 /**

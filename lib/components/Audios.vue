@@ -7,7 +7,7 @@
 	<!-- eslint-disable vue/no-unused-refs -- the player ref is consumed by useVideojsAdapter, the audio one by useMediaPlayer, via useTemplateRef -->
 	<media-i18n :lang="playerLanguage">
 		<audio-player ref="player">
-			<AudioSkin :stopped="stopped" :rate="rate">
+			<audio-skin class="viewer-media">
 				<audio
 					ref="audio"
 					:autoplay="true"
@@ -27,7 +27,7 @@
 
 					{{ t('Your browser does not support audio.') }}
 				</audio>
-			</AudioSkin>
+			</audio-skin>
 		</audio-player>
 	</media-i18n>
 </template>
@@ -35,11 +35,13 @@
 <script setup lang="ts">
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
-import AudioSkin from './videojs/AudioSkin.vue'
 import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
 import { useVideojsAdapter } from '../composables/useVideojsAdapter.ts'
 import { t } from '../utils/l10n.ts'
 import { playerLanguage } from '../utils/playerTranslations.ts'
+
+import '@videojs/html/audio/player'
+import '@videojs/html/audio/skin'
 
 defineOptions({
 	name: 'ViewerAudios',
@@ -48,7 +50,7 @@ defineOptions({
 const props = defineProps<ViewerProps>()
 const emit = defineEmits<ViewerEmits>()
 
-const { stopped, rate, ...adapter } = useVideojsAdapter()
+const adapter = useVideojsAdapter()
 const {
 	onFail,
 	donePlaying,
@@ -60,7 +62,15 @@ const {
 </script>
 
 <style scoped lang="scss">
-.media-skin {
+.viewer-media {
+	// The skin's public settings: the rest of its look is its own
+	--media-accent-color: var(--color-primary-element);
+	--media-accent-text-color: var(--color-primary-element-text);
+	--media-font-family: var(--font-face);
+	// The viewer is dark whatever the theme, and the audio skin follows this
+	color-scheme: dark;
+
+	display: block;
 	/* over arrows in tiny screens */
 	z-index: 20050;
 	align-self: center;
