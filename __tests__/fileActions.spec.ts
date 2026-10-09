@@ -2,14 +2,14 @@
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-import type { IFileAction as FileAction } from '@nextcloud/files'
+import type { IFileAction as FileAction, IFileListAction } from '@nextcloud/files'
 
 import { Permission } from '@nextcloud/files'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Capture every FileAction registered by the API package so we can inspect
 // their enabled()/exec() without a live Files app.
-const { registered } = vi.hoisted(() => ({ registered: [] as FileAction[] }))
+const { registered, registeredList } = vi.hoisted(() => ({ registered: [] as FileAction[], registeredList: [] as IFileListAction[] }))
 vi.mock('@nextcloud/files', async (orig) => {
 	// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest importOriginal idiom
 	const actual = await orig<typeof import('@nextcloud/files')>()
@@ -17,6 +17,8 @@ vi.mock('@nextcloud/files', async (orig) => {
 		...actual,
 		registerFileAction: (action: FileAction) => registered.push(action),
 		getFileActions: () => registered,
+		registerFileListAction: (action: IFileListAction) => registeredList.push(action),
+		getFileListActions: () => registeredList,
 	}
 })
 
@@ -68,6 +70,7 @@ function ctx(nodes: unknown[]) {
 
 beforeEach(() => {
 	registered.length = 0
+	registeredList.length = 0
 	viewer.open.mockClear()
 	// setup.ts already resets the shared scope, handlers included, before each test.
 })
@@ -292,5 +295,49 @@ describe('the slideshow of a selection', () => {
 		await action(ACTION_SLIDESHOW)!.execBatch!(ctx([a, b]))
 
 		expect(viewer.open).toHaveBeenCalledWith([a, b], a, expect.objectContaining({ startSlideshow: true }), undefined)
+	})
+})
+
+describe('the slideshow of a folder', () => {
+	const images = () => makeHandler({ id: 'images', group: 'media', enabled: (nodes) => nodes.every((node) => node.mime?.startsWith('image/')) })
+	const folderSlideshow = () => registeredList.find((a) => a.id === 'viewer-folder-slideshow')!
+	const listCtx = (contents: unknown[]) => ({ contents, view: VIEW, folder: FOLDER }) as never
+
+	it('is offered when pictures and videos are most of the files', () => {
+		registerHandler(images())
+		const a = makeFile({ mime: 'image/jpeg' })
+		const b = makeFile({ mime: 'image/png' })
+		const pdf = makeFile({ mime: 'application/pdf' })
+
+		expect(folderSlideshow().enabled!(listCtx([a, b, pdf]))).toBe(true)
+		// Subfolders do not count against it
+		expect(folderSlideshow().enabled!(listCtx([a, b, makeFolder(), makeFolder(), makeFolder()]))).toBe(true)
+		// Nothing to step to
+		expect(folderSlideshow().enabled!(listCtx([a, makeFolder()]))).toBe(false)
+		// A folder of documents with a few pictures
+		expect(folderSlideshow().enabled!(listCtx([a, b, pdf, makeFile({ mime: 'text/plain' })]))).toBe(false)
+	})
+
+	it('leaves out pictures no handler can show', () => {
+		registerHandler(makeHandler({ id: 'png', enabled: (nodes) => nodes.every((node) => node.mime === 'image/png') }))
+
+		expect(folderSlideshow().enabled!(listCtx([makeFile({ mime: 'image/png' }), makeFile({ mime: 'image/jpeg' })]))).toBe(false)
+	})
+
+	it('is registered once for all the handlers', () => {
+		registerHandler(images())
+		registerHandler(makeHandler({ id: 'videos', tagName: 'oca-viewer-videos' }))
+
+		expect(registeredList.filter((a) => a.id === 'viewer-folder-slideshow')).toHaveLength(1)
+	})
+
+	it('opens the viewer on the pictures and videos with the slideshow running', async () => {
+		registerHandler(images())
+		const a = makeFile({ mime: 'image/jpeg' })
+		const b = makeFile({ mime: 'image/png' })
+
+		await folderSlideshow().exec(listCtx([makeFolder(), a, makeFile({ mime: 'application/pdf' }), b]))
+
+		expect(viewer.open).toHaveBeenCalledWith([a, b], a, expect.objectContaining({ startSlideshow: true, view: VIEW, folder: FOLDER }), undefined)
 	})
 })
