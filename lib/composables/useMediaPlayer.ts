@@ -6,11 +6,12 @@
 import type { EmitFn } from 'vue'
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
-import { onBeforeUnmount, onUpdated, ref, useTemplateRef, watch } from 'vue'
+import { computed, onBeforeUnmount, onUpdated, ref, useTemplateRef, watch } from 'vue'
 import blankVideo from '../img/blank.mp4'
 import { logger } from '../services/logger.ts'
 import { preloadMedia } from '../services/mediaPreloader.ts'
 import { t } from '../utils/l10n.ts'
+import { useMediaVolume } from './useMediaVolume.ts'
 import { useViewerProps } from './useViewerProps.ts'
 
 /** Marks the page furniture the viewer hides around a full screen player */
@@ -42,6 +43,7 @@ export function useMediaPlayer(forAudio: boolean, props: ViewerProps, emit: Emit
 
 	const video = useTemplateRef<HTMLVideoElement>('video')
 	const audio = useTemplateRef<HTMLAudioElement>('audio')
+	useMediaVolume(computed(() => video.value ?? audio.value))
 
 	const fallback = ref(false)
 

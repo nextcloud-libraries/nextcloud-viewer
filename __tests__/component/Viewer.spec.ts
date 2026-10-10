@@ -33,6 +33,7 @@ vi.mock('@nextcloud/image-editor', async () => {
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
 import { Permission, registerFileAction } from '@nextcloud/files'
+import { useViewerSettings } from '../../lib/composables/useViewerSettings.ts'
 import { restoreTitle } from '../../lib/utils/documentTitle.ts'
 import { getViewer } from '../../lib/viewer.ts'
 import { makeFile, makeHandler } from '../factories.ts'
@@ -519,6 +520,47 @@ describe('comparing two files', () => {
 		await vm.compare(current, older)
 		await wrapper.vm.$nextTick()
 		expect(elements(wrapper)).toHaveLength(2)
+	})
+})
+
+describe('the viewer settings', () => {
+	it('set how long the slideshow shows each file', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().slideshowDelay).toBe(5000)
+
+		await useViewerSettings().setSlideshowDelay(10)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().slideshowDelay).toBe(10000)
+		await useViewerSettings().setSlideshowDelay(5)
+	})
+
+	// Escape reaches the viewer too until the dialog has taken the focus
+	it('keep the viewer open while they are', async () => {
+		const { vm, wrapper, modalProps } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		expect(modalProps().noClose).toBe(false)
+
+		await wrapper.find('.viewer__settings').trigger('click')
+		expect(modalProps().noClose).toBe(true)
+	})
+
+	it.each([
+		['the button at the bottom', (wrapper: VueWrapper) => wrapper.find('.viewer__settings').trigger('click')],
+		['?', () => document.body.dispatchEvent(new KeyboardEvent('keydown', { key: '?', bubbles: true, cancelable: true }))],
+	])('open on %s', async (_, open) => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ mime: 'image/jpeg' })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		expect(wrapper.findComponent({ name: 'ViewerSettings' }).exists()).toBe(false)
+
+		await open(wrapper)
+		await vi.waitFor(() => expect(wrapper.findComponent({ name: 'ViewerSettings' }).exists()).toBe(true))
 	})
 })
 
