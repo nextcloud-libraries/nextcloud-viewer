@@ -7,7 +7,10 @@ import type { IFile, IFolder, IView } from '@nextcloud/files'
 import type { ViewerEventMap, ViewerSession } from './session.ts'
 import type ViewerVue from './views/Viewer.vue'
 
+import { canView } from './handlers.ts'
+import { getHandlerForFile } from './helpers/handlerHelper.ts'
 import { loadImplementation, scope } from './scope.ts'
+import { initHandlerElement } from './utils/customElements.ts'
 
 /**
  * List of props provided to your custom component.
@@ -72,6 +75,14 @@ export interface ViewerProps {
 	 * `files`, the older one, to its `file` (see `IHandler.canShowDifferences`).
 	 */
 	comparison?: ComparisonView
+
+	/**
+	 * Whether the file is shown inline, outside the viewer, as the preview of a
+	 * link to it (see `getViewer().elementFor()`). A hint that handlers should
+	 * not take over the page, for example by autoplaying. Editing is usually
+	 * better left to the viewer, which the caller can open on the file.
+	 */
+	embedded?: boolean
 }
 
 /**
@@ -322,6 +333,29 @@ export class Viewer extends EventTarget implements ViewerAPI {
 	removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions): void
 	removeEventListener(type: string, listener: EventListenerOrEventListenerObject | null, options?: boolean | EventListenerOptions): void {
 		super.removeEventListener(type, listener, options)
+	}
+
+	/**
+	 * The element that shows a file, to render it outside the viewer, as the
+	 * preview of a file link in a chat or a document does.
+	 *
+	 * Resolves with the tag name of the custom element of the handler the
+	 * viewer would open the file with, once that element is defined (see
+	 * `IHandler.onInit`), or with nothing when no handler takes the file. The
+	 * element takes the props every handler does (`ViewerProps`), and says it
+	 * has loaded or failed with the same events. Loads nothing of the viewer
+	 * itself.
+	 *
+	 * @param file - The file to show
+	 */
+	async elementFor(file: IFile): Promise<string | undefined> {
+		// The one the viewer opens it with, for a file it can show at all
+		const handler = canView(file) ? getHandlerForFile(file) : undefined
+		if (handler === undefined) {
+			return undefined
+		}
+		await initHandlerElement(handler)
+		return handler.tagName
 	}
 }
 
