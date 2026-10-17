@@ -99,6 +99,8 @@ const fixtures: Fixture[] = [
 				{ name: 'shared.jpg', mime: 'image/jpeg', hasPreview: true, share: 'sharetoken' },
 				// As Talk hands a guest a file in its folder share
 				{ name: 'shared-link.jpg', mime: 'image/jpeg', hasPreview: true, share: 'linktoken', shareLinkFolder: '/holiday' },
+				// One without a preview, which only its WebDAV address serves alone
+				{ name: 'shared-original.jpg', mime: 'image/jpeg', hasPreview: false, share: 'origtoken', shareLinkFolder: '/holiday' },
 			]
 		: []),
 ]

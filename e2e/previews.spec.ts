@@ -93,6 +93,35 @@ test.describe('Previews', () => {
 		expect(url.searchParams.get('file')).toBe('/holiday/shared-link.jpg')
 	})
 
+	// Through the link, a file of a folder share downloads as a zip of the folder
+	test('loads a guest the file a link points into from its WebDAV address', async ({ page }) => {
+		const links: string[] = []
+		await page.route('**/s/origtoken/**', async (route) => {
+			links.push(route.request().url())
+			await route.fulfill({ status: 404 })
+		})
+		await page.route('**/public.php/dav/files/origtoken**', async (route) => {
+			if (route.request().method() === 'PROPFIND') {
+				await route.fulfill({
+					status: 207,
+					contentType: 'application/xml',
+					body: '<?xml version="1.0"?><d:multistatus xmlns:d="DAV:"><d:response><d:href>/public.php/dav/files/origtoken/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>',
+				})
+				return
+			}
+			await route.fulfill({ contentType: 'image/jpeg', body: IMAGE })
+		})
+
+		const viewer = new ViewerPage(page)
+		await viewer.open('shared-original.jpg', 'shared&guest')
+		await viewer.waitForOpen()
+		const image = viewer.container.locator('img').first()
+		await expect(image).toBeVisible()
+
+		expect(new URL(await image.getAttribute('src') ?? '', page.url()).pathname).toBe('/public.php/dav/files/origtoken/holiday/shared-original.jpg')
+		expect(links).toEqual([])
+	})
+
 	test('asks for the preview by hand when the share forbids downloading', async ({ page }) => {
 		// The server refuses a plain request for the preview of a share that
 		// cannot be downloaded, and serves it when the request says it comes
