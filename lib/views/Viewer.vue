@@ -97,7 +97,7 @@
 				<NcActionButton
 					v-if="canDownloadFile"
 					closeAfterClick
-					@click="downloadFile(currentFile!)">
+					@click="downloadFile(currentFile!, shownFile)">
 					<template #icon>
 						<DownloadIcon :size="20" />
 					</template>
@@ -245,12 +245,12 @@
 		<!-- Single file view -->
 		<component
 			:is="currentHandler?.tagName"
-			v-else-if="currentFile && elementReady(currentHandler)"
+			v-else-if="currentFile && shownFile && elementReady(currentHandler)"
 			v-show="!loading && !errorString"
 			:key="`${currentFile.source}-${reloadKey}`"
 			ref="handlerElement"
 			:can-swipe="canSwipe"
-			:file="currentFile"
+			:file="shownFile"
 			:files="currentFileList"
 			:is-sidebar-shown="isSidebarShown"
 			:max-height="height"
@@ -319,7 +319,7 @@ import { loadState } from '@nextcloud/initial-state'
 import { useHotKey } from '@nextcloud/vue/composables/useHotKey'
 import { useIsMobile } from '@nextcloud/vue/composables/useIsMobile'
 import debounce from 'debounce'
-import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, triggerRef, useTemplateRef, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, shallowRef, triggerRef, useTemplateRef, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcBlurHash from '@nextcloud/vue/components/NcBlurHash'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -357,6 +357,7 @@ import { emittedValue, toError } from '../utils/handlerEvents.ts'
 import { t } from '../utils/l10n.ts'
 import { isLegacyServer } from '../utils/legacyServer.ts'
 import { blurhash, fitInto, photoSize } from '../utils/photoMetadata.ts'
+import { isShareLink, resolveShareLink } from '../utils/publicShare.ts'
 import { renameFile } from '../utils/rename.ts'
 import { getViewer } from '../viewer.ts'
 
@@ -446,6 +447,20 @@ const SIDEBAR_FULLSCREEN_CLASS = 'viewer--sidebar-fullscreen'
 
 // Current context
 const currentFile = ref<IFile>()
+// The file as the handler is given it: one given by a share's link, at its
+// WebDAV address, which the link alone cannot say for a folder share
+const shownFile = shallowRef<IFile>()
+watch(currentFile, async (file) => {
+	if (file === undefined || !isShareLink(file)) {
+		shownFile.value = file
+		return
+	}
+	shownFile.value = undefined
+	const resolved = await resolveShareLink(file)
+	if (currentFile.value === file) {
+		shownFile.value = resolved
+	}
+}, { immediate: true })
 watch(() => currentFile.value?.source, () => {
 	shownVersion = currentFile.value?.attributes?.etag
 })
@@ -710,13 +725,14 @@ const canDeleteFile = computed(() => currentFile.value !== undefined
  * with it.
  *
  * @param file - The file shown
+ * @param from - Where to fetch it, if not at its own address
  */
-async function downloadFile(file: IFile) {
+async function downloadFile(file: IFile, from: IFile = file) {
 	if (!await prepareDownload(downloadTargets(), file)) {
 		return
 	}
 	const link = document.createElement('a')
-	link.href = file.encodedSource
+	link.href = from.encodedSource
 	link.download = file.basename
 	document.body.append(link)
 	link.click()
@@ -767,7 +783,7 @@ useHotKey('s', (event) => {
 	if (action !== undefined) {
 		runDownloadAction(action)
 	} else if (canDownloadFile.value) {
-		downloadFile(currentFile.value)
+		downloadFile(currentFile.value, shownFile.value)
 	}
 }, { ctrl: true, allowInModal: true })
 useHotKey('Delete', (event) => {

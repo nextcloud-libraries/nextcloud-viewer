@@ -14,7 +14,9 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 vi.mock('@nextcloud/event-bus')
 // The viewer's own Delete goes through it
 const axiosDelete = vi.hoisted(() => vi.fn(async () => ({})))
-vi.mock('@nextcloud/axios', () => ({ default: { delete: axiosDelete } }))
+// What a share is, asked for a file given by its link
+const axiosRequest = vi.hoisted(() => vi.fn())
+vi.mock('@nextcloud/axios', () => ({ default: { delete: axiosDelete, request: axiosRequest } }))
 const showError = vi.hoisted(() => vi.fn())
 vi.mock('@nextcloud/dialogs', async (importOriginal) => ({
 	// eslint-disable-next-line @typescript-eslint/consistent-type-imports -- vitest importOriginal idiom
@@ -32,7 +34,7 @@ vi.mock('@nextcloud/image-editor', async () => {
 })
 
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
-import { Permission, registerFileAction } from '@nextcloud/files'
+import { File, Permission, registerFileAction } from '@nextcloud/files'
 import { useViewerSettings } from '../../lib/composables/useViewerSettings.ts'
 import { restoreTitle } from '../../lib/utils/documentTitle.ts'
 import { getViewer } from '../../lib/viewer.ts'
@@ -1897,5 +1899,66 @@ describe('the viewer\'s own Download and Delete', () => {
 		expect(ctrl('s').defaultPrevented).toBe(false)
 		expect(ctrl('e').defaultPrevented).toBe(false)
 		expect(axiosDelete).not.toHaveBeenCalled()
+	})
+})
+
+// Talk hands a guest the files of a conversation by their share's link: in a
+// folder share, the link downloads the whole folder as a zip
+describe('a file given by its share\'s link', () => {
+	/**
+	 * Open a file of a share by its link
+	 *
+	 * @param token - The share's, each test its own as what a share is is kept
+	 * @param folder - Whether the share is a folder holding the file
+	 */
+	async function openLinked(token: string, folder: boolean) {
+		axiosRequest.mockResolvedValueOnce({ data: `<d:multistatus xmlns:d="DAV:"><d:response><d:propstat><d:prop><d:resourcetype>${folder ? '<d:collection/>' : ''}</d:resourcetype></d:prop></d:propstat></d:response></d:multistatus>` })
+		// An element that keeps what it is given, to read it back
+		const { vm, wrapper } = mountViewer([makeHandler({ id: 'compared', tagName: 'oca-viewer-compared', enabled: () => true })])
+		const file = new File({
+			source: `https://cloud.example.com/index.php/s/${token}/download/beach.jpg`,
+			root: `/index.php/s/${token}`,
+			mime: 'image/jpeg',
+			owner: null,
+		})
+		await vm.open([file], file)
+		await flushPromises()
+		return { file, wrapper }
+	}
+
+	it('is shown from its address in the share', async () => {
+		const { wrapper } = await openLinked('shown1', true)
+
+		const shown = (wrapper.find('oca-viewer-compared').element as ComparedElement).file
+		expect(shown?.source).toBe('https://cloud.example.com/public.php/dav/files/shown1/beach.jpg')
+	})
+
+	it('is not shown over a file opened while its share was asked', async () => {
+		const answer = Promise.withResolvers<{ data: string }>()
+		axiosRequest.mockReturnValueOnce(answer.promise)
+		const { vm, wrapper } = mountViewer([makeHandler({ id: 'compared', tagName: 'oca-viewer-compared', enabled: () => true })])
+		const linked = new File({ source: 'https://cloud.example.com/index.php/s/slow1/download/a.jpg', root: '/index.php/s/slow1', mime: 'image/jpeg', owner: null })
+		const other = makeFile({ basename: 'b.jpg' })
+		await vm.open([linked, other], linked)
+		await vm.open([linked, other], other)
+		await flushPromises()
+
+		answer.resolve({ data: '<d:multistatus xmlns:d="DAV:"/>' })
+		await flushPromises()
+
+		expect((wrapper.find('oca-viewer-compared').element as ComparedElement).file?.source).toBe(other.source)
+	})
+
+	// The address of a file shared alone is the share's, named by its token
+	it('downloads from there, under its own name', async () => {
+		const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+		const { wrapper } = await openLinked('download1', false)
+
+		await wrapper.findAll('.nc-action-button-stub').find((button) => button.text() === 'Download')!.trigger('click')
+		await flushPromises()
+
+		const link = click.mock.contexts[0] as HTMLAnchorElement
+		expect(link.href).toBe('https://cloud.example.com/public.php/dav/files/download1')
+		expect(link.download).toBe('beach.jpg')
 	})
 })
