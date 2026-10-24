@@ -470,7 +470,9 @@ describe('the editing option', () => {
 	 */
 	async function saveAnEdit() {
 		const ctx = mountViewer([imageHandler({ canEdit: true })])
-		const file = makeFile()
+		// Saved at the version it was opened at, the editor's response having
+		// no etag to say otherwise
+		const file = makeFile({ attributes: { etag: 'opened' } })
 
 		await ctx.vm.open([file], file, { editing: true })
 		// The editor is loaded on demand, so it is not there on the first tick

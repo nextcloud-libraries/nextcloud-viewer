@@ -236,7 +236,7 @@ describe('what a handler emits', () => {
 
 	it('is given the edited image as localSource once the editor saves, instead of a refetch', async () => {
 		renders.length = 0
-		const f1 = makeFile({ mime: 'image/jpeg' })
+		const f1 = makeFile({ mime: 'image/jpeg', attributes: { etag: 'opened' } })
 		const { vm, wrapper } = mountViewer([probeHandler({ canEdit: true })])
 
 		await vm.open([f1], f1, { editing: true })

@@ -1527,29 +1527,54 @@ describe('the file shown, updated', () => {
 	/**
 	 * Open a file, then announce an update of it.
 	 *
-	 * @param etag - The version the update carries
+	 * @param changes - What the update changes of the file
 	 */
-	async function update(etag: string) {
-		const { vm, wrapper } = mountViewer([imageHandler()])
+	async function update(changes: { etag?: string, basename?: string }) {
+		const { vm, wrapper, modalName } = mountViewer([imageHandler()])
 		const file = makeFile({ basename: 'notes.jpg', mime: 'image/jpeg', attributes: { etag: 'v1' } })
 		await vm.open([file], file)
 		await wrapper.vm.$nextTick()
 		const before = wrapper.find('oca-viewer-image').element
 
 		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
-		updated(makeFile({ id: file.fileid, basename: 'notes.jpg', mime: 'image/jpeg', attributes: { etag } }))
+		updated(makeFile({ id: file.fileid, basename: changes.basename ?? 'notes.jpg', mime: 'image/jpeg', attributes: { etag: changes.etag ?? 'v1' } }))
 		await wrapper.vm.$nextTick()
-		return wrapper.find('oca-viewer-image').element === before
+		return { kept: wrapper.find('oca-viewer-image').element === before, name: modalName() }
 	}
 
 	// Text announces each of its own saves: rebuilding the editor for one
 	// lost the user's place, mid-sentence
 	it('keeps its element for the version already shown', async () => {
-		expect(await update('v1')).toBe(true)
+		expect((await update({ etag: 'v1' })).kept).toBe(true)
 	})
 
 	it('shows another version afresh', async () => {
-		expect(await update('v2')).toBe(false)
+		expect((await update({ etag: 'v2' })).kept).toBe(false)
+	})
+
+	it('is shown under its new name, in the element already showing it', async () => {
+		const { kept, name } = await update({ basename: 'holiday.jpg' })
+
+		expect(kept).toBe(true)
+		expect(name).toBe('holiday.jpg')
+	})
+
+	// Collabora saves the file it edits and announces it: rebuilding the
+	// editor for its own save reloaded the whole document
+	it('keeps its element for a new version its handler says it wrote', async () => {
+		const { vm, wrapper } = mountViewer([imageHandler()])
+		const file = makeFile({ basename: 'notes.jpg', mime: 'image/jpeg', attributes: { etag: 'v1' } })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		const element = wrapper.find('oca-viewer-image').element
+		const written = makeFile({ id: file.fileid, basename: 'notes.jpg', mime: 'image/jpeg', attributes: { etag: 'v2' } })
+
+		element.dispatchEvent(new CustomEvent('update:file', { detail: [written] }))
+		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
+		updated(written)
+		await wrapper.vm.$nextTick()
+
+		expect(wrapper.find('oca-viewer-image').element).toBe(element)
 	})
 })
 

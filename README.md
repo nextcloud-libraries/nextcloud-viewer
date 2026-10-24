@@ -92,6 +92,12 @@ Until `loaded` arrives the viewer shows its spinner, so don't forget it.
 > itself, so `loaded` or `errored` comes once per element, and `onMounted` is
 > enough here. The other props (`shown`, `maxWidth`, `maxHeight`, `editing`,
 > `turns`, ...) do change while your element is mounted.
+>
+> An update of the file shown (`files:node:updated`) is handed to the element
+> already showing it as its new `file` when it brings nothing new to show: a
+> new name, a favourite, the version it already shows. A new version mounts a
+> new element, unless your element wrote it: emit `update:file` with the node
+> as written before announcing it, and the viewer keeps your element.
 
 #### 3. Register it
 
@@ -260,6 +266,7 @@ const src = computed(() => props.file.encodedSource)
 | `update:canSwipe`  | `[boolean]` | Enable/disable the swipe gesture (e.g. for custom controls) |
 | `update:editing`   | `[boolean]` | Notify the viewer the editing mode changed                  |
 | `update:playing`   | `[boolean]` | Notify the viewer media plays, so the slideshow waits for it |
+| `update:file`      | `[File]`    | You wrote the file you show: the node as written, before `files:node:updated`, so the viewer keeps your element |
 
 Before it downloads the file shown, from its own Download, Ctrl+S or the Files
 download action, the viewer dispatches `before-download` on your element. A view

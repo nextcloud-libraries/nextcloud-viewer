@@ -255,7 +255,7 @@
 			:is="currentHandler?.tagName"
 			v-else-if="currentFile && elementReady(currentHandler)"
 			v-show="!loading && !errorString"
-			:key="`${currentFile.source}-${reloadKey}`"
+			:key="`${mountedSource}-${reloadKey}`"
 			ref="handlerElement"
 			:can-swipe="canSwipe"
 			:file="currentFile"
@@ -425,8 +425,6 @@ onUnmounted(() => clearTimeout(slowLoadingTimer))
 // Not by file id: every version of a file shares it, and an older version
 // would otherwise show the edit made to the current one.
 const editedSources = ref<Record<string, string>>({})
-// Files this viewer has just saved, whose next update event is its own.
-const ownSaves = new Set<number>()
 
 const canSwipe = ref(true)
 const isFullscreen = ref(false)
@@ -458,9 +456,18 @@ const COMPARISON_GAP = 8
 
 // Current context
 const currentFile = ref<IFile>()
-watch(() => currentFile.value?.source, () => {
+// The source the element shown was mounted for. The update of a renamed file
+// is swapped in without changing it, so the element is not rebuilt for a name
+const mountedSource = ref<string>()
+let swapping = false
+// Sync, for the swap to be told apart from showing another file
+watch(() => currentFile.value?.source, (source) => {
+	if (swapping) {
+		return
+	}
 	shownVersion = currentFile.value?.attributes?.etag
-})
+	mountedSource.value = source
+}, { flush: 'sync' })
 const currentFileList = ref<IFile[]>([])
 const currentHandler = ref<IHandler>()
 
@@ -592,11 +599,10 @@ const canEdit = computed(() => {
 })
 
 // Turning the picture on screen, written back to the file shortly after.
-// The update a write announces is ours, and the turn is already on screen,
-// unless the user has moved on: then nothing reloads for it anyway
+// The version written is the one on screen, as the turn already is, unless
+// the user has moved on: then nothing reloads for it anyway
 const { canRotate, rotateLeft, turns } = useRotation(currentFile, (node) => {
-	if (node.fileid !== undefined && node.fileid === currentFile.value?.fileid) {
-		ownSaves.add(node.fileid)
+	if (syncShownFile(node)) {
 		showRotationSaved()
 	}
 })
@@ -1016,36 +1022,67 @@ function onNodeDeleted(node: INode) {
 }
 
 /**
- * When the shown file is updated (e.g. saved from the image editor), remount the
- * handler so it re-reads the node and shows the new content.
+ * Take a node as the file shown, at the version on screen.
+ *
+ * What the handler, or the viewer itself, says once it has written the file
+ * it shows: the update announced for that write then brings nothing new.
+ *
+ * @param node - The file shown, as written
+ * @return Whether it is the file shown
+ */
+function syncShownFile(node: INode): boolean {
+	if (node.type !== FileType.File || node.fileid === undefined || node.fileid !== currentFile.value?.fileid) {
+		return false
+	}
+	swapping = true
+	currentFile.value = node as IFile
+	swapping = false
+	shownVersion = node.attributes?.etag
+	currentFileList.value = currentFileList.value.map((file) => file.fileid === node.fileid ? node as IFile : file)
+	return true
+}
+
+/**
+ * When a file is updated, show the updated node.
+ *
+ * The element showing it is kept for an update that brings nothing new to
+ * show: a name, a favourite, the version already on screen, which is what a
+ * handler that wrote the file said with `update:file`. Another version, from
+ * anywhere else, is shown afresh by mounting the element again.
  *
  * @param node - The updated node
  */
 function onNodeUpdated(node: INode) {
-	// A neighbour renamed or changed elsewhere is swapped in, or stepping to
-	// it would show it from the node it had when the viewer opened
-	if (node.type === FileType.File && node.fileid !== undefined && node.fileid !== currentFile.value?.fileid) {
-		currentFileList.value = currentFileList.value.map((file) => file.fileid === node.fileid ? node as IFile : file)
-	}
-
-	// The save the viewer did itself is already on screen, from the blob the
-	// editor handed over, so that one update is not worth a refetch. Only
-	// that one: a change from anywhere else supersedes what is shown, and
-	// waiting for it here is how an edited file stayed frozen until close.
-	if (node.fileid !== undefined && ownSaves.delete(node.fileid)) {
+	if (node.type !== FileType.File || node.fileid === undefined) {
 		return
 	}
-	if (currentFile.value !== undefined && node.fileid === currentFile.value.fileid) {
-		// The version already shown, as Text announces each of its own saves:
-		// nothing new to show, and remounting would rebuild the editor under
-		// the user, mid-sentence
-		const version = node.attributes?.etag
-		if (version !== undefined && version === shownVersion) {
-			return
-		}
-		shownVersion = version
-		releaseEditedSource(currentFile.value.source)
-		reloadKey.value++
+	const shown = currentFile.value
+	const version = node.attributes?.etag
+	// Text announces each of its own saves at the version it opened: nothing
+	// new to show, and remounting would rebuild the editor under the user
+	const sameVersion = version !== undefined && version === shownVersion
+	if (!syncShownFile(node)) {
+		// A neighbour renamed or changed elsewhere is swapped in, or stepping
+		// to it would show it from the node it had when the viewer opened
+		currentFileList.value = currentFileList.value.map((file) => file.fileid === node.fileid ? node as IFile : file)
+		return
+	}
+	if (sameVersion) {
+		return
+	}
+	releaseEditedSource(shown!.source)
+	reloadKey.value++
+}
+
+/**
+ * The handler wrote the file it shows, and hands over the node it wrote.
+ *
+ * @param reported - What the handler emitted
+ */
+function onHandlerFile(reported: unknown) {
+	const file = emittedValue<IFile>(reported)
+	if (file) {
+		syncShownFile(file)
 	}
 }
 
@@ -1061,7 +1098,8 @@ function onEditSaved(source: string) {
 	}
 	// Release a previous edit of the same file before replacing it.
 	releaseEditedSource(file.source)
-	ownSaves.add(file.fileid)
+	// The editor wrote the node it was given, at its new version
+	syncShownFile(file)
 	editedSources.value = { ...editedSources.value, [file.source]: source }
 }
 
@@ -1088,7 +1126,6 @@ function clearEditedSources() {
 		URL.revokeObjectURL(url)
 	}
 	editedSources.value = {}
-	ownSaves.clear()
 }
 
 /**
@@ -1570,7 +1607,7 @@ watch(() => !!currentFile.value || !!errorString.value, async (shown) => {
 	}
 }, { flush: 'sync' })
 
-// `update:canSwipe`, `update:editing` and `update:playing` are bound by hand rather than with
+// `update:canSwipe`, `update:editing`, `update:playing` and `update:file` are bound by hand rather than with
 // v-on. A handler is a custom element, so its emits leave as DOM events under
 // the name it declared, while v-on hyphenates the listener it is given
 // (`update:canSwipe` becomes `update:can-swipe`) and then matches nothing.
@@ -1580,11 +1617,13 @@ watch(handlerElement, (element, previous) => {
 		previous.removeEventListener('update:canSwipe', onCanSwipe)
 		previous.removeEventListener('update:editing', onHandlerEditing)
 		previous.removeEventListener('update:playing', onPlaying)
+		previous.removeEventListener('update:file', onHandlerFile)
 	}
 	if (element) {
 		element.addEventListener('update:canSwipe', onCanSwipe)
 		element.addEventListener('update:editing', onHandlerEditing)
 		element.addEventListener('update:playing', onPlaying)
+		element.addEventListener('update:file', onHandlerFile)
 	}
 	// Whatever the previous handler was playing left with it
 	playing.value = false

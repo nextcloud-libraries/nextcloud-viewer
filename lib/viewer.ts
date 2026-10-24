@@ -160,6 +160,16 @@ export interface ViewerEmits {
 	 * @param playing Whether media is playing
 	 */
 	'update:playing': [boolean]
+
+	/**
+	 * Emit this event once you wrote the file you show, with the node as
+	 * written (its new etag, its new mtime), before announcing it with
+	 * `files:node:updated`. The viewer then keeps your element for that
+	 * update, rather than mounting a new one to show the new version.
+	 *
+	 * @param file The file shown, as written
+	 */
+	'update:file': [IFile]
 }
 
 /**

@@ -41,7 +41,7 @@ const ROTATABLE_MIME = 'image/jpeg'
  *
  * @param file the file on screen
  * @param onWritten called with a file just before its update is announced,
- *   so the viewer can tell its own write from a change made elsewhere
+ *   so the viewer can take it as the one it shows
  */
 export function useRotation(file: Ref<IFile | undefined>, onWritten?: (node: IFile) => void) {
 	/** Quarter turns anticlockwise the viewer is showing, beyond the file's own */
