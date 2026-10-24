@@ -342,6 +342,14 @@ describe('livePhotoUtils.findLivePhotoPeerFromName', () => {
 		expect(findLivePhotoPeerFromName(photo, [photo, peer])).toBe(peer)
 	})
 
+	// The picture of a live photo is the moving video's other half, so a
+	// video must not borrow it as its poster just because the names match
+	it('does not pair a video with the picture of another live photo', () => {
+		const video = makeFile({ id: 1, basename: 'IMG_1234.mov', mime: 'video/quicktime' })
+		const otherLivePhoto = makeFile({ id: 2, basename: 'IMG_1234.jpg', attributes: { 'metadata-files-live-photo': 99 } })
+		expect(findLivePhotoPeerFromName(video, [video, otherLivePhoto])).toBeUndefined()
+	})
+
 	it('reads the whole name of a file that has no extension', () => {
 		const video = makeFile({ id: 1, basename: 'clip', mime: 'video/quicktime' })
 		const longer = makeFile({ id: 2, basename: 'clips.jpg' })

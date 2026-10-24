@@ -38,6 +38,10 @@ function nameWithoutExtension(file: IFile): string {
  * exactly: `IMG_1234.mov` belongs with `IMG_1234.jpg` and not with the
  * `IMG_1239.jpg` next to it.
  *
+ * Only a picture without live photo metadata qualifies: a picture that is
+ * half of a live photo of its own belongs with its own video, so showing it
+ * here would put someone else's poster on the video.
+ *
  * @param referenceFile - The file whose peer live photo should be found by name
  * @param fileList - The list of files to search within
  */
@@ -47,6 +51,7 @@ export function findLivePhotoPeerFromName(referenceFile: IFile, fileList: IFile[
 		// if same filename and extension is allowed
 		return comparedFile.source !== referenceFile.source
 			&& (nameWithoutExtension(comparedFile) === name && livePictureExtRegex.test(comparedFile.basename))
+			&& comparedFile.attributes?.['metadata-files-live-photo'] === undefined
 	})
 }
 

@@ -613,8 +613,8 @@ describe('a video that has played to the end', () => {
 	// What a user puts beside a film to show before and after it plays:
 	// a picture of the same name in the same folder
 	async function mountWithPoster() {
-		const movie = makeFile({ basename: 'trailer.webm', mime: 'video/webm' })
-		const poster = makeFile({ basename: 'trailer.jpg', mime: 'image/jpeg' })
+		const movie = makeFile({ id: 10, basename: 'trailer.webm', mime: 'video/webm', attributes: { 'metadata-files-live-photo': 11 } })
+		const poster = makeFile({ id: 11, basename: 'trailer.jpg', mime: 'image/jpeg', attributes: { 'metadata-files-live-photo': 10 } })
 		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, poster] }) })
 		await flushPromises()
 		const video = wrapper.find('video').element as HTMLVideoElement
@@ -626,6 +626,49 @@ describe('a video that has played to the end', () => {
 		const { wrapper, poster } = await mountWithPoster()
 
 		expect(wrapper.find('video').attributes('poster')).toBe(poster.encodedSource)
+	})
+
+	// The dav metadata links the halves by file id, so a renamed half keeps
+	// its partner while a name that merely looks alike is not one.
+	it('keeps the poster of a live photo whose picture was renamed', async () => {
+		const movie = makeFile({ id: 20, basename: 'trailer.webm', mime: 'video/webm', attributes: { 'metadata-files-live-photo': 21 } })
+		const renamed = makeFile({ id: 21, basename: 'holidays.jpg', mime: 'image/jpeg', attributes: { 'metadata-files-live-photo': 20 } })
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, renamed] }) })
+		await flushPromises()
+
+		expect(wrapper.find('video').attributes('poster')).toBe(renamed.encodedSource)
+	})
+
+	it('ignores a picture of the same name that is not its live photo peer', async () => {
+		// The metadata points at a file that is not in the list: falling back
+		// to the name would show a picture that is not its peer.
+		const movie = makeFile({ id: 30, basename: 'trailer.webm', mime: 'video/webm', attributes: { 'metadata-files-live-photo': 32 } })
+		const other = makeFile({ id: 31, basename: 'trailer.jpg', mime: 'image/jpeg' })
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, other] }) })
+		await flushPromises()
+
+		expect(wrapper.find('video').attributes('poster')).not.toBe(other.encodedSource)
+	})
+
+	// A camera saves the poster beside the video, without live photo metadata
+	it('shows the picture of the same name for a video without metadata', async () => {
+		const movie = makeFile({ id: 50, basename: 'camera.webm', mime: 'video/webm' })
+		const picture = makeFile({ id: 51, basename: 'camera.jpg', mime: 'image/jpeg' })
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, picture] }) })
+		await flushPromises()
+
+		expect(wrapper.find('video').attributes('poster')).toBe(picture.encodedSource)
+	})
+
+	// The picture of a live photo belongs with its own video, so it cannot
+	// serve as the poster of a video that merely shares its name
+	it('does not show a picture of the same name that is another live photo', async () => {
+		const movie = makeFile({ id: 60, basename: 'camera.webm', mime: 'video/webm' })
+		const picture = makeFile({ id: 61, basename: 'camera.jpg', mime: 'image/jpeg', attributes: { 'metadata-files-live-photo': 99 } })
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, picture] }) })
+		await flushPromises()
+
+		expect(wrapper.find('video').attributes('poster')).not.toBe(picture.encodedSource)
 	})
 
 	it('goes back to its poster without downloading the video again', async () => {
@@ -706,9 +749,11 @@ describe('a video before it can play', () => {
 		expect(wrapper.find('video').attributes('poster')).toContain('/core/preview')
 	})
 
-	it('shows the picture of the same name rather than its preview', async () => {
-		const picture = makeFile({ basename: 'clip.jpg', mime: 'image/jpeg' })
-		const wrapper = await mountVideo({ beside: [picture] })
+	it('shows the picture of its live photo rather than its preview', async () => {
+		const picture = makeFile({ id: 41, basename: 'clip.jpg', mime: 'image/jpeg' })
+		const movie = makeFile({ id: 40, basename: 'clip.mp4', mime: 'video/mp4', attributes: { hasPreview: true, 'metadata-files-live-photo': 41 } })
+		const wrapper = mount(Videos, { props: makeProps({ file: movie, files: [movie, picture] }) })
+		await flushPromises()
 
 		expect(wrapper.find('video').attributes('poster')).toBe(picture.encodedSource)
 	})

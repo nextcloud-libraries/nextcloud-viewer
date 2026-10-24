@@ -65,7 +65,7 @@ import { preloadImageSize } from '../services/mediaPreloader.ts'
 import { canDownload } from '../utils/canDownload.ts'
 import { probeFile } from '../utils/isoMedia.ts'
 import { t } from '../utils/l10n.ts'
-import { findLivePhotoPeerFromName } from '../utils/livePhotoUtils.ts'
+import { findLivePhotoPeerFromFileId, findLivePhotoPeerFromName } from '../utils/livePhotoUtils.ts'
 import { playerLanguage } from '../utils/playerTranslations.ts'
 import { getPreviewIfAny, getServerPreview } from '../utils/previewUtils.ts'
 
@@ -98,8 +98,15 @@ const width = ref(0)
 watch(() => props.maxHeight, updateVideoSize)
 watch(() => props.maxWidth, updateVideoSize)
 
+const metadataFilesLivePhoto = computed(() => props.file.attributes?.['metadata-files-live-photo'] as number | undefined)
+
 const livePhotoPath = computed(() => {
-	const peerFile = findLivePhotoPeerFromName(props.file, props.files)
+	// The dav metadata links the halves of a live photo by file id. A video
+	// without it keeps the picture of the same name beside it as its poster,
+	// the way cameras save them.
+	const peerFile = metadataFilesLivePhoto.value !== undefined
+		? findLivePhotoPeerFromFileId(metadataFilesLivePhoto.value, props.files)
+		: findLivePhotoPeerFromName(props.file, props.files)
 	if (peerFile === undefined) {
 		return undefined
 	}
