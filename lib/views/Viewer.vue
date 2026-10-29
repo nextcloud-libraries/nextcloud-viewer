@@ -366,6 +366,7 @@ import { getHandlers, isHandlerEnabled } from '../handlers.ts'
 import { getHandlerForFile } from '../helpers/handlerHelper.ts'
 import { fetchFolderContent } from '../services/dav.ts'
 import { logger } from '../services/logger.ts'
+import { reportOpened } from '../services/opened.ts'
 import { dispatchViewerEvent, ViewerSession } from '../session.ts'
 import { prepareDownload } from '../utils/beforeDownload.ts'
 import { canDownload } from '../utils/canDownload.ts'
@@ -1356,6 +1357,8 @@ async function showFiles(files: IFile[], file?: IFile, options?: ViewerOptions, 
 	if (!isSameFile) {
 		loading.value = true
 		pendingLoads.value = 1
+		// Only what was asked for: stepping through the others is browsing
+		reportOpened(file)
 	}
 	// A failure to open something else earlier is not this file's problem
 	errorString.value = null
