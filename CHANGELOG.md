@@ -6,6 +6,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.20
+
+### Added
+
+- Pictures show the file itself instead of the preview when the server caps
+  previews below the screen size, so they are no longer blurry
+  (#172, nextcloud/server#65714)
+- A setting shows pictures from the file itself instead of their preview,
+  for the formats the browser can show and when the share allows
+  downloading (#174)
+- When a handler writes its file, like Collabora on save, the viewer shows
+  the updated file without reloading the handler (#176)
+- The viewer tells the server which file the user opened, so apps like
+  recommendations know what people work with. Only the file it was asked to
+  open counts, not the ones stepped through, and nothing is sent for guests
+  or public shares (#180, nextcloud/server#65994)
+
+### Fixed
+
+- MPEG and Flash videos, which no browser plays, download instead of
+  opening in a player that fails (#175)
+- A video whose picture the browser can't decode says so, instead of
+  playing its sound over a black screen (#178)
+- A video's poster comes from the live photo it belongs to, not from any
+  picture with the same name (#177)
+- The header lines up with the app container whatever its margin (#181)
+
+### Other
+
+* Bump dompurify from 3.4.16 to 3.4.17
+* Bump vite from 7.3.6 to 7.3.7
+
+### New Contributors
+
+* @bulungasdeveloper made their first contribution in https://github.com/nextcloud-libraries/nextcloud-viewer/pull/177
+
 ## 2.0.0-beta.19
 
 ### Added
