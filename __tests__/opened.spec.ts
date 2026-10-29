@@ -10,10 +10,7 @@ const isPublicShare = vi.fn(() => false)
 const getCurrentUser = vi.fn<() => { uid: string } | null>(() => ({ uid: 'alice' }))
 const logger = { debug: vi.fn(), warn: vi.fn() }
 
-vi.mock('@nextcloud/axios', () => ({
-	default: { post },
-	isAxiosError: (error: { isAxiosError?: boolean }) => error.isAxiosError === true,
-}))
+vi.mock('@nextcloud/axios', () => ({ default: { post } }))
 vi.mock('@nextcloud/router', () => ({ generateOcsUrl: (url: string) => `/ocs/v2.php/${url}` }))
 vi.mock('@nextcloud/sharing/public', () => ({ isPublicShare: () => isPublicShare() }))
 vi.mock('@nextcloud/auth', () => ({ getCurrentUser: () => getCurrentUser() }))
@@ -74,7 +71,7 @@ describe('reportOpened', () => {
 
 	// A server before 36, or a file the user cannot see: nothing to warn about
 	it('only logs for debugging when the server answers 404', async () => {
-		post.mockRejectedValue(Object.assign(new Error('Not found'), { isAxiosError: true, response: { status: 404 } }))
+		post.mockRejectedValue(Object.assign(new Error('Not found'), { response: { status: 404 } }))
 
 		await expect(reportOpened(file)).resolves.toBeUndefined()
 		expect(logger.debug).toHaveBeenCalledOnce()
