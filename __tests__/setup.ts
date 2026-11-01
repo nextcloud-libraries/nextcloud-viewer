@@ -2,6 +2,7 @@
  * SPDX-FileCopyrightText: 2025 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
+import events from 'node:events'
 import { beforeEach, vi } from 'vitest'
 import { scope } from '../lib/scope.ts'
 
@@ -39,6 +40,21 @@ globalThis.ResizeObserver ??= class {
 	observe() {}
 	unobserve() {}
 	disconnect() {}
+}
+
+// p-queue 10, through @nextcloud/vue, hands itself to node's setMaxListeners,
+// which rejects it as it extends jsdom's EventTarget, not node's. It only
+// silences a listener count warning, so skip those targets until
+// https://github.com/sindresorhus/p-queue/issues/257 is fixed.
+const setMaxListeners = events.setMaxListeners
+events.setMaxListeners = (n, ...targets) => {
+	try {
+		setMaxListeners(n, ...targets)
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== 'ERR_INVALID_ARG_TYPE') {
+			throw error
+		}
+	}
 }
 
 const g = globalThis as NcGlobal
