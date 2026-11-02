@@ -369,6 +369,15 @@ describe('the subtitles of a video', () => {
 		expect(viewer.open.mock.calls[0]![1]).toBe(movie)
 	})
 
+	it('are left alone when picked with another file', async () => {
+		registerHandler(videos())
+		const both = { nodes: [subtitles, movie], contents: [movie, subtitles], view: VIEW, folder: FOLDER } as never
+
+		expect(action(ACTION_SUBTITLED_VIDEO)!.enabled!(both)).toBe(false)
+		await action(ACTION_SUBTITLED_VIDEO)!.exec(both)
+		expect(viewer.open).not.toHaveBeenCalled()
+	})
+
 	it('are left alone without their video beside them, or one the viewer plays', () => {
 		registerHandler(videos())
 		expect(action(ACTION_SUBTITLED_VIDEO)!.enabled!(clicked([subtitles]))).toBe(false)

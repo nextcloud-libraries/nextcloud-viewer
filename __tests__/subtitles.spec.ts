@@ -42,6 +42,11 @@ describe('the subtitles of a video', () => {
 	it('are not the files of another video, another format, or named after a cut', () => {
 		expect(found(['Holiday 2025.vtt', 'Holiday 2026.ass', 'Holiday 2026.directors-cut.vtt', 'Holiday 2026.mp4.txt'])).toEqual([])
 	})
+
+	// Shaped like a language tag, but none: no region is two digits
+	it('are not the files named after something no language is', () => {
+		expect(found(['Holiday 2026.en-12.vtt'])).toEqual([])
+	})
 })
 
 describe('SubRip, as WebVTT', () => {
