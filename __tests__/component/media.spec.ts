@@ -537,6 +537,59 @@ describe('Videos.vue (smoke)', () => {
 	})
 })
 
+// Named like the video, next to it in the folder, as players find them
+describe('the subtitles next to a video', () => {
+	it('are tracks of its player, as WebVTT', async () => {
+		const blobs: Blob[] = []
+		const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+			blobs.push(blob as Blob)
+			return `blob:track-${blobs.length}`
+		})
+		axiosGet.mockResolvedValueOnce({ data: '1\n00:00:01,000 --> 00:00:02,000\nBonjour\n' })
+		const file = makeFile({ basename: 'movie.mp4', mime: 'video/mp4' })
+		// Not a file any handler shows, so only among the files opened
+		const subtitles = makeFile({ basename: 'movie.fr.srt', mime: 'application/octet-stream' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file], openedFiles: [file, subtitles] }) })
+		await flushPromises()
+
+		const track = wrapper.find('track')
+		expect(track.attributes()).toMatchObject({ kind: 'subtitles', src: 'blob:track-1', srclang: 'fr' })
+		expect(blobs[0]!.type).toBe('text/vtt')
+		const text = await new Promise<string>((resolve) => {
+			const reader = new FileReader()
+			reader.onload = () => resolve(reader.result as string)
+			reader.readAsText(blobs[0]!)
+		})
+		expect(text).toBe('WEBVTT\n\n1\n00:00:01.000 --> 00:00:02.000\nBonjour\n')
+		createObjectURL.mockRestore()
+	})
+
+	// The player reads WebVTT whatever type the server gives it
+	it('are read from their own address when they are WebVTT', async () => {
+		const file = makeFile({ basename: 'movie.mp4', mime: 'video/mp4' })
+		const subtitles = makeFile({ basename: 'movie.vtt', mime: 'application/octet-stream' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file], openedFiles: [file, subtitles] }) })
+		await flushPromises()
+
+		expect(wrapper.find('track').attributes('src')).toBe(subtitles.encodedSource)
+		expect(axiosGet).not.toHaveBeenCalledWith(subtitles.encodedSource, expect.anything())
+	})
+
+	it('are left out where the share forbids downloading them', async () => {
+		const file = makeFile({ basename: 'movie.mp4', mime: 'video/mp4' })
+		const subtitles = makeFile({
+			basename: 'movie.vtt',
+			mime: 'application/octet-stream',
+			attributes: { 'hide-download': true },
+		})
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file], openedFiles: [file, subtitles] }) })
+		await flushPromises()
+
+		expect(wrapper.find('track').exists()).toBe(false)
+		expect(axiosGet).not.toHaveBeenCalledWith(subtitles.encodedSource, expect.anything())
+	})
+})
+
 // HEVC in many browsers: the sound plays over black, with no error
 describe('a video whose picture the browser cannot decode', () => {
 	/**

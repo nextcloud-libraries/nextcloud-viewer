@@ -38,6 +38,7 @@ const Probe = defineComponent({
 	props: {
 		file: { type: Object, required: true },
 		files: { type: Array, default: () => [] },
+		openedFiles: { type: Array, default: undefined },
 		maxHeight: { type: Number, default: 0 },
 		maxWidth: { type: Number, default: 0 },
 		editing: { type: Boolean, default: false },
@@ -89,6 +90,21 @@ describe('what a handler is given', () => {
 
 		expect(lastRender().file.basename).toBe('a.jpg')
 		expect(lastRender().files.map((file) => file.basename)).toEqual(['a.jpg', 'b.jpg'])
+	})
+
+	// A video's subtitles are files it does not show, which only this has
+	it('receives every file opened with it, those it does not show included', async () => {
+		renders.length = 0
+		const video = makeFile({ basename: 'movie.mp4', mime: 'video/mp4' })
+		const subtitles = makeFile({ basename: 'movie.vtt', mime: 'application/octet-stream' })
+		const { vm, wrapper } = mountViewer([probeHandler({ enabled: (nodes: IFile[]) => nodes.every((node) => node.mime === 'video/mp4') })])
+
+		await vm.open([video, subtitles], video)
+		await wrapper.vm.$nextTick()
+		await flushPromises()
+
+		expect(lastRender().files.map((file) => file.basename)).toEqual(['movie.mp4'])
+		expect(lastRender().openedFiles!.map((file) => file.basename)).toEqual(['movie.mp4', 'movie.vtt'])
 	})
 
 	it('is told when the Files sidebar opens beside it, and when it closes', async () => {

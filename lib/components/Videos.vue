@@ -34,6 +34,14 @@
 						the provided mime instead of detecting a potential
 						compatibility. -->
 
+					<track
+						v-for="track in tracks"
+						:key="track.src"
+						kind="subtitles"
+						:src="track.src"
+						:srclang="track.srclang"
+						:label="track.label">
+
 					{{ t('Your browser does not support videos.') }}
 				</video>
 				<!-- The skin shows its poster only until playback starts, and
@@ -56,9 +64,10 @@
 <script setup lang="ts">
 import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, ref, toRef, watch } from 'vue'
 import VideoOffOutlineIcon from 'vue-material-design-icons/VideoOffOutline.vue'
 import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
+import { useSubtitles } from '../composables/useSubtitles.ts'
 import { useVideojsAdapter } from '../composables/useVideojsAdapter.ts'
 import { logger } from '../services/logger.ts'
 import { preloadImageSize } from '../services/mediaPreloader.ts'
@@ -90,6 +99,9 @@ const {
 	showBeforePlayable,
 	src,
 } = useMediaPlayer(false, props, emit, adapter)
+
+// The subtitles next to it, among every file the viewer was opened with
+const { tracks } = useSubtitles(toRef(props, 'file'), computed(() => props.openedFiles ?? props.files))
 
 const height = ref(0)
 const width = ref(0)
@@ -220,6 +232,13 @@ function onLoadedMetadata() {
 	max-width: 100%;
 	max-height: 100%;
 	background-color: black;
+}
+
+// Subtitles above the control bar rather than under it. The skin's own rule
+// for it targets the video inside its shadow root, which a slotted video is
+// not, so it never applies
+.viewer-media video::-webkit-media-text-track-container {
+	translate: 0 calc(-1 * (var(--default-clickable-area) + 6 * var(--default-grid-baseline)));
 }
 
 .viewer-media__no-picture {

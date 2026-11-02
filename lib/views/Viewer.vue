@@ -260,6 +260,7 @@
 			:can-swipe="canSwipe"
 			:file="currentFile"
 			:files="currentFileList"
+			:opened-files="openedFiles"
 			:is-sidebar-shown="isSidebarShown"
 			:shown="fileShown"
 			:max-height="height"
@@ -470,6 +471,9 @@ watch(() => currentFile.value?.source, (source) => {
 	mountedSource.value = source
 }, { flush: 'sync' })
 const currentFileList = ref<IFile[]>([])
+// Every file opened with the one shown, before the list kept those its
+// handler shows: a video's subtitles are files no handler opens
+const openedFiles = ref<IFile[]>([])
 const currentHandler = ref<IHandler>()
 
 /**
@@ -1318,6 +1322,7 @@ async function showFiles(files: IFile[], file?: IFile, options?: ViewerOptions, 
 	 * and its group. We only want to show files that can be handled
 	 * by the same handler or handlers from the same group.
 	 */
+	openedFiles.value = files
 	currentFileList.value = files.filter((f) => {
 		const h = handlerFor(f)
 		if (h === undefined) {
@@ -1476,6 +1481,7 @@ async function showComparison(file1: IFile, file2: IFile, options?: CompareOptio
 
 	// Comparison mode has no navigation, so we reset the slideshow context
 	currentFileList.value = []
+	openedFiles.value = []
 	forcedHandler.value = undefined
 	currentOptions.value = {} as ViewerOptions
 	currentHandler.value = handler1
@@ -1681,6 +1687,7 @@ function close() {
 	currentSession = undefined
 	currentFile.value = undefined
 	currentFileList.value = []
+	openedFiles.value = []
 	currentHandler.value = undefined
 	forcedHandler.value = undefined
 	comparisonFile.value = undefined
@@ -1759,6 +1766,7 @@ async function loadMoreAtEnd() {
 		const moreFiles = await loadMore()
 		if (moreFiles.length > 0) {
 			currentFileList.value = currentFileList.value.concat(moreFiles)
+			openedFiles.value = openedFiles.value.concat(moreFiles)
 		}
 	} catch (error) {
 		logger.error('Failed to load more files', { error })
