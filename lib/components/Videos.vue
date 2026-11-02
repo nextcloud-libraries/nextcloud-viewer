@@ -66,6 +66,7 @@ import type { ViewerEmits, ViewerProps } from '../viewer.ts'
 
 import { computed, onBeforeUnmount, ref, toRef, watch } from 'vue'
 import VideoOffOutlineIcon from 'vue-material-design-icons/VideoOffOutline.vue'
+import { useEmbeddedSubtitles } from '../composables/useEmbeddedSubtitles.ts'
 import { useMediaPlayer } from '../composables/useMediaPlayer.ts'
 import { useSubtitles } from '../composables/useSubtitles.ts'
 import { useVideojsAdapter } from '../composables/useVideojsAdapter.ts'
@@ -102,6 +103,8 @@ const {
 
 // The subtitles next to it, among every file the viewer was opened with
 const { tracks } = useSubtitles(toRef(props, 'file'), computed(() => props.openedFiles ?? props.files))
+// And those inside it, as Matroska and WebM carry them
+useEmbeddedSubtitles(video, toRef(props, 'file'))
 
 const height = ref(0)
 const width = ref(0)

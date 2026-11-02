@@ -32,14 +32,30 @@ function escapeRegExp(text: string): string {
 /**
  * A language tag the browser understands, in its canonical form.
  *
- * @param tag - The tag a file name carries
+ * @param tag - The tag a file carries: `pt_BR`, or as Matroska writes it,
+ *   `fre` or `ger`, which become `fr` and `de`
+ * @return Nothing for what is no language, `und` (undetermined) included
  */
-function canonicalLanguage(tag: string): string | undefined {
+export function canonicalLanguage(tag: string): string | undefined {
 	try {
-		return Intl.getCanonicalLocales(tag.replace('_', '-'))[0]
+		const language = Intl.getCanonicalLocales(tag.replace('_', '-'))[0]
+		return language === 'und' ? undefined : language
 	} catch {
 		return undefined
 	}
+}
+
+/**
+ * What the player's captions menu lists a track in this language as.
+ *
+ * @param language - Its language, if known
+ */
+export function languageLabel(language?: string): string {
+	if (language === undefined) {
+		return t('Subtitles')
+	}
+	const displayNames = new Intl.DisplayNames([getLanguage().replace('_', '-')], { type: 'language' })
+	return displayNames.of(language) ?? language
 }
 
 /**
@@ -57,8 +73,6 @@ export function findSubtitles(video: IFile, files: IFile[]): Subtitle[] {
 	const extension = video.extension ?? ''
 	const name = extension === '' ? video.basename : video.basename.slice(0, -extension.length)
 	const pattern = new RegExp(`^${escapeRegExp(name)}(?:\\.([A-Za-z]{2,3}(?:[-_][A-Za-z0-9]{2,8})*))?\\.(vtt|srt)$`, 'i')
-	const displayNames = new Intl.DisplayNames([getLanguage().replace('_', '-')], { type: 'language' })
-
 	const subtitles: Subtitle[] = []
 	for (const file of files) {
 		const match = pattern.exec(file.basename)
@@ -74,7 +88,7 @@ export function findSubtitles(video: IFile, files: IFile[]): Subtitle[] {
 			file,
 			format: match[2]!.toLowerCase() as Subtitle['format'],
 			language,
-			label: language === undefined ? t('Subtitles') : (displayNames.of(language) ?? language),
+			label: languageLabel(language),
 		})
 	}
 	return subtitles

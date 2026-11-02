@@ -72,6 +72,8 @@ const fixtures: Fixture[] = [
 	{ name: 'video.mp4', mime: 'video/mp4' },
 	// The server knows no type for subtitle files
 	{ name: 'video.fr.vtt', mime: 'application/octet-stream' },
+	// Its subtitles inside it, as WebM and Matroska carry them
+	{ name: 'subtitled.webm', mime: 'video/webm' },
 	{ name: 'audio.mp3', mime: 'audio/mpeg' },
 	// The same WAV under each of the three names a server may give it,
 	// which is what nextcloud-libraries/nextcloud-viewer#45 was about
