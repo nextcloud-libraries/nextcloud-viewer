@@ -564,6 +564,17 @@ describe('the subtitles next to a video', () => {
 		createObjectURL.mockRestore()
 	})
 
+	// The player reads WebVTT whatever type the server gives it
+	it('are read from their own address when they are WebVTT', async () => {
+		const file = makeFile({ basename: 'movie.mp4', mime: 'video/mp4' })
+		const subtitles = makeFile({ basename: 'movie.vtt', mime: 'application/octet-stream' })
+		const wrapper = mount(Videos, { props: makeProps({ file, files: [file], openedFiles: [file, subtitles] }) })
+		await flushPromises()
+
+		expect(wrapper.find('track').attributes('src')).toBe(subtitles.encodedSource)
+		expect(axiosGet).not.toHaveBeenCalledWith(subtitles.encodedSource, expect.anything())
+	})
+
 	it('are left out where the share forbids downloading them', async () => {
 		const file = makeFile({ basename: 'movie.mp4', mime: 'video/mp4' })
 		const subtitles = makeFile({

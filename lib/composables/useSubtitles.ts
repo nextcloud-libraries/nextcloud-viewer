@@ -14,24 +14,35 @@ import { findSubtitles, srtToVtt } from '../utils/subtitles.ts'
 
 /** A `<track>` of the video */
 export interface SubtitleTrack {
-	/** The WebVTT to read, as an object URL */
+	/** The WebVTT to read: the file itself, or an object URL of ours */
 	src: string
 	srclang?: string
 	label: string
 }
 
 /**
+ * Let go of the object URL a track was handed, if it was handed one.
+ *
+ * @param track - The track
+ */
+function revoke(track: SubtitleTrack) {
+	if (track.src.startsWith('blob:')) {
+		URL.revokeObjectURL(track.src)
+	}
+}
+
+/**
  * The subtitles found next to a video, as tracks of its player.
  *
- * Each is fetched and handed over as WebVTT from an object URL: the server
- * knows no type for subtitle files, and a browser reads a track only as
- * `text/vtt`. One in a share that forbids downloading is left out.
+ * A WebVTT file is read by the player from its own address. A SubRip one is
+ * fetched and turned into WebVTT first, handed over from an object URL.
+ * One in a share that forbids downloading is left out.
  *
  * @param file - The video
  * @param files - The files next to it
  */
 export function useSubtitles(file: Ref<IFile>, files: Ref<IFile[]>) {
-	// The tracks handed to the player, each holding an object URL of ours
+	// The tracks handed to the player
 	const tracks = ref<SubtitleTrack[]>([])
 	// The requests for the video shown: another video, or the player going
 	// away, aborts them, so a late answer is never shown on the wrong one
@@ -40,14 +51,12 @@ export function useSubtitles(file: Ref<IFile>, files: Ref<IFile[]>) {
 	/**
 	 * Let go of the tracks shown, and of what is still loading.
 	 *
-	 * An object URL holds its blob until revoked, so every track made here
-	 * is revoked once it is no longer the video's.
+	 * An object URL holds its blob until revoked, so every one made here is
+	 * revoked once it is no longer the video's.
 	 */
 	function release() {
 		controller?.abort()
-		for (const track of tracks.value) {
-			URL.revokeObjectURL(track.src)
-		}
+		tracks.value.forEach(revoke)
 		tracks.value = []
 	}
 
@@ -67,17 +76,17 @@ export function useSubtitles(file: Ref<IFile>, files: Ref<IFile[]>) {
 		// All at once: one that fails leaves the others, and is only logged,
 		// as the video plays the same without it
 		const loaded = await Promise.all(subtitles.map(async (subtitle): Promise<SubtitleTrack | undefined> => {
+			const track = { srclang: subtitle.language, label: subtitle.label }
+			// The player reads WebVTT itself, whatever type the server gives
+			// it: `application/octet-stream`, as it knows none for subtitles
+			if (subtitle.format === 'vtt') {
+				return { ...track, src: subtitle.file.encodedSource }
+			}
 			try {
-				// Fetched rather than given to the track by its address: the
-				// server knows no type for subtitle files and sends them as
-				// `application/octet-stream`, which a browser refuses as a track
+				// SubRip is not read by any browser, so it is fetched and
+				// turned into WebVTT here
 				const { data } = await axios.get<string>(subtitle.file.encodedSource, { responseType: 'text', signal: current.signal })
-				const vtt = subtitle.format === 'srt' ? srtToVtt(data) : data
-				return {
-					src: URL.createObjectURL(new Blob([vtt], { type: 'text/vtt' })),
-					srclang: subtitle.language,
-					label: subtitle.label,
-				}
+				return { ...track, src: URL.createObjectURL(new Blob([srtToVtt(data)], { type: 'text/vtt' })) }
 			} catch (error) {
 				// An aborted request is the video changing, not a failure
 				if (!current.signal.aborted) {
@@ -90,7 +99,7 @@ export function useSubtitles(file: Ref<IFile>, files: Ref<IFile[]>) {
 		// Another video came while these loaded: they are not its tracks,
 		// and nothing else will revoke them
 		if (current.signal.aborted) {
-			found.forEach((track) => URL.revokeObjectURL(track.src))
+			found.forEach(revoke)
 			return
 		}
 		tracks.value = found
