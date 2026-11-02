@@ -70,6 +70,8 @@ const fixtures: Fixture[] = [
 	{ name: 'animation.gif', mime: 'image/gif' },
 	{ name: 'protected.jpg', mime: 'image/jpeg', noDownload: true },
 	{ name: 'video.mp4', mime: 'video/mp4' },
+	// The server knows no type for subtitle files
+	{ name: 'video.fr.vtt', mime: 'application/octet-stream' },
 	{ name: 'audio.mp3', mime: 'audio/mpeg' },
 	// The same WAV under each of the three names a server may give it,
 	// which is what nextcloud-libraries/nextcloud-viewer#45 was about

@@ -247,6 +247,7 @@ const src = computed(() => props.file.encodedSource)
 | ---------------- | --------- | ----------------------------------------------- |
 | `file`           | `File`    | The file currently displayed                    |
 | `files`          | `File[]`  | The list of files currently opened in the viewer. When comparing, the two compared, the base first |
+| `openedFiles`    | `File[]`  | Every file the viewer was opened with, those no handler shows included: what sits next to the file, such as a video's subtitles. Optional |
 | `maxHeight`      | `number`  | Max height of the viewer container              |
 | `maxWidth`       | `number`  | Max width of the viewer container               |
 | `editing`        | `boolean` | Whether the viewer is in editing mode           |

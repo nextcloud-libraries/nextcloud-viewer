@@ -35,6 +35,13 @@ export interface ViewerProps {
 	files: IFile[]
 
 	/**
+	 * Every file the viewer was opened with, those no handler shows
+	 * included: what sits next to the file, such as its subtitles.
+	 * Optional
+	 */
+	openedFiles?: IFile[]
+
+	/**
 	 * The max height of the viewer container
 	 */
 	maxHeight: number
