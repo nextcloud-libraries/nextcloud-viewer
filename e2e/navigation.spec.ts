@@ -24,6 +24,7 @@ const MEDIA = [
 	'animation.gif',
 	'protected.jpg',
 	'video.mp4',
+	'subtitled.webm',
 	'audio.mp3',
 	'sound.wav',
 	'sound-xwav.wav',
