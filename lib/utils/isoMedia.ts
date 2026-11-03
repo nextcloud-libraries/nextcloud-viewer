@@ -17,14 +17,10 @@
 
 import type { IFile } from '@nextcloud/files'
 
+import { RangeReader } from './rangeReader.ts'
+
 /** The formats laid out in ISO boxes */
 export const ISO_MEDIA_MIMES = ['video/mp4', 'video/quicktime', 'video/x-m4v', 'audio/mp4', 'audio/x-m4a', 'audio/m4a']
-
-/** How much is read at once: the boxes at the start, or the start of the index */
-const READ_BYTES = 4096
-
-/** How many reads a file gets before it is given up on */
-const MAX_READS = 6
 
 /** Box headers: a 32-bit length and a type, the length then possibly 64-bit */
 const HEADER_BYTES = 16
@@ -43,75 +39,6 @@ interface Box {
 	type: string
 	/** Where its content starts, after its header */
 	content: number
-}
-
-/**
- * Read a file in small ranges, and keep what was read.
- */
-class RangeReader {
-	private chunks: { offset: number, bytes: Uint8Array }[] = []
-	private reads = 0
-
-	constructor(private readonly url: string) {}
-
-	/**
-	 * The bytes at an offset, read from the file when not already read.
-	 *
-	 * Fewer than asked for at the end of the file. A server that answers
-	 * the whole file to a range is not read: it would be the whole file.
-	 *
-	 * @param offset - Where to read from
-	 * @param length - How much is needed
-	 */
-	async bytesAt(offset: number, length: number): Promise<Uint8Array> {
-		const chunk = this.chunks.find((read) => offset >= read.offset && offset + length <= read.offset + read.bytes.length)
-			?? await this.read(offset, Math.max(length, READ_BYTES))
-		return chunk.bytes.subarray(offset - chunk.offset, offset - chunk.offset + length)
-	}
-
-	/**
-	 * Read a range of the file.
-	 *
-	 * @param offset - Where to read from
-	 * @param length - How much to read
-	 */
-	private async read(offset: number, length: number): Promise<{ offset: number, bytes: Uint8Array }> {
-		if (++this.reads > MAX_READS) {
-			throw new Error('Too many reads')
-		}
-		const controller = new AbortController()
-		try {
-			// fetch rather than axios: the read is cut short by hand should a
-			// server send more than asked for, and a GET needs no request token
-			const response = await fetch(this.url, {
-				headers: { Range: `bytes=${offset}-${offset + length - 1}` },
-				signal: controller.signal,
-			})
-			if (response.status === 416) {
-				return { offset, bytes: new Uint8Array() }
-			}
-			if (response.status !== 206 || !response.body) {
-				throw new Error(`No range read: ${response.status}`)
-			}
-			const bytes = new Uint8Array(length)
-			let read = 0
-			const reader = response.body.getReader()
-			while (read < length) {
-				const { done, value } = await reader.read()
-				if (done) {
-					break
-				}
-				const part = value.subarray(0, length - read)
-				bytes.set(part, read)
-				read += part.length
-			}
-			const chunk = { offset, bytes: bytes.subarray(0, read) }
-			this.chunks.push(chunk)
-			return chunk
-		} finally {
-			controller.abort()
-		}
-	}
 }
 
 /**

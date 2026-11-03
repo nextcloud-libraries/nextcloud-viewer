@@ -13,6 +13,8 @@
  * requests. mkvmerge and ffmpeg both index every subtitle by default.
  */
 
+import { RangeReader } from './rangeReader.ts'
+
 /** A subtitle track of the file */
 export interface EmbeddedTrack {
 	/** Its number in the file */
@@ -21,8 +23,11 @@ export interface EmbeddedTrack {
 	name?: string
 	/** Its language, as the file says it */
 	language?: string
-	/** How its text is written: as it is, after WebM's cue id and settings lines, or as an ASS event */
-	format: 'text' | 'webm' | 'ass'
+	/**
+	 * How its text is written: WebVTT as it is or after WebM's cue id and
+	 * settings lines, or as SubRip or ASS, which WebVTT reads otherwise
+	 */
+	format: 'vtt' | 'webm' | 'srt' | 'ass'
 	/** How each block of it is stored, when not as it is */
 	encoding?: ContentEncoding
 }
@@ -33,7 +38,7 @@ export interface CueReference {
 	track: number
 	/** When it starts, in seconds */
 	start: number
-	/** When it ends, in seconds, if the index says */
+	/** When it ends, in seconds, if the index says: its block may say otherwise */
 	end?: number
 	/** Where its cluster starts in the file */
 	cluster: number
@@ -95,6 +100,7 @@ const ID = {
 	CueDuration: 0xB2,
 	BlockGroup: 0xA0,
 	Block: 0xA1,
+	BlockDuration: 0x9B,
 	SimpleBlock: 0xA3,
 	CRC32: 0xBF,
 	Void: 0xEC,
@@ -105,8 +111,8 @@ const SUBTITLE_TRACK = 0x11
 
 /** The codecs whose text the browser can be given, and how it is written */
 const TEXT_CODECS: Record<string, EmbeddedTrack['format']> = {
-	'S_TEXT/UTF8': 'text',
-	'S_TEXT/WEBVTT': 'text',
+	'S_TEXT/UTF8': 'srt',
+	'S_TEXT/WEBVTT': 'vtt',
 	'D_WEBVTT/SUBTITLES': 'webm',
 	'D_WEBVTT/CAPTIONS': 'webm',
 	'S_TEXT/ASS': 'ass',
@@ -114,14 +120,22 @@ const TEXT_CODECS: Record<string, EmbeddedTrack['format']> = {
 }
 
 /** Enough of the file's start for its header, its seek head and its tracks */
-const HEAD_BYTES = 64 * 1024
+export const HEAD_BYTES = 64 * 1024
 
 /** Enough for the block of one subtitle, read again whole if it is longer */
 const BLOCK_BYTES = 512
 
+/**
+ * How far into a cluster its subtitle blocks are read in one go: the video
+ * between them is read with them, so not past a couple of seconds of it
+ */
+const CLUSTER_AHEAD_BYTES = 256 * 1024
+
 /** An element's ID, the size of its data, and where that data is */
 interface Element {
 	id: number
+	/** Where it starts, in the buffer it was read from */
+	start: number
 	size: number
 	/** Where its data starts, in the buffer it was read from */
 	data: number
@@ -159,7 +173,7 @@ function readElement(bytes: Uint8Array, position: number): Element {
 	const id = readVint(bytes, position, true)
 	const size = readVint(bytes, position + id.length)
 	const data = position + id.length + size.length
-	return { id: id.value, size: size.value, data, end: data + size.value }
+	return { id: id.value, start: position, size: size.value, data, end: data + size.value }
 }
 
 /**
@@ -206,28 +220,15 @@ function readString(bytes: Uint8Array, element: Element): string {
 	return new TextDecoder().decode(bytes.subarray(element.data, element.end)).replace(/\0+$/, '')
 }
 
-/** Fetches a range of the file's bytes */
-export type RangeReader = (start: number, length: number) => Promise<Uint8Array>
-
 /**
- * Fetch a range of a file, refusing a server that answers with all of it.
+ * A reader of the file for its subtitles: as many small reads as a film's
+ * cues take, none of them larger than a cluster's worth of them.
  *
- * A server that ignores the range sends the whole video, which is exactly
- * what reading the subtitles this way avoids: such an answer is cut short
- * and the subtitles are given up on.
- *
- * @param source - The file's address
- * @param signal - Aborts the request
+ * @param url - What gives the file's address
+ * @param signal - Aborts every read
  */
-export function rangeReader(source: string, signal?: AbortSignal): RangeReader {
-	return async (start, length) => {
-		const response = await fetch(source, { headers: { Range: `bytes=${start}-${start + length - 1}` }, signal })
-		if (response.status !== 206) {
-			await response.body?.cancel()
-			throw new Error(`The server does not answer ranges of ${source}`)
-		}
-		return new Uint8Array(await response.arrayBuffer())
-	}
+export function matroskaReader(url: () => string, signal?: AbortSignal): RangeReader {
+	return new RangeReader(url, { readBytes: BLOCK_BYTES, maxReadBytes: 1024 * 1024, maxReads: 10000, signal })
 }
 
 /**
@@ -245,10 +246,57 @@ async function readElementAt(read: RangeReader, position: number, head: Uint8Arr
 			return { bytes: head, element }
 		}
 	}
-	const header = await read(position, 16)
-	const { end } = readElement(header, 0)
-	const bytes = await read(position, end)
+	// The reader refuses a size past what any element read here can be,
+	// such as one from a damaged file
+	const { end } = readElement(await read.bytesAt(position, 16), 0)
+	const bytes = await read.bytesAt(position, end)
 	return { bytes, element: readElement(bytes, 0) }
+}
+
+/**
+ * Where each top level element of the segment is, as its seek heads say.
+ *
+ * Most muxers write one at the segment's start. Some list the index in a
+ * second one it points to, near the end. A file with none, as a browser's
+ * MediaRecorder writes, has what the head holds looked for in it.
+ *
+ * @param read - Reads the file
+ * @param head - The start of the file
+ * @param segmentData - Where the segment's data starts
+ */
+async function topLevelPositions(read: RangeReader, head: Uint8Array, segmentData: number): Promise<Map<number, number>> {
+	const positions = new Map<number, number>()
+	const inHead = childrenOf(head, segmentData, head.length)
+	const firstSeekHead = inHead.find((child) => child.id === ID.SeekHead)
+	if (firstSeekHead === undefined) {
+		for (const child of inHead) {
+			if (!positions.has(child.id)) {
+				positions.set(child.id, child.start)
+			}
+		}
+		return positions
+	}
+
+	const seekHeads = [{ bytes: head, element: firstSeekHead }]
+	for (let i = 0; i < seekHeads.length && i < 2; i++) {
+		const { bytes, element } = seekHeads[i]!
+		for (const seek of childrenOf(bytes, element.data, element.end).filter((child) => child.id === ID.Seek)) {
+			const fields = childrenOf(bytes, seek.data, seek.end)
+			const id = fields.find((field) => field.id === ID.SeekID)
+			const position = fields.find((field) => field.id === ID.SeekPosition)
+			if (id === undefined || position === undefined) {
+				continue
+			}
+			const target = readUint(bytes, id)
+			const at = segmentData + readUint(bytes, position)
+			if (target === ID.SeekHead && at !== firstSeekHead.start) {
+				seekHeads.push(await readElementAt(read, at, head))
+			} else if (!positions.has(target)) {
+				positions.set(target, at)
+			}
+		}
+	}
+	return positions
 }
 
 /**
@@ -286,7 +334,7 @@ function readEncoding(bytes: Uint8Array, encodings: Element): ContentEncoding | 
  * @return Nothing for a file that is not Matroska, or has no such track
  */
 export async function readMatroskaFile(read: RangeReader): Promise<MatroskaFile | undefined> {
-	const head = await read(0, HEAD_BYTES)
+	const head = await read.bytesAt(0, HEAD_BYTES)
 	const ebml = readElement(head, 0)
 	if (ebml.id !== ID.EBML) {
 		return undefined
@@ -296,20 +344,7 @@ export async function readMatroskaFile(read: RangeReader): Promise<MatroskaFile 
 		return undefined
 	}
 
-	// Where each top level element is, from the seek head at the segment's start
-	const positions = new Map<number, number>()
-	const seekHead = childrenOf(head, segment.data, segment.data + 4096).find((child) => child.id === ID.SeekHead)
-	if (seekHead === undefined) {
-		return undefined
-	}
-	for (const seek of childrenOf(head, seekHead.data, seekHead.end).filter((child) => child.id === ID.Seek)) {
-		const fields = childrenOf(head, seek.data, seek.end)
-		const id = fields.find((field) => field.id === ID.SeekID)
-		const position = fields.find((field) => field.id === ID.SeekPosition)
-		if (id !== undefined && position !== undefined) {
-			positions.set(readUint(head, id), segment.data + readUint(head, position))
-		}
-	}
+	const positions = await topLevelPositions(read, head, segment.data)
 	const tracksPosition = positions.get(ID.Tracks)
 	if (tracksPosition === undefined) {
 		return undefined
@@ -348,7 +383,8 @@ export async function readMatroskaFile(read: RangeReader): Promise<MatroskaFile 
 		tracks.push({
 			number: readUint(bytes, number),
 			name: name === undefined ? undefined : readString(bytes, name),
-			language: language === undefined ? undefined : readString(bytes, language),
+			// What Matroska takes a track without one to be in
+			language: language === undefined ? 'eng' : readString(bytes, language),
 			format,
 			encoding,
 		})
@@ -357,6 +393,16 @@ export async function readMatroskaFile(read: RangeReader): Promise<MatroskaFile 
 		return undefined
 	}
 	return { tracks, cuesPosition: positions.get(ID.Cues), timestampScale, segmentData: segment.data }
+}
+
+/**
+ * A timestamp of the file, in seconds.
+ *
+ * @param file - What its head said
+ * @param timestamp - The timestamp, in the file's own units
+ */
+function seconds(file: MatroskaFile, timestamp: number): number {
+	return timestamp * file.timestampScale / 1e9
 }
 
 /**
@@ -376,7 +422,6 @@ export async function readCueReferences(read: RangeReader, file: MatroskaFile): 
 		return []
 	}
 	const subtitleTracks = new Set(file.tracks.map((track) => track.number))
-	const seconds = (timestamp: number) => timestamp * file.timestampScale / 1e9
 	const cues: CueReference[] = []
 	for (const point of childrenOf(bytes, element.data, element.end).filter((child) => child.id === ID.CuePoint)) {
 		const fields = childrenOf(bytes, point.data, point.end)
@@ -398,8 +443,8 @@ export async function readCueReferences(read: RangeReader, file: MatroskaFile): 
 			const duration = values.get(ID.CueDuration)
 			cues.push({
 				track,
-				start: seconds(start),
-				end: duration === undefined ? undefined : seconds(start + duration),
+				start: seconds(file, start),
+				end: duration === undefined ? undefined : seconds(file, start + duration),
 				// Counted from the segment's data, as the seek head is
 				cluster: file.segmentData + cluster,
 				relative,
@@ -445,23 +490,50 @@ export function assText(event: string): string {
 }
 
 /**
+ * Text that WebVTT reads as it is meant, from SubRip or ASS: what would be
+ * taken for markup escaped, the italic, bold and underline SubRip allows kept.
+ *
+ * @param text - The text
+ */
+export function cueMarkup(text: string): string {
+	return text
+		.replace(/&/g, '&amp;')
+		.replace(/<(?!\/?[ibu]>)/gi, '&lt;')
+}
+
+/** A cue's text, and when it ends if its block says */
+export interface CueText {
+	text: string
+	/** When it ends, in seconds, from the block's own duration */
+	end?: number
+}
+
+/**
  * Read the text of a cue from its block.
  *
  * @param read - Reads the file
+ * @param file - What its head said
  * @param cue - Where it is
  * @param track - Its track
  * @param clusterData - Where its cluster's data starts, read once per cluster
  */
-export async function readCueText(read: RangeReader, cue: CueReference, track: EmbeddedTrack, clusterData: number): Promise<string> {
+export async function readCueText(read: RangeReader, file: MatroskaFile, cue: CueReference, track: EmbeddedTrack, clusterData: number): Promise<CueText> {
 	const position = clusterData + cue.relative
-	let bytes = await read(position, BLOCK_BYTES)
+	let bytes = await read.bytesAt(position, BLOCK_BYTES)
 	let block = readElement(bytes, 0)
 	if (block.end > bytes.length) {
-		bytes = await read(position, block.end)
+		bytes = await read.bytesAt(position, block.end)
 		block = readElement(bytes, 0)
 	}
+	let end: number | undefined
 	if (block.id === ID.BlockGroup) {
-		const inner = childrenOf(bytes, block.data, block.end).find((child) => child.id === ID.Block)
+		const children = childrenOf(bytes, block.data, block.end)
+		const duration = children.find((child) => child.id === ID.BlockDuration)
+		if (duration !== undefined) {
+			// The block's timestamp is the cue's, which the index gives
+			end = cue.start + seconds(file, readUint(bytes, duration))
+		}
+		const inner = children.find((child) => child.id === ID.Block)
 		if (inner === undefined) {
 			throw new Error('A block group without its block')
 		}
@@ -474,12 +546,18 @@ export async function readCueText(read: RangeReader, cue: CueReference, track: E
 	// are not laced: what follows is the one frame
 	const trackNumber = readVint(bytes, block.data)
 	const frame = await decode(bytes.subarray(block.data + trackNumber.length + 3, block.end), track.encoding)
-	const text = new TextDecoder().decode(frame)
-	if (track.format === 'ass') {
-		return assText(text)
+	const text = new TextDecoder().decode(frame).replace(/\r\n?/g, '\n')
+	switch (track.format) {
+		case 'ass':
+			return { text: cueMarkup(assText(text)), end }
+		case 'srt':
+			return { text: cueMarkup(text), end }
+		// WebM puts the cue's id and its settings on the lines before its text
+		case 'webm':
+			return { text: text.split('\n').slice(2).join('\n'), end }
+		default:
+			return { text, end }
 	}
-	// WebM puts the cue's id and its settings on the lines before its text
-	return track.format === 'webm' ? text.split('\n').slice(2).join('\n') : text
 }
 
 /**
@@ -490,5 +568,23 @@ export async function readCueText(read: RangeReader, cue: CueReference, track: E
  * @param cluster - Where the cluster starts
  */
 export async function readClusterData(read: RangeReader, cluster: number): Promise<number> {
-	return cluster + readElement(await read(cluster, 16), 0).data
+	return cluster + readElement(await read.bytesAt(cluster, 16), 0).data
+}
+
+/**
+ * Read the blocks of these cues of one cluster in a single read, when they
+ * sit close enough together: one request for a cluster's few lines rather
+ * than one for each. Further apart, each is read on its own.
+ *
+ * @param read - Reads the file
+ * @param cluster - Where the cluster starts
+ * @param cues - Its cues to read
+ */
+export async function readClusterAhead(read: RangeReader, cluster: number, cues: CueReference[]): Promise<void> {
+	const last = Math.max(...cues.map((cue) => cue.relative))
+	// The cluster's own header is at most 12 bytes: a 4-byte ID and a size
+	const length = 12 + last + BLOCK_BYTES
+	if (length <= CLUSTER_AHEAD_BYTES) {
+		await read.bytesAt(cluster, length)
+	}
 }
