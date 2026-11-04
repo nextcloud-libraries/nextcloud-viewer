@@ -1027,6 +1027,18 @@ function onNodeDeleted(node: INode) {
 }
 
 /**
+ * Whether two nodes are the same file: same id and same root. The file and
+ * its older versions share an id but sit under different roots, so the id
+ * alone would take an older version for the current file.
+ *
+ * @param a - A node
+ * @param b - Another node
+ */
+function isSameFile(a: INode, b: INode | undefined): boolean {
+	return a.fileid !== undefined && a.fileid === b?.fileid && a.root === b.root
+}
+
+/**
  * Take a node as the file shown, at the version on screen.
  *
  * What the handler, or the viewer itself, says once it has written the file
@@ -1036,14 +1048,14 @@ function onNodeDeleted(node: INode) {
  * @return Whether it is the file shown
  */
 function syncShownFile(node: INode): boolean {
-	if (node.type !== FileType.File || node.fileid === undefined || node.fileid !== currentFile.value?.fileid) {
+	if (node.type !== FileType.File || !isSameFile(node, currentFile.value)) {
 		return false
 	}
 	swapping = true
 	currentFile.value = node as IFile
 	swapping = false
 	shownVersion = node.attributes?.etag
-	currentFileList.value = currentFileList.value.map((file) => file.fileid === node.fileid ? node as IFile : file)
+	currentFileList.value = currentFileList.value.map((file) => isSameFile(node, file) ? node as IFile : file)
 	return true
 }
 
@@ -1069,7 +1081,7 @@ function onNodeUpdated(node: INode) {
 	if (!syncShownFile(node)) {
 		// A neighbour renamed or changed elsewhere is swapped in, or stepping
 		// to it would show it from the node it had when the viewer opened
-		currentFileList.value = currentFileList.value.map((file) => file.fileid === node.fileid ? node as IFile : file)
+		currentFileList.value = currentFileList.value.map((file) => isSameFile(node, file) ? node as IFile : file)
 		return
 	}
 	if (sameVersion) {
