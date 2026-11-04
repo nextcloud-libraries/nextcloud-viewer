@@ -12,6 +12,7 @@ import { scope } from './scope.ts'
 import { logger } from './services/logger.ts'
 import { openViewer, openWithHistory } from './utils/history.ts'
 import { t } from './utils/l10n.ts'
+import { findSubtitledVideo } from './utils/subtitleNames.ts'
 
 /** Default click-to-open action id */
 const ACTION_VIEWER = 'viewer-open'
@@ -21,6 +22,8 @@ const ACTION_VIEWER_MENU = 'viewer-open-with'
 const ACTION_SLIDESHOW = 'viewer-open-slideshow'
 /** Folder-wide slideshow, in the Files list header */
 const ACTION_FOLDER_SLIDESHOW = 'viewer-folder-slideshow'
+/** A video's subtitles, opening the video they are for */
+const ACTION_SUBTITLED_VIDEO = 'viewer-open-subtitled-video'
 
 export interface IHandler {
 	/**
@@ -269,6 +272,42 @@ const slideshowAction: IFileAction = {
 }
 
 /**
+ * The video a subtitle file of the given nodes is for, if the viewer plays it.
+ *
+ * @param nodes - The nodes acted on
+ * @param contents - The files of their folder
+ */
+function subtitledVideo(nodes: INode[], contents: INode[]): IFile | undefined {
+	if (nodes.length !== 1 || nodes[0]!.type !== FileType.File) {
+		return undefined
+	}
+	const video = findSubtitledVideo(nodes[0] as IFile, contents.filter((node) => node.type === FileType.File) as IFile[])
+	return video !== undefined && countEnabledHandlers([video], 1) ? video : undefined
+}
+
+/**
+ * Open the video a subtitle file is named after, which shows it in its
+ * captions. Subtitle files are nothing the viewer opens, as the server gives
+ * them no type, and clicking one downloaded it.
+ */
+const subtitledVideoAction: IFileAction = {
+	id: ACTION_SUBTITLED_VIDEO,
+	displayName: () => t('Play its video'),
+	iconSvgInline: () => MotionPlaySvg,
+	order: -1000,
+	default: DefaultType.DEFAULT,
+
+	enabled: ({ nodes, contents }) => subtitledVideo(nodes, contents) !== undefined,
+	async exec({ nodes, contents, view, folder }) {
+		const video = subtitledVideo(nodes, contents)
+		if (video !== undefined) {
+			openWithHistory(contents as IFile[], video, view, folder)
+		}
+		return null
+	},
+}
+
+/**
  * The pictures and videos among the given nodes that the viewer can show.
  *
  * @param nodes - The nodes to pick from
@@ -359,7 +398,7 @@ export function registerHandler(handler: IHandler): void {
 	// did not. Ahead of the check below, as that copy has usually registered
 	// the default handlers too, which this one then leaves to it.
 	const registeredActions = new Set(getFileActions().map((action) => action.id))
-	for (const action of [defaultViewerAction, openWithViewerAction, slideshowAction]) {
+	for (const action of [defaultViewerAction, openWithViewerAction, slideshowAction, subtitledVideoAction]) {
 		if (!registeredActions.has(action.id)) {
 			registerFileAction(action)
 			logger.info('Registered viewer file action', { id: action.id })

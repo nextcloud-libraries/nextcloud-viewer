@@ -25,9 +25,11 @@ import { gzipSync } from 'node:zlib'
 /**
  * What the entry may cost, gzipped, before anyone has opened a file. Raised
  * from 10 kB for <nc-viewer-file>, defined on every page, and the default
- * handlers defining their elements when first needed
+ * handlers defining their elements when first needed, then to 11.5 kB for
+ * the Files action opening a video from its subtitles, which Files asks of
+ * every file it lists
  */
-const BUDGET_GZIP = 11 * 1024
+const BUDGET_GZIP = 11.5 * 1024
 
 /** Chunks that must only ever be reached through a dynamic import */
 const MUST_BE_LAZY = ['mount', 'mountViewerFile', 'Images', 'Videos', 'Audios', 'ImageEditor', 'usePlyrPlayer', 'translations']
@@ -105,7 +107,7 @@ for (const file of files.sort()) {
 	gzip += gzipSync(contents).length
 	console.info(`  ${String(contents.length).padStart(8)}  ${relative(process.cwd(), file)}`)
 }
-console.info(`\n  ${String(raw).padStart(8)}  total, ${(gzip / 1024).toFixed(1)} kB gzipped (budget ${(BUDGET_GZIP / 1024).toFixed(0)} kB)\n`)
+console.info(`\n  ${String(raw).padStart(8)}  total, ${(gzip / 1024).toFixed(1)} kB gzipped (budget ${(BUDGET_GZIP / 1024).toFixed(1)} kB)\n`)
 
 console.info(`  dependencies: ${packages.sort().join(', ') || 'none'}\n`)
 
@@ -124,7 +126,7 @@ if (leaked.length > 0) {
 }
 
 if (gzip > BUDGET_GZIP) {
-	console.error(`The entry is ${(gzip / 1024).toFixed(1)} kB gzipped, over the ${(BUDGET_GZIP / 1024).toFixed(0)} kB budget.`)
+	console.error(`The entry is ${(gzip / 1024).toFixed(1)} kB gzipped, over the ${(BUDGET_GZIP / 1024).toFixed(1)} kB budget.`)
 	console.error('Either something now imports the viewer statically, or the budget needs raising on purpose.')
 	process.exit(1)
 }

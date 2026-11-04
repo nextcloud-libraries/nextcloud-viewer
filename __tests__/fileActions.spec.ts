@@ -341,3 +341,48 @@ describe('the slideshow of a folder', () => {
 		expect(viewer.open).toHaveBeenCalledWith([a, b], a, expect.objectContaining({ startSlideshow: true, view: VIEW, folder: FOLDER }), undefined)
 	})
 })
+
+// Subtitle files are nothing the viewer opens, and clicking one downloaded it
+describe('the subtitles of a video', () => {
+	const ACTION_SUBTITLED_VIDEO = 'viewer-open-subtitled-video'
+	const videos = () => makeHandler({ id: 'videos', enabled: (nodes) => nodes.every((node) => node.mime?.startsWith('video/')) })
+	const movie = makeFile({ basename: 'movie.mp4', mime: 'video/mp4' })
+	const subtitles = makeFile({ basename: 'movie.fr.srt', mime: 'application/octet-stream' })
+
+	/**
+	 * The context of the subtitles clicked in a folder of these files.
+	 *
+	 * @param contents - The folder's files
+	 */
+	function clicked(contents: unknown[]) {
+		return { nodes: [subtitles], contents, view: VIEW, folder: FOLDER } as never
+	}
+
+	it('open the video they are named after, in the viewer', async () => {
+		registerHandler(videos())
+		const other = makeFile({ basename: 'other.mp4', mime: 'video/mp4' })
+
+		expect(action(ACTION_SUBTITLED_VIDEO)!.enabled!(clicked([other, movie, subtitles]))).toBe(true)
+		await action(ACTION_SUBTITLED_VIDEO)!.exec(clicked([other, movie, subtitles]))
+
+		expect(viewer.open).toHaveBeenCalledOnce()
+		expect(viewer.open.mock.calls[0]![1]).toBe(movie)
+	})
+
+	it('are left alone when picked with another file', async () => {
+		registerHandler(videos())
+		const both = { nodes: [subtitles, movie], contents: [movie, subtitles], view: VIEW, folder: FOLDER } as never
+
+		expect(action(ACTION_SUBTITLED_VIDEO)!.enabled!(both)).toBe(false)
+		await action(ACTION_SUBTITLED_VIDEO)!.exec(both)
+		expect(viewer.open).not.toHaveBeenCalled()
+	})
+
+	it('are left alone without their video beside them, or one the viewer plays', () => {
+		registerHandler(videos())
+		expect(action(ACTION_SUBTITLED_VIDEO)!.enabled!(clicked([subtitles]))).toBe(false)
+
+		getHandlers().clear()
+		expect(action(ACTION_SUBTITLED_VIDEO)!.enabled!(clicked([movie, subtitles]))).toBe(false)
+	})
+})

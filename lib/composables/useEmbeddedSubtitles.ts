@@ -12,7 +12,8 @@ import { onBeforeUnmount, watch } from 'vue'
 import { logger } from '../services/logger.ts'
 import { canDownload } from '../utils/canDownload.ts'
 import { matroskaReader, readClusterAhead, readClusterData, readCueReferences, readCueText, readMatroskaFile } from '../utils/matroska.ts'
-import { canonicalLanguage, languageLabel } from '../utils/subtitles.ts'
+import { canonicalLanguage } from '../utils/subtitleNames.ts'
+import { languageLabel } from '../utils/subtitles.ts'
 
 /** The containers that carry subtitles a browser plays the video of */
 const MATROSKA_MIMES = ['video/x-matroska', 'video/webm']
