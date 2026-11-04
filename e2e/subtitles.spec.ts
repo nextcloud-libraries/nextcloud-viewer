@@ -27,4 +27,30 @@ test.describe('A video with subtitles beside it', () => {
 			return cues?.length ? (cues[0] as VTTCue).text : null
 		})).toBe('Bonjour, voici la bande-annonce')
 	})
+
+	test('inside it, lists them too, and reads them once picked', async ({ page }) => {
+		const ranges: string[] = []
+		page.on('request', (request) => {
+			// Bounded ranges are ours: the video element asks for `bytes=0-`
+			if (request.url().endsWith('/subtitled.webm') && /^bytes=\d+-\d+$/.test(request.headers().range ?? '')) {
+				ranges.push(request.headers().range!)
+			}
+		})
+		const viewer = new ViewerPage(page)
+		await viewer.open('subtitled.webm')
+		await viewer.waitForOpen()
+
+		const tracks = () => page.evaluate(() => [...document.querySelector('video')!.textTracks]
+			.map((track) => ({ label: track.label, language: track.language, mode: track.mode })))
+		await expect.poll(tracks).toEqual([{ label: 'Français', language: 'fr', mode: 'disabled' }])
+		// Its head only, until they are wanted
+		expect(ranges).toEqual(['bytes=0-65535'])
+
+		await viewer.container.locator('media-captions-button').click()
+
+		await expect.poll(() => page.evaluate(() => {
+			const cues = document.querySelector('video')!.textTracks[0]!.activeCues
+			return cues?.length ? (cues[0] as VTTCue).text : null
+		})).toBe('Premier sous-titre')
+	})
 })
