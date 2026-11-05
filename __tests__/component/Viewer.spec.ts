@@ -332,6 +332,20 @@ describe('Viewer delete handling', () => {
 		expect(modalName()).toBe('f2.jpg')
 	})
 
+	// They share its id: it was the version that went, and the viewer moved on
+	it('keeps an older version shown when its current file is deleted', async () => {
+		const { vm, wrapper, modalName } = mountViewer([imageHandler()])
+		const version = makeVersion()
+		const file = makeFile({ id: 7, basename: 'notes.jpg', mime: 'image/jpeg' })
+		await vm.open([version, file], version)
+		await wrapper.vm.$nextTick()
+
+		deletedHandler()(file)
+		await wrapper.vm.$nextTick()
+
+		expect(modalName()).toBe('1691420501')
+	})
+
 	it('falls back to the previous file when the last one is deleted', async () => {
 		const { vm, wrapper, modalName, f3 } = await setup()
 		await vm.goTo(f3.fileid!)
@@ -1521,6 +1535,7 @@ describe('nodes from another copy of Vue', () => {
 })
 
 describe('a neighbour changed elsewhere', () => {
+	// As Files announces a rename: with where the file was
 	it('is shown from its new node when the user steps to it', async () => {
 		const { vm, wrapper, modalName, emitModal } = mountViewer([imageHandler()])
 		const f1 = makeFile({ basename: 'f1.jpg', mime: 'image/jpeg' })
@@ -1529,8 +1544,8 @@ describe('a neighbour changed elsewhere', () => {
 		await wrapper.vm.$nextTick()
 
 		const renamed = makeFile({ id: f2.fileid, basename: 'holiday.jpg', mime: 'image/jpeg' })
-		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
-		updated(renamed)
+		const moved = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:moved')![1] as (moved: unknown) => void
+		moved({ node: renamed, oldSource: f2.source })
 		await emitModal('next')
 		await wrapper.vm.$nextTick()
 
@@ -1566,8 +1581,11 @@ describe('the file shown, updated', () => {
 		await wrapper.vm.$nextTick()
 		const before = wrapper.find('oca-viewer-image').element
 
-		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
-		updated(makeFile({ id: file.fileid, basename: changes.basename ?? 'notes.jpg', mime: 'image/jpeg', attributes: { etag: changes.etag ?? 'v1' } }))
+		const node = makeFile({ id: file.fileid, basename: changes.basename ?? 'notes.jpg', mime: 'image/jpeg', attributes: { etag: changes.etag ?? 'v1' } })
+		// A rename is announced with where the file was, as Files does
+		const event = changes.basename === undefined ? 'files:node:updated' : 'files:node:moved'
+		const handler = vi.mocked(subscribe).mock.calls.findLast(([name]) => name === event)![1] as (payload: unknown) => void
+		handler(changes.basename === undefined ? node : { node, oldSource: file.source })
 		await wrapper.vm.$nextTick()
 		return { kept: wrapper.find('oca-viewer-image').element === before, name: modalName() }
 	}
@@ -1621,6 +1639,22 @@ describe('the file shown, updated', () => {
 		await wrapper.vm.$nextTick()
 
 		expect(modalName()).toBe('1691420501')
+		expect(wrapper.find('oca-viewer-image').element).toBe(element)
+	})
+
+	// A share of a folder and of a folder in it mount the same file twice
+	it('is not replaced by the same file at another place', async () => {
+		const { vm, wrapper, modalName } = mountViewer([imageHandler()])
+		const file = makeFile({ id: 7, basename: 'notes.jpg', mime: 'image/jpeg', attributes: { etag: 'v1' } })
+		await vm.open([file], file)
+		await wrapper.vm.$nextTick()
+		const element = wrapper.find('oca-viewer-image').element
+
+		const updated = vi.mocked(subscribe).mock.calls.findLast(([event]) => event === 'files:node:updated')![1] as (node: unknown) => void
+		updated(makeFile({ id: 7, basename: 'Shared/notes.jpg', mime: 'image/jpeg', attributes: { etag: 'v2' } }))
+		await wrapper.vm.$nextTick()
+
+		expect(modalName()).toBe('notes.jpg')
 		expect(wrapper.find('oca-viewer-image').element).toBe(element)
 	})
 

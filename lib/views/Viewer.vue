@@ -998,12 +998,12 @@ async function submitRename() {
  * @param node - The deleted node
  */
 function onNodeDeleted(node: INode) {
-	const index = currentFileList.value.findIndex((file) => file.fileid === node.fileid || file.source === node.source)
+	const index = currentFileList.value.findIndex((file) => isSameFile(node, file))
 	if (index === -1) {
 		return
 	}
 
-	const wasCurrent = currentFileList.value[index]?.fileid === currentFile.value?.fileid
+	const wasCurrent = isSameFile(node, currentFile.value)
 	currentFileList.value = currentFileList.value.filter((_, i) => i !== index)
 
 	if (!wasCurrent) {
@@ -1027,15 +1027,18 @@ function onNodeDeleted(node: INode) {
 }
 
 /**
- * Whether two nodes are the same file: same id and same root. The file and
- * its older versions share an id but sit under different roots, so the id
- * alone would take an older version for the current file.
+ * Whether two nodes are the same file, at the same place: by their source.
+ *
+ * Not by their id, which a file shares with its older versions, and with
+ * itself where it is mounted twice, as a share of a folder and of a folder
+ * in it are. A file renamed or moved is told by `files:node:moved`, which
+ * gives where it was.
  *
  * @param a - A node
  * @param b - Another node
  */
 function isSameFile(a: INode, b: INode | undefined): boolean {
-	return a.fileid !== undefined && a.fileid === b?.fileid && a.root === b.root
+	return a.source === b?.source
 }
 
 /**
@@ -1070,7 +1073,7 @@ function syncShownFile(node: INode): boolean {
  * @param node - The updated node
  */
 function onNodeUpdated(node: INode) {
-	if (node.type !== FileType.File || node.fileid === undefined) {
+	if (node.type !== FileType.File) {
 		return
 	}
 	const shown = currentFile.value
@@ -1089,6 +1092,30 @@ function onNodeUpdated(node: INode) {
 	}
 	releaseEditedSource(shown!.source)
 	reloadKey.value++
+}
+
+/**
+ * When a file is renamed or moved, show it under its new name.
+ *
+ * Only the name changed, so the element showing it is kept. The node may
+ * have been renamed in place already, when it is the one the viewer holds,
+ * so it is looked for at its new place too.
+ *
+ * @param moved - The moved node, and where it was
+ * @param moved.node - The node, at its new place
+ * @param moved.oldSource - Where it was
+ */
+function onNodeMoved({ node, oldSource }: { node: INode, oldSource: string }) {
+	if (node.type !== FileType.File) {
+		return
+	}
+	const isMoved = (file: IFile) => file.source === oldSource || isSameFile(node, file)
+	if (currentFile.value !== undefined && isMoved(currentFile.value)) {
+		swapping = true
+		currentFile.value = node as IFile
+		swapping = false
+	}
+	currentFileList.value = currentFileList.value.map((file) => isMoved(file) ? node as IFile : file)
 }
 
 /**
@@ -2105,6 +2132,7 @@ onMounted(() => {
 	// Advance the viewer when the shown file is deleted (from the menu or elsewhere)
 	subscribe('files:node:deleted', onNodeDeleted)
 	subscribe('files:node:updated', onNodeUpdated)
+	subscribe('files:node:moved', onNodeMoved)
 })
 
 onUnmounted(() => {
@@ -2117,6 +2145,7 @@ onUnmounted(() => {
 	unsubscribe('files:sidebar:closed', onAppSidebarClose)
 	unsubscribe('files:node:deleted', onNodeDeleted)
 	unsubscribe('files:node:updated', onNodeUpdated)
+	unsubscribe('files:node:moved', onNodeMoved)
 	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
 })
 
