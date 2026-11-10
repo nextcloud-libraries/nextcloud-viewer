@@ -6,6 +6,42 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2.0.0-beta.21
+
+### Added
+
+- Videos show the subtitles next to them: a `.vtt` or `.srt` file named
+  like the video, with a language or not (`movie.fr.vtt`), is listed in
+  the player's captions menu. SubRip is turned into WebVTT, which is all
+  browsers read (#184, nextcloud/viewer#239)
+- Videos show the subtitles inside Matroska and WebM files, read through
+  the file's index with small range requests rather than downloading the
+  video, and only once a track is turned on (#186)
+- Clicking a subtitle file in Files opens the video it is named after,
+  when the viewer plays it (#187)
+
+### Fixed
+
+- An older version stays shown when its file is updated, renamed or
+  deleted, as Text does when it closes; files are told apart by their
+  source rather than their id (#189)
+- Stepping through a list holding the same file twice no longer loops
+  (#192, #190)
+
+### Changed
+
+- `@nextcloud/dialogs` 8 is accepted next to 7, and the image editor is
+  at 1.0.0-beta.8, which accepts it too (#185)
+
+### Other
+
+* Bump @nextcloud/files from 4.1.0 to 4.1.1
+* Bump @nextcloud/vue from 9.13.0 to 9.14.1
+* Bump @stryker-mutator/core from 10.0.0 to 10.1.1
+* Bump @stryker-mutator/vitest-runner from 10.0.0 to 10.1.1
+* Bump vue from 3.5.43 to 3.5.44
+* Bump webdav from 5.10.0 to 5.11.0
+
 ## 2.0.0-beta.20
 
 ### Added
