@@ -337,7 +337,7 @@ import { loadState } from '@nextcloud/initial-state'
 import { useHotKey } from '@nextcloud/vue/composables/useHotKey'
 import { useIsMobile } from '@nextcloud/vue/composables/useIsMobile'
 import debounce from 'debounce'
-import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, triggerRef, useTemplateRef, watch } from 'vue'
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, toRaw, triggerRef, useTemplateRef, watch } from 'vue'
 import NcActionButton from '@nextcloud/vue/components/NcActionButton'
 import NcBlurHash from '@nextcloud/vue/components/NcBlurHash'
 import NcButton from '@nextcloud/vue/components/NcButton'
@@ -1224,6 +1224,10 @@ function showFile(file: IFile) {
 	pendingLoads.value = 1
 }
 
+// The place in `steps` of the file shown, as last stepped to or opened on.
+// Checked against the file before use: the list may have changed since
+const shownStep = ref(-1)
+
 // The files stepped through: the list but the pictures a video of it uses as
 // its poster, which the video shows already. One opened on its own stays
 const steps = computed(() => {
@@ -1245,7 +1249,16 @@ const steps = computed(() => {
  */
 function indexOfCurrent(): number {
 	const source = currentFile.value?.source
-	return source === undefined ? -1 : steps.value.findIndex((file) => file.source === source)
+	if (source === undefined) {
+		return -1
+	}
+	// Where the viewer opened on it, or stepped to it: a list may hold the
+	// same file twice, as Talk does for a file shared in two messages, and
+	// its first place is not always the one shown
+	if (steps.value[shownStep.value]?.source === source) {
+		return shownStep.value
+	}
+	return steps.value.findIndex((file) => file.source === source)
 }
 
 const hasNext = computed(() => {
@@ -1329,10 +1342,12 @@ async function showFiles(files: IFile[], file?: IFile, options?: ViewerOptions, 
 	if (!file) {
 		file = files[0]
 	} else {
-		// By source: a caller that looked the file up on its own, or a
+		// The very node first, as a list may hold the same file twice. By
+		// source then: a caller that looked the file up on its own, or a
 		// folder listed for it, holds another object for the same file, and
 		// it would have been listed twice
-		const listed = files.find((node) => node.source === file!.source)
+		const listed = files.find((node) => toRaw(node) === toRaw(file))
+			?? files.find((node) => node.source === file!.source)
 		if (listed) {
 			file = listed
 		} else {
@@ -1397,6 +1412,8 @@ async function showFiles(files: IFile[], file?: IFile, options?: ViewerOptions, 
 	comparisonHandler.value = undefined
 	currentHandler.value = handler
 	currentFile.value = file
+	// The very one it was asked to open, where the list holds it twice
+	shownStep.value = steps.value.findIndex((step) => toRaw(step) === toRaw(file))
 	currentOptions.value = options ?? {} as ViewerOptions
 	if (!isSameFile) {
 		loading.value = true
@@ -1779,6 +1796,7 @@ async function next() {
 		return
 	}
 
+	shownStep.value = newIndex
 	showFile(newFile)
 	notify('update:file', newFile)
 	preloadNeighbors()
@@ -1846,6 +1864,7 @@ function previous() {
 		return
 	}
 
+	shownStep.value = newIndex
 	showFile(newFile)
 	notify('update:file', newFile)
 
