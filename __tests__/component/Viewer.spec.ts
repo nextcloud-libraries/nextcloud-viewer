@@ -1534,6 +1534,39 @@ describe('nodes from another copy of Vue', () => {
 	})
 })
 
+// Talk lists a file once for each message it was shared in
+describe('a list holding the same file twice', () => {
+	it('is stepped through in its order, from either place of it', async () => {
+		const { vm, wrapper, modalName, emitModal } = mountViewer([imageHandler()])
+		const [f0, f1, f2, f3, f4] = [0, 1, 2, 3, 4].map((n) => makeFile({ basename: `file-${n}.jpg`, mime: 'image/jpeg' }))
+		const f0Again = makeFile({ id: f0!.fileid, basename: 'file-0.jpg', mime: 'image/jpeg' })
+		await vm.open([f4!, f0!, f3!, f2!, f1!, f0Again], f3!)
+		await wrapper.vm.$nextTick()
+
+		const seen = [modalName()]
+		for (let step = 0; step < 6; step++) {
+			await emitModal('next')
+			await wrapper.vm.$nextTick()
+			seen.push(modalName())
+		}
+
+		expect(seen).toEqual(['file-3.jpg', 'file-2.jpg', 'file-1.jpg', 'file-0.jpg', 'file-4.jpg', 'file-0.jpg', 'file-3.jpg'])
+	})
+
+	it('opens on the place it was asked for, and steps back from it', async () => {
+		const { vm, wrapper, modalName, emitModal } = mountViewer([imageHandler()])
+		const [f0, f1, f2] = [0, 1, 2].map((n) => makeFile({ basename: `file-${n}.jpg`, mime: 'image/jpeg' }))
+		const f0Again = makeFile({ id: f0!.fileid, basename: 'file-0.jpg', mime: 'image/jpeg' })
+		await vm.open([f0!, f1!, f2!, f0Again], f0Again)
+		await wrapper.vm.$nextTick()
+
+		await emitModal('previous')
+		await wrapper.vm.$nextTick()
+
+		expect(modalName()).toBe('file-2.jpg')
+	})
+})
+
 describe('a neighbour changed elsewhere', () => {
 	// As Files announces a rename: with where the file was
 	it('is shown from its new node when the user steps to it', async () => {
