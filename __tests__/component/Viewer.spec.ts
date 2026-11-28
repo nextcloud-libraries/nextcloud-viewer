@@ -851,6 +851,26 @@ describe('Viewer sidebar', () => {
 		expect(document.body.classList.contains('viewer--sidebar-fullscreen')).toBe(false)
 	})
 
+	// The sidebar only reaches the top of the page in its own full screen mode
+	it('switches the Files sidebar to its full screen mode while the viewer is open', async () => {
+		const setFullScreenMode = vi.fn()
+		window.OCA = { ...window.OCA, Files: { ...window.OCA?.Files, _sidebar: () => ({ setFullScreenMode }) } }
+		try {
+			const { vm, wrapper, emitModal } = mountViewer([imageHandler()])
+			const file = makeFile({ mime: 'image/jpeg' })
+			await vm.open([file], file)
+			await wrapper.vm.$nextTick()
+
+			sidebarHandler('files:sidebar:opened')()
+			expect(setFullScreenMode).toHaveBeenLastCalledWith(true)
+
+			await emitModal('close')
+			expect(setFullScreenMode).toHaveBeenLastCalledWith(false)
+		} finally {
+			delete window.OCA.Files._sidebar
+		}
+	})
+
 	// Opened from the files list first, then a file opened: the viewer heard
 	// it open while closed, and left it its usual height
 	it('expands a sidebar opened before the viewer once a file is shown', async () => {

@@ -332,7 +332,7 @@ import type { CompareOptions, ComparisonView, ViewerAPI, ViewerOptions } from '.
 import axios from '@nextcloud/axios'
 import { showError } from '@nextcloud/dialogs'
 import { emit, subscribe, unsubscribe } from '@nextcloud/event-bus'
-import { FileType, Permission } from '@nextcloud/files'
+import { FileType, getSidebar, Permission } from '@nextcloud/files'
 import { loadState } from '@nextcloud/initial-state'
 import { useHotKey } from '@nextcloud/vue/composables/useHotKey'
 import { useIsMobile } from '@nextcloud/vue/composables/useIsMobile'
@@ -1762,7 +1762,7 @@ function close() {
 	folderListing?.abort()
 	clearEditedSources()
 	// Restore the app header when closing (the sidebar may still be open).
-	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
+	setSidebarFullscreen(false)
 }
 
 /**
@@ -1939,6 +1939,22 @@ function measureSidebar() {
 }
 
 /**
+ * Expand the Files sidebar to the full height next to the viewer, or give it
+ * back its usual place. The sidebar pins itself to the top of the page in its
+ * full screen mode, the class hides the app header and keeps the app content
+ * from reflowing under it.
+ *
+ * @param fullscreen - Whether the sidebar takes the full height
+ */
+function setSidebarFullscreen(fullscreen: boolean) {
+	document.body.classList.toggle(SIDEBAR_FULLSCREEN_CLASS, fullscreen)
+	const sidebar = getSidebar()
+	if (sidebar.available) {
+		sidebar.setFullScreenMode(fullscreen)
+	}
+}
+
+/**
  * Handle app sidebar opening to adjust viewer size
  */
 function onAppSidebarOpen() {
@@ -1954,7 +1970,7 @@ function onAppSidebarOpen() {
 	// the sidebar is also opened from the plain files list, where the app header
 	// must stay visible.
 	if (currentFile.value) {
-		document.body.classList.add(SIDEBAR_FULLSCREEN_CLASS)
+		setSidebarFullscreen(true)
 	}
 }
 
@@ -1968,7 +1984,7 @@ function onAppSidebarClose() {
 	}
 	sidebarPosition.value = 0
 	trapSidebar.value = null
-	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
+	setSidebarFullscreen(false)
 }
 
 // The Files app only says so when its sidebar opens. One already open when
@@ -2165,7 +2181,7 @@ onUnmounted(() => {
 	unsubscribe('files:node:deleted', onNodeDeleted)
 	unsubscribe('files:node:updated', onNodeUpdated)
 	unsubscribe('files:node:moved', onNodeMoved)
-	document.body.classList.remove(SIDEBAR_FULLSCREEN_CLASS)
+	setSidebarFullscreen(false)
 })
 
 defineExpose<ViewerAPI>({
